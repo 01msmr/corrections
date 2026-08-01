@@ -4773,6 +4773,28 @@ describe("Adminoberfläche Redaktionen", () => {
     expect(res.headers.get("location")).toBe(zurueck);
   });
 
+  it("rendert einen fremden Rückweg nicht in das versteckte Feld", async () => {
+    // Die Absicherung muss auf beiden Wegen greifen: hier beim Rendern,
+    // im Test darunter beim Weiterleiten.
+    for (const boese of ["https://boese.example/", "//boese.example/", "/admin/redaktionen"]) {
+      const html = await (
+        await app().request(`/admin/redaktionen?zurueck=${encodeURIComponent(boese)}`)
+      ).text();
+      expect(html).not.toContain(boese);
+    }
+  });
+
+  it("weist einen Rückweg mit Steuerzeichen ab, statt abzustürzen", async () => {
+    const res = await post("/admin/redaktionen", {
+      name: "X",
+      primaryDomain: "steuerzeichen.de",
+      contactEmails: "",
+      zurueck: "/neu?a=1\r\nSet-Cookie: evil=1",
+    });
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toContain("/admin/redaktionen?hinweis=");
+  });
+
   it("weist einen fremden Rückweg ab", async () => {
     const res = await post("/admin/redaktionen", {
       name: "X",
@@ -4963,7 +4985,12 @@ const BASE = "/admin/redaktionen";
  * Weiterleitung — ein praeparierter Link koennte auf eine fremde Seite fuehren.
  */
 function sicherereRueckweg(wert: string | undefined): string | undefined {
-  return wert?.startsWith("/neu?") ? wert : undefined;
+  if (wert === undefined || !wert.startsWith("/neu?")) return undefined;
+  // Steuerzeichen ebenfalls abweisen: ein eingebetteter Zeilenumbruch besteht
+  // die Praefixpruefung, laesst aber das Setzen des Location-Headers mit einer
+  // unbehandelten Ausnahme scheitern — 500 statt sanftem Rueckfall.
+  if (/[\u0000-\u001F\u007F]/.test(wert)) return undefined;
+  return wert;
 }
 
 function parseEmails(raw: unknown): string[] {
