@@ -342,7 +342,7 @@ git commit -m "Monorepo-Geruest mit shared-Paket und Kennzahlen-Konstanten"
 
 **Interfaces:**
 - Consumes: `@korrektur/shared`
-- Produces: `createApp(): Hono` aus `packages/api/src/app.ts`; `loadEnv(source?: Record<string, string | undefined>): Env` aus `packages/api/src/env.ts` mit `Env = { PORT: number; DATABASE_PATH: string; ADMIN_USER: string; ADMIN_PASSWORD: string; PUBLIC_BASE_URL: string; SMTP_HOST: string; SMTP_PORT: number; SMTP_USER: string; SMTP_PASSWORD: string; MAIL_FROM: string }`
+- Produces: `createApp(): Hono` aus `packages/api/src/app.ts`; `loadEnv(source?: Record<string, string | undefined>): Env` aus `packages/api/src/env.ts` mit `Env = { PORT: number; DATABASE_PATH: string; MIGRATIONS_DIR: string; ADMIN_USER: string; ADMIN_PASSWORD: string; PUBLIC_BASE_URL: string; SMTP_HOST: string; SMTP_PORT: number; SMTP_USER: string; SMTP_PASSWORD: string; MAIL_FROM: string }`
 
 **Zielumgebung:** netcup Webhosting mit Plesk, Node 26.5, kein Docker, kein Root. Gebaut wird auf dem GitHub-Runner, hochgeladen wird ein fertiges Bündel. Auf dem Server läuft weder npm noch ein Compiler.
 
