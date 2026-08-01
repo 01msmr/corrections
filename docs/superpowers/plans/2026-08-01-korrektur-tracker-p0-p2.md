@@ -1825,12 +1825,14 @@ describe("Kennzahlen-Views", () => {
     addCorrection({ dispatchStatus: "bounced" });
     const [row] = outletStats(db);
     expect(row?.nReplyBase).toBe(0);
+    expect(row?.nCorrectionBase).toBe(0);
   });
 
   it("hält eine nur vorbereitete Meldung aus jedem Nenner heraus", () => {
     addCorrection({ dispatchStatus: "prepared", sentAt: null });
     const [row] = outletStats(db);
     expect(row?.nReplyBase).toBe(0);
+    expect(row?.nCorrectionBase).toBe(0);
   });
 
   it("wertet eine Autoreply nicht als Antwort", () => {
@@ -1960,11 +1962,44 @@ export function applyViews(db: Db): void {
 
 - [ ] **Step 4: Abfragen implementieren**
 
+`packages/api/src/db/views.ts` ergänzen — die Views zusätzlich als typisierte
+Drizzle-Objekte, damit die Abfrage ohne Cast auskommt:
+
+```ts
+import { integer, sqliteView, text } from "drizzle-orm/sqlite-core";
+
+/**
+ * Deklaration der bereits per DDL erzeugten Views. `.existing()` sagt Drizzle,
+ * dass es sie nicht anlegen soll — es braucht nur die Spaltentypen, um
+ * `db.select().from(...)` typisiert zu machen. Damit entfaellt der Cast auf
+ * eine handgeschriebene Row-Schnittstelle, und eine umbenannte Spalte faellt
+ * beim Uebersetzen auf statt erst zur Laufzeit als `undefined`.
+ */
+export const vOutletStats = sqliteView("v_outlet_stats", {
+  outletId: text("outlet_id").notNull(),
+  name: text("name").notNull(),
+  nReports: integer("n_reports").notNull(),
+  nCorrectionBase: integer("n_correction_base").notNull(),
+  nCorrected: integer("n_corrected").notNull(),
+  nReplyBase: integer("n_reply_base").notNull(),
+  nReplied: integer("n_replied").notNull(),
+}).existing();
+
+export const vErrorTypeStats = sqliteView("v_error_type_stats", {
+  errorTypeId: text("error_type_id").notNull(),
+  label: text("label").notNull(),
+  nReports: integer("n_reports").notNull(),
+  nCorrectionBase: integer("n_correction_base").notNull(),
+  nCorrected: integer("n_corrected").notNull(),
+}).existing();
+```
+
 `packages/api/src/repo/stats.ts`:
 
 ```ts
 import { rateOrNull } from "@korrektur/shared";
 import type { Db } from "../db/client.js";
+import { vErrorTypeStats, vOutletStats } from "../db/views.js";
 
 export interface OutletStatRow {
   outletId: string;
@@ -1987,56 +2022,31 @@ export interface ErrorTypeStatRow {
   correctionRate: number | null;
 }
 
-interface RawOutletRow {
-  outlet_id: string;
-  name: string;
-  n_reports: number;
-  n_correction_base: number;
-  n_corrected: number;
-  n_reply_base: number;
-  n_replied: number;
-}
-
-interface RawErrorTypeRow {
-  error_type_id: string;
-  label: string;
-  n_reports: number;
-  n_correction_base: number;
-  n_corrected: number;
-}
-
-/** Alphabetisch sortiert — die Reihenfolge ist keine Aussage (§2.2). */
+/**
+ * Alphabetisch sortiert — die Reihenfolge ist keine Aussage (§2.2).
+ * Sortiert wird mit deutscher Collation statt SQLites NOCASE: letzteres kennt
+ * nur ASCII und ordnet Umlaute falsch ein.
+ */
 export function outletStats(db: Db): OutletStatRow[] {
-  const rows = db.$client
-    .prepare("SELECT * FROM v_outlet_stats ORDER BY name COLLATE NOCASE")
-    .all() as RawOutletRow[];
-
-  return rows.map((r) => ({
-    outletId: r.outlet_id,
-    name: r.name,
-    nReports: r.n_reports,
-    nCorrectionBase: r.n_correction_base,
-    nCorrected: r.n_corrected,
-    nReplyBase: r.n_reply_base,
-    nReplied: r.n_replied,
-    correctionRate: rateOrNull(r.n_corrected, r.n_correction_base),
-    replyRate: rateOrNull(r.n_replied, r.n_reply_base),
-  }));
+  return db
+    .select()
+    .from(vOutletStats)
+    .all()
+    .map((r) => ({
+      ...r,
+      correctionRate: rateOrNull(r.nCorrected, r.nCorrectionBase),
+      replyRate: rateOrNull(r.nReplied, r.nReplyBase),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "de"));
 }
 
 export function errorTypeStats(db: Db): ErrorTypeStatRow[] {
-  const rows = db.$client
-    .prepare("SELECT * FROM v_error_type_stats ORDER BY label COLLATE NOCASE")
-    .all() as RawErrorTypeRow[];
-
-  return rows.map((r) => ({
-    errorTypeId: r.error_type_id,
-    label: r.label,
-    nReports: r.n_reports,
-    nCorrectionBase: r.n_correction_base,
-    nCorrected: r.n_corrected,
-    correctionRate: rateOrNull(r.n_corrected, r.n_correction_base),
-  }));
+  return db
+    .select()
+    .from(vErrorTypeStats)
+    .all()
+    .map((r) => ({ ...r, correctionRate: rateOrNull(r.nCorrected, r.nCorrectionBase) }))
+    .sort((a, b) => a.label.localeCompare(b.label, "de"));
 }
 ```
 
@@ -5590,6 +5600,19 @@ Bookmarklet, das beides vorbefüllt — bewusst optional, weil manche Nachrichte
 
 Ein verteilbarer Kurzbefehl für fremde Nutzer ist vorgesehen, aber nicht Teil von v1 —
 Ablauf in Abschnitt 15 der Spec.
+```
+
+- [ ] **Step 6b: Build-Reihenfolge im Deploy-Workflow reparieren**
+
+`.github/workflows/deploy.yml` führt `pnpm test` und `pnpm bundle` aus, ohne vorher zu
+bauen. `@korrektur/shared` wird über sein `exports`-Feld nach `dist/` aufgelöst, und
+`dist/` ist gitignored — auf einem frischen Runner existiert es also nicht, und beide
+Schritte scheitern. Lokal fällt das nicht auf, weil `dist/` dort vom Entwickeln her
+liegt. Vor dem Prüfschritt ergänzen:
+
+```yaml
+      - name: Pakete bauen
+        run: pnpm -r build
 ```
 
 - [ ] **Step 7: Vollständigen Durchlauf prüfen**
