@@ -2164,7 +2164,7 @@ describe("extractArticle", () => {
     // Kommt vom fremden Server: leere Antwort, Klartext, abgeschnittenes Markup.
     expect(extractArticle("", "https://beispiel-zeitung.de/d")).toBeNull();
     expect(extractArticle("kein HTML, nur Text", "https://beispiel-zeitung.de/e")).toBeNull();
-    expect(extractArticle("<html><body><p>abgeschnitten", "https://beispiel-zeitung.de/f")).not.toThrow;
+    expect(() => extractArticle("<html><body><p>abgeschnitten", "https://beispiel-zeitung.de/f")).not.toThrow();
   });
 });
 ```
