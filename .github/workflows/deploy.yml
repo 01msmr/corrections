@@ -54,9 +54,16 @@ jobs:
         run: |
           rsync -az --delete \
             --exclude 'tmp/' \
+            --exclude 'data/' \
             -e "ssh -i ~/.ssh/id_ed25519" \
             build/ \
             "${{ secrets.NETCUP_USER }}@${{ secrets.NETCUP_HOST }}:${{ secrets.NETCUP_APP_ROOT }}/"
+          # tmp/: von Passenger verwaltet (u.a. restart.txt fuer den Neustart-Trigger).
+          #       Nicht Teil des Codestands, darf beim Deploy nicht angefasst werden.
+          # data/: enthaelt korrektur.db (SQLite, WAL-/SHM-Dateien inklusive) ausserhalb
+          #        von httpdocs. --delete wuerde sie sonst bei jedem Push loeschen, siehe
+          #        Design-Spec §13. Diese Verzeichnisse existieren nicht im Quell-Build
+          #        und wuerden ohne Ausschluss auf dem Server geloescht.
 
       - name: Anwendung neu starten
         run: |
