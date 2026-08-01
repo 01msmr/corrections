@@ -25,6 +25,9 @@ jobs:
       - name: Abhängigkeiten installieren
         run: pnpm install --frozen-lockfile
 
+      - name: Pakete bauen
+        run: pnpm -r build
+
       - name: Prüfen
         run: |
           pnpm typecheck
