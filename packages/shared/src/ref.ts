@@ -1,4 +1,4 @@
-import { randomInt } from "node:crypto";
+import { customAlphabet } from "nanoid";
 
 /** Crockford-Base32 ohne I, L, O, U — nichts Verwechselbares (§5.2). */
 const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
@@ -15,12 +15,11 @@ const BODY_CLASS = `[${ALPHABET}]{${REF_BODY_LENGTH}}`;
 export const REF_PATTERN = new RegExp(`^K${BODY_CLASS}$`);
 const SUBJECT_PATTERN = new RegExp(`\\[(K${BODY_CLASS})\\]`);
 
+/** Aus demselben ALPHABET wie die Muster — keine zweite Quelle. */
+const nanoRef = customAlphabet(ALPHABET, REF_BODY_LENGTH);
+
 export function generateRef(): string {
-  let body = "";
-  for (let i = 0; i < REF_BODY_LENGTH; i++) {
-    body += ALPHABET[randomInt(ALPHABET.length)];
-  }
-  return `K${body}`;
+  return `K${nanoRef()}`;
 }
 
 export function isRef(value: string): boolean {
