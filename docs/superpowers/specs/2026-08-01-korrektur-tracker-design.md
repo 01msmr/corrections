@@ -197,6 +197,7 @@ corrections
   recipient_email                  ← intern
   message_id                       ← nur bei dispatch_mode='smtp'
   dispatch_status ('prepared' | 'sent' | 'failed' | 'bounced'), sent_at
+  send_confirmed_by ('smtp' | 'bcc' | 'client' | null)
   outcome ('open' | 'acknowledged' | 'corrected' | 'rejected' | 'no_response')
   responded_at, corrected_at
   verification ('manual' | 'none')
@@ -263,10 +264,12 @@ korrigierte Meldung könnte nur einen der beiden Werte tragen. Deshalb getrennt:
 - `dispatch_status` — was mit der Mail passiert ist
 - `outcome` — was die Redaktion getan hat
 
-`sent_at` bleibt `NULL`, bis der Versand belegt ist: bei SMTP durch die Serverantwort,
-bei `mailto:` (spätere Phase) durch die eintreffende BCC-Kopie. Das ist die
-strukturelle Voraussetzung dafür, dass die Fremdnutzer-Phase keinen Datenbruch
-erzeugt.
+`sent_at` bleibt `NULL`, bis der Versand behauptet oder belegt ist. **Wodurch**, hält
+`send_confirmed_by` fest: `smtp` (Serverantwort des Relays), `bcc` (die tatsächlich
+versendete Kopie ist eingetroffen), `client` (ein Kurzbefehl hat es gemeldet, ohne
+Beleg). Die ersten beiden sind Belege, der dritte ist eine Behauptung — Details und
+Begründung in 15.2. Das ist die strukturelle Voraussetzung dafür, dass die
+Fremdnutzer-Phase keinen Datenbruch erzeugt.
 
 ### 5.2 `ref` und Idempotenz sind zwei verschiedene Dinge
 
@@ -640,26 +643,64 @@ bedient nur noch den Altbestand. Dadurch steht der produktive Erfassungspfad nac
 
 ## 15. Nicht in v1
 
-**Öffentliche Erfassung für fremde Nutzer per `mailto:`.** Vorgesehen, aber später.
-Der Entwurf steht bereits fest, damit `dispatch_mode` und die getrennten Nenner ab P1
-im Schema liegen und die Phase ohne Migration dazukommt:
+**Externer Zugang für fremde Nutzer.** Vorgesehen, aber später. Der Entwurf steht
+bereits fest, damit `dispatch_mode` und `send_confirmed_by` ab P1 im Schema liegen und
+die Phase ohne Migration dazukommt.
 
-- Formular öffentlich, erzeugt `mailto:`-Link; die Mail geht unter der Adresse des
-  Nutzers raus. Der Server wird dadurch **kein Mail-Relay für Fremde** — eine
-  missbräuchliche Meldung würde sonst die Reputation der eigenen Domain und damit die
-  Zustellung der eigenen Meldungen gefährden. Zudem wirkt ein Leserbrief von einer
-  echten Person in der Redaktion anders als eine Maschinenmail.
-- `bcc` auf ein Eingangspostfach belegt den Versand (best effort — nicht alle Clients
-  übernehmen `bcc`). Der Betreff-Token ordnet die Kopie zu.
-- **Die Antwort ist strukturell unsichtbar.** Sie geht ins Postfach des Nutzers. Auch
-  ein `Reply-To` im `mailto:` hilft nicht: RFC 6068 erlaubt es, die meisten Clients
-  ignorieren alles außer `to`, `cc`, `bcc`, `subject`, `body`. Der Betreff-Token ist
-  hier der einzige verfügbare Schlüssel — er ordnet immerhin die BCC-Kopie zu.
-- **Kopier-Button** neben dem Link (Empfänger, Betreff, Body in die Zwischenablage)
-  deckt Webmail-Nutzer ohne registrierten `mailto:`-Handler ab. Ohne ihn fehlt eine
-  nennenswerte Gruppe.
-- **Längenlimit** beachten: je nach OS-Handler reißt der Link um ~2000 Zeichen.
-- Fremdmeldungen dürfen nie in den Nenner der Antwortquote geraten (Abschnitt 9.3).
+Der eigene Weg bleibt davon unberührt: **eigene Meldungen gehen weiterhin per SMTP über
+das Serverskript raus** (Abschnitt 3.1, 6). Was hier beschrieben wird, gilt
+ausschließlich für Meldungen Dritter.
+
+### 15.1 Ablauf: Server komponiert, Gerät versendet
+
+Der externe Weg läuft über einen verteilbaren Kurzbefehl in drei Schritten:
+
+1. `POST /api/v1/corrections/prepare` — der Kurzbefehl schickt URL, Textauswahl,
+   Fehlerart, Vorschlag. Der Server kanonisiert, löst das Outlet auf, holt den Artikel,
+   leitet die Anker ab, vergibt den `ref`, legt den Datensatz mit
+   `dispatch_status='prepared'` an und liefert `{ ref, recipient, subject, body,
+   anchor_quality }` zurück.
+2. Der Kurzbefehl übergibt das an die **native Mail-Aktion des Geräts**, mit `bcc` auf
+   ein Eingangspostfach. Die Mail geht unter der Adresse des Nutzers raus.
+3. `POST /api/v1/corrections/{ref}/sent` — der Kurzbefehl meldet den Versand zurück:
+   `dispatch_status='sent'`, `sent_at`, `send_confirmed_by='client'`.
+
+Der Server wird dadurch **kein Mail-Relay für Fremde**. Eine missbräuchliche Meldung
+würde sonst die Reputation der eigenen Domain und damit die Zustellung der eigenen
+Meldungen gefährden. Zudem wirkt ein Leserbrief von einer echten Person in der
+Redaktion anders als eine Maschinenmail.
+
+Der Kurzbefehl ist dem reinen `mailto:`-Link deutlich überlegen: Er kann Schritt 3
+ausführen. Ein `mailto:`-Link kann das nicht — dort endet die Sicht des Servers mit dem
+Klick.
+
+### 15.2 `send_confirmed_by` — warum die Spalte nötig ist
+
+| Wert | Bedeutung | Belegkraft |
+|---|---|---|
+| `smtp` | Server hat selbst versendet, Relay hat quittiert | belegt |
+| `bcc` | Die tatsächlich versendete Kopie ist eingetroffen | belegt |
+| `client` | Der Kurzbefehl hat Versand gemeldet | Behauptung |
+| `null` | noch nichts davon | — |
+
+Schritt 3 feuert auch, wenn der Nutzer die Mail im Editor wieder verwirft. Ohne diese
+Unterscheidung stünde eine unbestätigte Behauptung im selben Nenner wie ein belegter
+Versand — genau die Vermischung, die Abschnitt 9.3 verhindern soll. Die BCC-Kopie hebt
+`client` später auf `bcc` an und trägt dabei die echte `Message-ID` nach, womit auch
+Stufe 1 der Zuordnungskaskade für Fremdmeldungen greift.
+
+### 15.3 Weitere Punkte dieser Phase
+
+- **Zugriffstoken** für den verteilten Kurzbefehl: ausschließlich für die beiden
+  `prepare`/`sent`-Endpunkte und `GET /api/v1/error-types`, rate-limitiert, rotierbar,
+  ohne Zugriff auf Stammdaten oder Lesezugriff.
+- **Die Textauswahl muss durchgereicht werden**, nicht abgetippt. Die Antwort auf
+  `prepare` enthält `anchor_quality`; bei `none` zeigt der Kurzbefehl eine Warnung,
+  statt still einen halbwertigen Datensatz zu erzeugen.
+- **Fehlerarten holt der Kurzbefehl zur Laufzeit** über `GET /api/v1/error-types` —
+  sonst wandert das Wörterbuch-Problem aus 3.2 in kleinerer Form zurück ins Gerät.
+- **Die Antwort der Redaktion bleibt unsichtbar.** Sie geht ins Postfach des Nutzers.
+  Fremdmeldungen dürfen deshalb nie in den Nenner der Antwortquote geraten (9.3).
 - Ab dieser Phase werden fremde Mailadressen verarbeitet: erweiterte
   Datenschutzerklärung, Rechtsgrundlage, Löschkonzept, Missbrauchsschutz,
   Rate-Limiting.
