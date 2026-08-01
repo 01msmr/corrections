@@ -17,9 +17,11 @@ export interface Mailer {
 
 interface TransportInfo {
   messageId: string;
+  /** Only set by the JSON transport — the fully built message. */
+  message?: string;
 }
 
-function wrap(transport: Transporter<TransportInfo>, from: string): Mailer {
+function wrap(transport: Transporter<TransportInfo>, from: string, onMessage?: (raw: string) => void): Mailer {
   return {
     async send(message: OutgoingMail): Promise<SendResult> {
       if (message.to.trim().length === 0) {
@@ -33,6 +35,9 @@ function wrap(transport: Transporter<TransportInfo>, from: string): Mailer {
           subject: message.subject,
           text: message.text,
         });
+        if (onMessage && info.message) {
+          onMessage(info.message);
+        }
         return { ok: true, messageId: info.messageId };
       } catch (error) {
         return { ok: false, error: error instanceof Error ? error.message : "Unbekannter Fehler" };
@@ -53,6 +58,6 @@ export function createSmtpMailer(env: Env): Mailer {
 }
 
 /** Baut die Nachricht vollständig, verschickt aber nichts — für Tests und Trockenläufe. */
-export function createJsonMailer(from: string): Mailer {
-  return wrap(nodemailer.createTransport({ jsonTransport: true }), from);
+export function createJsonMailer(from: string, onMessage?: (raw: string) => void): Mailer {
+  return wrap(nodemailer.createTransport({ jsonTransport: true }), from, onMessage);
 }
