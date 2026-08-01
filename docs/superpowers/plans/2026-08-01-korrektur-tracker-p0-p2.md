@@ -428,6 +428,8 @@ import { z } from "zod";
 const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   DATABASE_PATH: z.string().min(1).default("./data/korrektur.db"),
+  /** Explizit, weil das CJS-Buendel kein import.meta.url kennt (Task 7). */
+  MIGRATIONS_DIR: z.string().min(1).default("./packages/api/src/db/migrations"),
   ADMIN_USER: z.string().min(1),
   ADMIN_PASSWORD: z.string().min(8),
   PUBLIC_BASE_URL: z.string().url(),
@@ -543,6 +545,7 @@ tmp/          → für restart.txt
 ```
 PORT=3000
 DATABASE_PATH=./data/korrektur.db
+MIGRATIONS_DIR=./packages/api/src/db/migrations
 PUBLIC_BASE_URL=https://korrekturen.msmr.co
 
 ADMIN_USER=admin
@@ -651,7 +654,7 @@ Vier Secrets werden gebraucht — GitHub → Settings → Secrets and variables 
 1. **Subdomain anlegen**: Plesk → Websites & Domains → Subdomain hinzufügen.
 2. **Deploy-Schlüssel hinterlegen**: lokal `ssh-keygen -t ed25519 -f ~/.ssh/netcup_deploy -N ""`, dann `ssh-copy-id -i ~/.ssh/netcup_deploy.pub BENUTZER@HOST`. Der private Teil wird zum Secret `NETCUP_SSH_KEY`, er verlässt den eigenen Rechner sonst nicht.
 3. **Node.js aktivieren**: Plesk → die Subdomain → Node.js → *Node.js aktivieren*. Anwendungsstamm auf das Subdomain-Verzeichnis, **Anwendungsstartdatei `app.js`**, Anwendungsmodus `production`.
-4. **Umgebungsvariablen** aus `.env.example` dort eintragen, mit den echten Werten.
+4. **Umgebungsvariablen** aus `.env.example` dort eintragen, mit den echten Werten. `MIGRATIONS_DIR` steht auf dem Server auf `./migrations` — der Ordner liegt neben `app.js`. `DATABASE_PATH` zeigt auf einen Pfad ausserhalb von `httpdocs`.
 5. **Cronjob** anlegen: Plesk → Geplante Aufgaben, stündlich, Befehl `/opt/plesk/node/26/bin/node /var/www/vhosts/…/korrekturen.msmr.co/worker.js`. Den genauen Node-Pfad zeigt Plesk in der Node.js-Ansicht an.
 
 - [ ] **Step 11: Deployment prüfen**
@@ -1456,8 +1459,7 @@ export default {
 `packages/api/src/db/client.ts`:
 
 ```ts
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { drizzle, type NodeSQLiteDatabase } from "drizzle-orm/node-sqlite";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
@@ -1473,9 +1475,16 @@ export function createDb(path: string): Db {
   return drizzle(sqlite, { schema }) as Db;
 }
 
-export function runMigrations(db: Db): void {
-  const here = dirname(fileURLToPath(import.meta.url));
-  migrate(db, { migrationsFolder: resolve(here, "migrations") });
+const DEFAULT_MIGRATIONS_DIR = "./packages/api/src/db/migrations";
+
+/**
+ * Der Ordner wird uebergeben statt aus import.meta.url abgeleitet: Das
+ * ausgelieferte CJS-Buendel kennt import.meta.url nicht (§3.4). Auf dem Server
+ * steht MIGRATIONS_DIR auf "./migrations", neben app.js.
+ */
+export function runMigrations(db: Db, migrationsFolder?: string): void {
+  const folder = migrationsFolder ?? process.env["MIGRATIONS_DIR"] ?? DEFAULT_MIGRATIONS_DIR;
+  migrate(db, { migrationsFolder: resolve(process.cwd(), folder) });
 }
 ```
 
@@ -3920,8 +3929,8 @@ const ENV = {
   DATABASE_PATH: ":memory:",
   ADMIN_USER: "admin",
   ADMIN_PASSWORD: "geheimes-passwort",
-  PUBLIC_BASE_URL: "https://korrektur.example.tld",
-  SMTP_HOST: "smtp.example.tld",
+  PUBLIC_BASE_URL: "https://korrekturen.msmr.co",
+  SMTP_HOST: "mail.example.tld",
   SMTP_PORT: 587,
   SMTP_USER: "korrektur@example.tld",
   SMTP_PASSWORD: "x",
@@ -5268,7 +5277,7 @@ git commit -m "Oeffentlicher Serializer mit rekursivem Feld-Waechter"
 ### Task 24: Verdrahtung, Bootstrap und Dokumentation
 
 **Files:**
-- Modify: `packages/api/src/app.ts`, `packages/api/src/index.ts`
+- Modify: `packages/api/src/app.ts`, `packages/api/src/web.ts`
 - Create: `CLAUDE.md`, `docs/kurzbefehl.md`
 - Test: `packages/api/src/app.test.ts`
 
@@ -5296,8 +5305,8 @@ const ENV = {
   DATABASE_PATH: ":memory:",
   ADMIN_USER: "admin",
   ADMIN_PASSWORD: "geheimes-passwort",
-  PUBLIC_BASE_URL: "https://korrektur.example.tld",
-  SMTP_HOST: "smtp.example.tld",
+  PUBLIC_BASE_URL: "https://korrekturen.msmr.co",
+  SMTP_HOST: "mail.example.tld",
   SMTP_PORT: 587,
   SMTP_USER: "korrektur@example.tld",
   SMTP_PASSWORD: "x",
@@ -5408,7 +5417,7 @@ export function createApp(options: AppOptions): Hono {
 }
 ```
 
-`packages/api/src/index.ts`:
+`packages/api/src/web.ts`:
 
 ```ts
 import { mkdirSync } from "node:fs";
@@ -5557,7 +5566,7 @@ curl -fsS https://korrekturen.msmr.co/healthz
 - [ ] **Step 8: Commit**
 
 ```bash
-git add packages/api/src/app.ts packages/api/src/app.test.ts packages/api/src/index.ts packages/api/src/routes/health.test.ts CLAUDE.md docs/kurzbefehl.md
+git add packages/api/src/app.ts packages/api/src/app.test.ts packages/api/src/web.ts packages/api/src/routes/health.test.ts CLAUDE.md docs/kurzbefehl.md
 git commit -m "App verdrahten, Bootstrap und Kurzbefehl-Dokumentation"
 ```
 
