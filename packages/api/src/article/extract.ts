@@ -10,20 +10,32 @@ export function extractArticle(
   html: string,
   url: string,
 ): { title: string | null; text: string } | null {
-  const { document } = parseHTML(html);
-  const base = document.createElement("base");
-  base.setAttribute("href", url);
-  document.head?.appendChild(base);
+  try {
+    const { document } = parseHTML(html);
 
-  // linkedom's Document ist strukturell kompatibel zum DOM-`Document`, gegen den
-  // @mozilla/readability typisiert ist, aber kein Subtyp davon — daher hier der
-  // einzige, minimale Cast an dieser Grenze.
-  const article = new Readability(document as unknown as Document).parse();
-  if (!article) return null;
+    // Ohne Wurzelelement wirft linkedom schon beim Lesen von document.head —
+    // Optional Chaining hilft dort nicht, die Pruefung muss vorher stehen.
+    if (!document.documentElement) return null;
 
-  const text = normalizeText(article.textContent ?? "");
-  if (text.length === 0) return null;
+    const base = document.createElement("base");
+    base.setAttribute("href", url);
+    document.head?.appendChild(base);
 
-  const title = article.title ? normalizeText(article.title) : null;
-  return { title: title && title.length > 0 ? title : null, text };
+    // linkedom's Document ist strukturell kompatibel zum DOM-`Document`, gegen den
+    // @mozilla/readability typisiert ist, aber kein Subtyp davon — daher hier der
+    // einzige, minimale Cast an dieser Grenze.
+    const article = new Readability(document as unknown as Document).parse();
+    if (!article) return null;
+
+    const text = normalizeText(article.textContent ?? "");
+    if (text.length === 0) return null;
+
+    const title = article.title ? normalizeText(article.title) : null;
+    return { title: title && title.length > 0 ? title : null, text };
+  } catch {
+    // Das HTML stammt von fremden Servern. Parser und Readability duerfen an
+    // kaputtem Markup scheitern; der Aufrufer bekommt dann null statt einer
+    // Ausnahme, die einen ganzen Request abbrechen wuerde.
+    return null;
+  }
 }
