@@ -246,6 +246,18 @@ export async function createCorrection(
       .where(eq(corrections.id, id))
       .run();
   } else {
+    // Ohne diese Zeile ist ein Fehlschlag nicht diagnostizierbar: die Oberflaeche
+    // zeigt nur "Versand fehlgeschlagen", und send.ts verwirft den Grund danach.
+    // Geloggt wird die SMTP-Antwort, nicht der Mailinhalt.
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "Versand fehlgeschlagen",
+        ref,
+        operation: "smtp send",
+        grund: sent.error,
+      }),
+    );
     db.update(corrections)
       .set({ dispatchStatus: "failed", needsReview: true })
       .where(eq(corrections.id, id))
