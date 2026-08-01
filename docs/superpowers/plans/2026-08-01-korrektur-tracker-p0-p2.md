@@ -3076,6 +3076,37 @@ Erwartet: FAIL — `./outlets.js` nicht auflösbar.
 
 - [ ] **Step 3: Implementieren**
 
+Zuerst der gemeinsame Helfer, den auch Task 16 benutzt:
+
+`packages/api/src/repo/removal.ts`:
+
+```ts
+export type RemovalOutcome = "deleted" | "archived" | "missing";
+
+/**
+ * Die Entscheidung, ob ein Stammdatensatz geloescht oder nur archiviert wird,
+ * lebt an genau einer Stelle (§5.0). Wuerden Redaktionen und Fehlerarten sie
+ * getrennt treffen, koennte eine der beiden Seiten spaeter abweichen und einen
+ * referenzierten Eintrag hart loeschen — veroeffentlichte Zahlen aenderten sich
+ * dann rueckwirkend. Die Abfragen bringt jeder Aufrufer selbst mit, nur die
+ * Regel ist geteilt.
+ */
+export function removeOrArchive(steps: {
+  exists: () => boolean;
+  isReferenced: () => boolean;
+  archive: () => void;
+  hardDelete: () => void;
+}): RemovalOutcome {
+  if (!steps.exists()) return "missing";
+  if (steps.isReferenced()) {
+    steps.archive();
+    return "archived";
+  }
+  steps.hardDelete();
+  return "deleted";
+}
+```
+
 `packages/api/src/repo/outlets.ts`:
 
 ```ts
@@ -3083,6 +3114,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { corrections, outletDomains, outlets } from "../db/schema.js";
+import { removeOrArchive, type RemovalOutcome } from "./removal.js";
 
 export type OutletRecord = typeof outlets.$inferSelect & { domains: string[] };
 
@@ -3189,23 +3221,20 @@ export function updateOutlet(db: Db, id: string, input: OutletInput): OutletReco
   return row ? withDomains(db, row) : null;
 }
 
-/**
- * Referenzierte Stammdaten werden archiviert, nie gelöscht — sonst änderten sich
- * veröffentlichte Zahlen rückwirkend (§5.0).
- */
-export function removeOutlet(db: Db, id: string): "deleted" | "archived" | "missing" {
-  const existing = db.select().from(outlets).where(eq(outlets.id, id)).get();
-  if (!existing) return "missing";
-
-  const referenced = db.select().from(corrections).where(eq(corrections.outletId, id)).get();
-  if (referenced) {
-    db.update(outlets).set({ archived: true }).where(eq(outlets.id, id)).run();
-    return "archived";
-  }
-
-  db.delete(outletDomains).where(eq(outletDomains.outletId, id)).run();
-  db.delete(outlets).where(eq(outlets.id, id)).run();
-  return "deleted";
+/** Regel in removal.ts, Abfragen hier — siehe dort, warum das getrennt ist. */
+export function removeOutlet(db: Db, id: string): RemovalOutcome {
+  return removeOrArchive({
+    exists: () => db.select().from(outlets).where(eq(outlets.id, id)).get() !== undefined,
+    isReferenced: () =>
+      db.select().from(corrections).where(eq(corrections.outletId, id)).get() !== undefined,
+    archive: () => {
+      db.update(outlets).set({ archived: true }).where(eq(outlets.id, id)).run();
+    },
+    hardDelete: () => {
+      db.delete(outletDomains).where(eq(outletDomains.outletId, id)).run();
+      db.delete(outlets).where(eq(outlets.id, id)).run();
+    },
+  });
 }
 
 export function addDomain(db: Db, outletId: string, domain: string): boolean {
@@ -3386,6 +3415,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { asc, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { corrections, errorTypes } from "../db/schema.js";
+import { removeOrArchive, type RemovalOutcome } from "./removal.js";
 
 export type ErrorTypeRecord = typeof errorTypes.$inferSelect;
 
@@ -3443,18 +3473,19 @@ export function updateErrorType(
   return db.select().from(errorTypes).where(eq(errorTypes.id, id)).get() ?? null;
 }
 
-export function removeErrorType(db: Db, id: string): "deleted" | "archived" | "missing" {
-  const existing = db.select().from(errorTypes).where(eq(errorTypes.id, id)).get();
-  if (!existing) return "missing";
-
-  const referenced = db.select().from(corrections).where(eq(corrections.errorTypeId, id)).get();
-  if (referenced) {
-    db.update(errorTypes).set({ archived: true }).where(eq(errorTypes.id, id)).run();
-    return "archived";
-  }
-
-  db.delete(errorTypes).where(eq(errorTypes.id, id)).run();
-  return "deleted";
+/** Dieselbe Regel wie bei Redaktionen — der Helfer liegt in removal.ts (Task 15). */
+export function removeErrorType(db: Db, id: string): RemovalOutcome {
+  return removeOrArchive({
+    exists: () => db.select().from(errorTypes).where(eq(errorTypes.id, id)).get() !== undefined,
+    isReferenced: () =>
+      db.select().from(corrections).where(eq(corrections.errorTypeId, id)).get() !== undefined,
+    archive: () => {
+      db.update(errorTypes).set({ archived: true }).where(eq(errorTypes.id, id)).run();
+    },
+    hardDelete: () => {
+      db.delete(errorTypes).where(eq(errorTypes.id, id)).run();
+    },
+  });
 }
 ```
 
