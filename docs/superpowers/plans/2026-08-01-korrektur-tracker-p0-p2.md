@@ -2962,6 +2962,7 @@ import {
   createOutlet,
   ensureOutletForHost,
   listOutlets,
+  removeDomain,
   removeOutlet,
   resolveOutletByHost,
   updateOutlet,
@@ -3010,6 +3011,26 @@ describe("Outlet-Auflösung", () => {
     const a = createOutlet(db, baseInput("A", "a.de"), NOW);
     createOutlet(db, baseInput("B", "b.de"), NOW);
     expect(addDomain(db, a.id, "b.de")).toBe(false);
+  });
+
+  it("meldet Erfolg, wenn die Domain bereits zu diesem Outlet gehört", () => {
+    const a = createOutlet(db, baseInput("A", "a.de"), NOW);
+    // Idempotent: erneutes Hinzufügen derselben Domain ist kein Fehler und
+    // erzeugt keine zweite Zeile.
+    expect(addDomain(db, a.id, "a.de")).toBe(true);
+    expect(listOutlets(db)[0]?.domains).toEqual(["a.de"]);
+  });
+
+  it("entfernt eine zusätzliche Domain, aber nie die letzte", () => {
+    const a = createOutlet(db, baseInput("A", "a.de"), NOW);
+    addDomain(db, a.id, "magazin.a.de");
+
+    expect(removeDomain(db, a.id, "magazin.a.de")).toBe(true);
+    expect(listOutlets(db)[0]?.domains).toEqual(["a.de"]);
+
+    // Ohne Domain waere das Outlet nie wieder ueber eine URL auffindbar.
+    expect(removeDomain(db, a.id, "a.de")).toBe(false);
+    expect(listOutlets(db)[0]?.domains).toEqual(["a.de"]);
   });
 });
 
@@ -3272,7 +3293,7 @@ export function removeDomain(db: Db, outletId: string, domain: string): boolean 
 pnpm vitest run packages/api/src/repo/outlets.test.ts
 ```
 
-Erwartet: 8 Tests grün.
+Erwartet: 10 Tests grün.
 
 - [ ] **Step 5: Commit**
 
@@ -3680,7 +3701,7 @@ export const errorTypeUpdateSchema = errorTypeInputSchema.omit({ key: true });
 pnpm vitest run packages/shared/src/schemas.test.ts
 ```
 
-Erwartet: 8 Tests grün.
+Erwartet: 10 Tests grün.
 
 - [ ] **Step 5: Commit**
 
@@ -4086,7 +4107,7 @@ export async function createCorrection(
 pnpm vitest run packages/api/src/repo/corrections.test.ts
 ```
 
-Erwartet: 8 Tests grün.
+Erwartet: 10 Tests grün.
 
 - [ ] **Step 5: Commit**
 
@@ -5456,7 +5477,7 @@ export function assertNoForbiddenFields(value: unknown, path = "$"): void {
 pnpm vitest run packages/api/src/serialize/public.test.ts
 ```
 
-Erwartet: 8 Tests grün.
+Erwartet: 10 Tests grün.
 
 - [ ] **Step 5: Commit**
 
