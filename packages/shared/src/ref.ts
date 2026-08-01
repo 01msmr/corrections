@@ -4,8 +4,16 @@ import { randomInt } from "node:crypto";
 const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const REF_BODY_LENGTH = 5;
 
-export const REF_PATTERN = /^K[0-9A-HJKMNP-TV-Z]{5}$/;
-const SUBJECT_PATTERN = /\[(K[0-9A-HJKMNP-TV-Z]{5})\]/;
+/**
+ * Beide Muster werden aus ALPHABET abgeleitet, nicht danebengeschrieben.
+ * Eine zweite, von Hand gepflegte Zeichenklasse koennte vom Alphabet
+ * abweichen — dann erzeugte generateRef Token, die isRef ablehnt, und der
+ * Fehler zeigte sich erst, wenn genau dieses Zeichen gezogen wird.
+ */
+const BODY_CLASS = `[${ALPHABET}]{${REF_BODY_LENGTH}}`;
+
+export const REF_PATTERN = new RegExp(`^K${BODY_CLASS}$`);
+const SUBJECT_PATTERN = new RegExp(`\\[(K${BODY_CLASS})\\]`);
 
 export function generateRef(): string {
   let body = "";
