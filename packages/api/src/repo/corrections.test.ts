@@ -142,6 +142,25 @@ describe("createCorrection", () => {
     expect(row?.needsReview).toBe(true);
   });
 
+  it("liest bei gleichzeitigen Anfragen mit gleichem Idempotency-Key den Gewinner, statt die Ref-Versuche zu verbrauchen", async () => {
+    // Beide Anfragen bestehen die frühe Duplikatsprüfung (line ~80), weil keine von
+    // beiden vor dem await auf fetchArticle bereits inserted hat. Die zweite
+    // kollidiert danach beim Insert auf idempotency_key, nicht auf ref.
+    const [first, second] = await Promise.all([
+      createCorrection(deps(), INPUT),
+      createCorrection(deps(), INPUT),
+    ]);
+
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+
+    // Genau ein Datensatz, genau eine Mail (implizit: kein zweiter dispatchStatus).
+    expect(db.select().from(corrections).all()).toHaveLength(1);
+    expect(second.ref).toBe(first.ref);
+    expect(second.id).toBe(first.id);
+  });
+
   it("würfelt einen neuen ref, wenn der erste kollidiert", async () => {
     const folge = ["K7QW3M", "K7QW3M", "KAB2CD"];
     let index = 0;

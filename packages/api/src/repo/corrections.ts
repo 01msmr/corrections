@@ -48,15 +48,29 @@ export function getCorrectionByRef(db: Db, ref: string): typeof corrections.$inf
  * `.message` ist nur "Failed query: ...", die SQLite-Meldung
  * ("UNIQUE constraint failed: ...") steckt in `.cause`. Deshalb wird hier
  * die Ursachenkette abgesucht statt nur `error.message`.
+ *
+ * Der Insert kann zwei verschiedene Unique-Indizes verletzen: `ref` (Zufallstoken,
+ * neu würfeln und erneut versuchen) und `idempotency_key` (ein gleichzeitiger
+ * Request hat das Rennen gewonnen — kein Fehler, sondern ein Duplikat). Beide
+ * erzeugen dieselbe generische "UNIQUE constraint failed"-Meldung, nur der
+ * Spaltenname unterscheidet sie. Verwechselt man sie, verbraucht die zweite
+ * Anfrage alle Ref-Versuche und scheitert mit dem rohen Treiberfehler, obwohl
+ * die erste Anfrage bereits erfolgreich war.
  */
-function isUniqueViolation(error: unknown): boolean {
+function uniqueViolationColumn(error: unknown): "ref" | "idempotency_key" | null {
   let current: unknown = error;
   for (let depth = 0; depth < 5 && current instanceof Error; depth++) {
-    if (/UNIQUE/i.test(current.message)) return true;
+    if (/UNIQUE constraint failed: corrections\.ref\b/.test(current.message)) return "ref";
+    if (/UNIQUE constraint failed: corrections\.idempotency_key\b/.test(current.message)) {
+      return "idempotency_key";
+    }
     current = current.cause;
   }
-  return false;
+  return null;
 }
+
+/** Wirft, wenn der Insert an `idempotency_key` scheiterte statt an `ref`. */
+class IdempotencyRaceLost extends Error {}
 
 function reserveRef(makeRef: () => string, insert: (ref: string) => void): string {
   for (let attempt = 0; attempt < REF_ATTEMPTS; attempt++) {
@@ -65,10 +79,23 @@ function reserveRef(makeRef: () => string, insert: (ref: string) => void): strin
       insert(ref);
       return ref;
     } catch (error) {
-      if (!isUniqueViolation(error) || attempt === REF_ATTEMPTS - 1) throw error;
+      const column = uniqueViolationColumn(error);
+      if (column === "idempotency_key") throw new IdempotencyRaceLost(undefined, { cause: error });
+      if (column !== "ref" || attempt === REF_ATTEMPTS - 1) throw error;
     }
   }
   throw new Error("Kein freier Referenz-Token gefunden");
+}
+
+function toDuplicateResult(row: typeof corrections.$inferSelect): CreateResult & { ok: true } {
+  return {
+    ok: true,
+    created: false,
+    id: row.id,
+    ref: row.ref,
+    anchorQuality: row.anchorQuality,
+    dispatchStatus: row.dispatchStatus === "sent" ? "sent" : "failed",
+  };
 }
 
 export async function createCorrection(
@@ -82,16 +109,7 @@ export async function createCorrection(
     .from(corrections)
     .where(eq(corrections.idempotencyKey, input.idempotencyKey))
     .get();
-  if (existing) {
-    return {
-      ok: true,
-      created: false,
-      id: existing.id,
-      ref: existing.ref,
-      anchorQuality: existing.anchorQuality,
-      dispatchStatus: existing.dispatchStatus === "sent" ? "sent" : "failed",
-    };
-  }
+  if (existing) return toDuplicateResult(existing);
 
   const canon = canonicalizeUrl(input.articleUrl);
   if (!canon) {
@@ -131,34 +149,50 @@ export async function createCorrection(
   }
 
   const id = createId();
-  const ref = reserveRef(deps.generateRef ?? generateRef, (candidate) => {
-    db.insert(corrections)
-      .values({
-        id,
-        ref: candidate,
-        idempotencyKey: input.idempotencyKey,
-        createdAt: now,
-        dispatchMode: "smtp",
-        articleUrl: input.articleUrl,
-        articleUrlCanon: canon.canonical,
-        outletId: outlet.id,
-        headline,
-        errorTypeId: errorType.id,
-        severity: input.severity,
-        quoteBefore: input.quoteBefore,
-        quotePrefix: anchors.prefix,
-        quoteSuffix: anchors.suffix,
-        quotePositionHint: anchors.positionHint,
-        anchorQuality: anchors.quality,
-        suggestionAfter: input.suggestionAfter,
-        comment: input.comment,
-        recipientEmail: recipient,
-        dispatchStatus: "prepared",
-        source: "web",
-        needsReview: outletCreated || anchors.quality !== "exact",
-      })
-      .run();
-  });
+  let ref: string;
+  try {
+    ref = reserveRef(deps.generateRef ?? generateRef, (candidate) => {
+      db.insert(corrections)
+        .values({
+          id,
+          ref: candidate,
+          idempotencyKey: input.idempotencyKey,
+          createdAt: now,
+          dispatchMode: "smtp",
+          articleUrl: input.articleUrl,
+          articleUrlCanon: canon.canonical,
+          outletId: outlet.id,
+          headline,
+          errorTypeId: errorType.id,
+          severity: input.severity,
+          quoteBefore: input.quoteBefore,
+          quotePrefix: anchors.prefix,
+          quoteSuffix: anchors.suffix,
+          quotePositionHint: anchors.positionHint,
+          anchorQuality: anchors.quality,
+          suggestionAfter: input.suggestionAfter,
+          comment: input.comment,
+          recipientEmail: recipient,
+          dispatchStatus: "prepared",
+          source: "web",
+          needsReview: outletCreated || anchors.quality !== "exact",
+        })
+        .run();
+    });
+  } catch (error) {
+    if (!(error instanceof IdempotencyRaceLost)) throw error;
+    // Ein gleichzeitiger Request mit demselben Idempotency-Key hat zwischen unserer
+    // frühen Duplikatsprüfung und diesem Insert gewonnen. Kein Fehler: den Gewinner
+    // lesen und dasselbe Ergebnis liefern, das die frühe Prüfung geliefert hätte —
+    // insbesondere keine zweite Mail verschicken.
+    const winner = db
+      .select()
+      .from(corrections)
+      .where(eq(corrections.idempotencyKey, input.idempotencyKey))
+      .get();
+    if (!winner) throw error;
+    return toDuplicateResult(winner);
+  }
 
   const mail = composeMail({
     ref,
