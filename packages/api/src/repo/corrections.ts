@@ -72,6 +72,29 @@ function uniqueViolationColumn(error: unknown): "ref" | "idempotency_key" | null
 /** Wirft, wenn der Insert an `idempotency_key` scheiterte statt an `ref`. */
 class IdempotencyRaceLost extends Error {}
 
+/**
+ * DrizzleQueryError haengt `query` und `params` als eigene, aufzaehlbare
+ * Eigenschaften an den Fehler — genau die Bind-Parameter (Empfaengeradresse,
+ * Zitat, Vorschlag) einer unbehandelten `console.error(err)`-Ausgabe. Der
+ * Fehler wird deshalb genau hier ersetzt, wo Ref und Operation ohnehin bekannt
+ * sind: geloggt wird nur, was den Fehlschlag identifiziert, nicht seine Eingabe.
+ * Die urspruengliche Fehlerursache wird bewusst nicht als `.cause` angehaengt —
+ * sonst wuerde ein spaeteres `console.error` (z. B. Honos Standard-Fehlerpfad)
+ * dieselben Bind-Parameter ueber die Ursachenkette erneut ausgeben.
+ */
+function sanitizedInsertFailure(ref: string, error: unknown): Error {
+  console.error(
+    JSON.stringify({
+      level: "error",
+      msg: "Anlegen der Meldung fehlgeschlagen",
+      ref,
+      operation: "insert correction",
+      grund: error instanceof Error ? error.name : "unbekannt",
+    }),
+  );
+  return new Error("Anlegen der Meldung fehlgeschlagen");
+}
+
 function reserveRef(makeRef: () => string, insert: (ref: string) => void): string {
   for (let attempt = 0; attempt < REF_ATTEMPTS; attempt++) {
     const ref = makeRef();
@@ -81,7 +104,8 @@ function reserveRef(makeRef: () => string, insert: (ref: string) => void): strin
     } catch (error) {
       const column = uniqueViolationColumn(error);
       if (column === "idempotency_key") throw new IdempotencyRaceLost(undefined, { cause: error });
-      if (column !== "ref" || attempt === REF_ATTEMPTS - 1) throw error;
+      if (column === "ref" && attempt < REF_ATTEMPTS - 1) continue;
+      throw sanitizedInsertFailure(ref, error);
     }
   }
   throw new Error("Kein freier Referenz-Token gefunden");

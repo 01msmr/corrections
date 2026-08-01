@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createDb, runMigrations, type Db } from "../db/client.js";
 import { seed } from "../db/seed.js";
 import { corrections } from "../db/schema.js";
@@ -159,6 +159,32 @@ describe("createCorrection", () => {
     expect(db.select().from(corrections).all()).toHaveLength(1);
     expect(second.ref).toBe(first.ref);
     expect(second.id).toBe(first.id);
+  });
+
+  it("loggt bei einem unbehandelten Datenbankfehler keine Bind-Parameter (Empfänger, Zitat)", async () => {
+    // Ein Trigger simuliert einen Datenbankfehler beim Insert, der keine der beiden
+    // Unique-Constraints betrifft (z. B. "disk I/O error" in Wirklichkeit). Ohne
+    // Absicherung haengt DrizzleQueryError query/params als eigene Eigenschaften an
+    // den Fehler -- ein unbehandeltes console.error(err) gibt dann Empfaengeradresse
+    // und Zitat aus (verifiziert vor der Änderung: exakt diese beiden Werte tauchten
+    // im params-Array auf).
+    db.$client.exec(
+      "CREATE TRIGGER block_insert BEFORE INSERT ON corrections BEGIN SELECT RAISE(ABORT, 'simulierter Fehler'); END;",
+    );
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    await expect(createCorrection(deps(), INPUT)).rejects.toThrow();
+
+    expect(errSpy).toHaveBeenCalledTimes(1);
+    const [loggedArg] = errSpy.mock.calls[0] ?? [];
+    const logged = typeof loggedArg === "string" ? loggedArg : JSON.stringify(loggedArg);
+    expect(logged).not.toContain("leserbriefe@beispiel-zeitung.de");
+    expect(logged).not.toContain(INPUT.quoteBefore);
+    expect(logged).not.toContain(INPUT.suggestionAfter);
+    // Identifiziert den Fehlschlag trotzdem ausreichend fuer die Fehlersuche.
+    expect(logged).toContain("insert correction");
+
+    errSpy.mockRestore();
   });
 
   it("würfelt einen neuen ref, wenn der erste kollidiert", async () => {
