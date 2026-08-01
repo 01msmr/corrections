@@ -729,6 +729,15 @@ describe("canonicalizeUrl", () => {
     );
   });
 
+  it("entfernt Tracking-Parameter unabhängig von der Schreibweise", () => {
+    expect(canonicalizeUrl("https://example.de/x?FBCLID=1&id=2")?.canonical).toBe(
+      "https://example.de/x?id=2",
+    );
+    expect(canonicalizeUrl("https://example.de/x?UTM_Source=a&id=2")?.canonical).toBe(
+      "https://example.de/x?id=2",
+    );
+  });
+
   it("sortiert verbleibende Parameter stabil", () => {
     expect(canonicalizeUrl("https://example.de/a?b=2&a=1")?.canonical).toBe(
       "https://example.de/a?a=1&b=2",
@@ -774,17 +783,20 @@ const TRACKING_PARAMS = [
   /^utm_/i,
   /^pk_/i,
   /^at_/i,
-  "fbclid",
-  "gclid",
-  "igshid",
-  "mc_cid",
-  "mc_eid",
-  "msclkid",
-  "ref",
-  "ref_src",
-  "wt_mc",
-  "wt_zmc",
-  "xtor",
+  // Durchgaengig als Regex mit i-Flag: normale Zeichenketten vergleicht
+  // normalize-url case-sensitiv, dann bliebe "?FBCLID=1" stehen und derselbe
+  // Artikel bekaeme je nach Schreibweise zwei verschiedene Dedupe-Schluessel.
+  /^fbclid$/i,
+  /^gclid$/i,
+  /^igshid$/i,
+  /^mc_cid$/i,
+  /^mc_eid$/i,
+  /^msclkid$/i,
+  /^ref$/i,
+  /^ref_src$/i,
+  /^wt_mc$/i,
+  /^wt_zmc$/i,
+  /^xtor$/i,
 ];
 
 export function canonicalizeUrl(raw: string): { canonical: string; host: string } | null {
