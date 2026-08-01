@@ -18,6 +18,10 @@ describe("normalizeText", () => {
     expect(normalizeText("  viel\n\n  Platz\t hier  ")).toBe("viel Platz hier");
   });
 
+  it("bildet das Zollzeichen auf ein doppeltes Anfuehrungszeichen ab", () => {
+    expect(normalizeText("5\u2033 Bildschirm")).toBe('5" Bildschirm');
+  });
+
   it("wendet NFKC an", () => {
     expect(normalizeText("ﬁnal")).toBe("final");
   });
