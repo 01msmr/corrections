@@ -201,7 +201,7 @@ export async function createCorrection(
     headline,
     errorTypeKey: errorType.key,
     errorTypeLabel: errorType.label,
-    severity: input.severity as 1 | 2 | 3,
+    severity: input.severity,
     quoteBefore: input.quoteBefore,
     suggestionAfter: input.suggestionAfter,
     comment: input.comment,

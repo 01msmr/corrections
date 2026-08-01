@@ -5,7 +5,10 @@ export interface ComposeInput {
   headline: string | null;
   errorTypeKey: string;
   errorTypeLabel: string;
-  severity: 1 | 2 | 3;
+  // Zod bindet 1..3 bereits an der Quelle (newCorrectionSchema); hier reicht number,
+  // damit corrections.ts den Wert ohne "as"-Cast durchreichen kann (Projektregel:
+  // kein `as` ausserhalb von Typwaechtern).
+  severity: number;
   quoteBefore: string;
   suggestionAfter: string;
   comment: string | null;
