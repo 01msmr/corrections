@@ -4754,6 +4754,36 @@ describe("Adminoberfläche Redaktionen", () => {
     expect(listOutlets(db)).toHaveLength(0);
   });
 
+  it("übernimmt eine vorgegebene Domain und leitet danach zurück", async () => {
+    const zurueck = "/neu?url=https%3A%2F%2Fneue-zeitung.de%2Fa&text=Zitat";
+    const html = await (
+      await app().request(
+        `/admin/redaktionen?domain=neue-zeitung.de&zurueck=${encodeURIComponent(zurueck)}`,
+      )
+    ).text();
+    expect(html).toContain('value="neue-zeitung.de"');
+    expect(html).toContain(zurueck);
+
+    const res = await post("/admin/redaktionen", {
+      name: "Neue Zeitung",
+      primaryDomain: "neue-zeitung.de",
+      contactEmails: "leserbriefe@neue-zeitung.de",
+      zurueck,
+    });
+    expect(res.headers.get("location")).toBe(zurueck);
+  });
+
+  it("weist einen fremden Rückweg ab", async () => {
+    const res = await post("/admin/redaktionen", {
+      name: "X",
+      primaryDomain: "x.de",
+      contactEmails: "",
+      zurueck: "https://boese.example/",
+    });
+    // Offene Weiterleitung verhindert: es geht zur Liste, nicht nach draussen.
+    expect(res.headers.get("location")).toContain("/admin/redaktionen?hinweis=");
+  });
+
   it("ergänzt eine weitere Domain", async () => {
     const outlet = createOutlet(db, { name: "X", primaryDomain: "x.de", publisher: null, country: null, notes: null, contactEmails: [] }, NOW);
     await post(`/admin/redaktionen/${outlet.id}/domains`, { domain: "magazin.x.de" });
@@ -4804,13 +4834,21 @@ import type { FC } from "hono/jsx";
 import type { OutletRecord } from "../repo/outlets.js";
 import { Layout } from "./layout.js";
 
-const Felder: FC<{ outlet?: OutletRecord }> = ({ outlet }) => (
+const Felder: FC<{ outlet?: OutletRecord; vorgabeDomain?: string }> = ({
+  outlet,
+  vorgabeDomain,
+}) => (
   <>
     <label for="name">Name</label>
-    <input id="name" name="name" required value={outlet?.name ?? ""} />
+    <input id="name" name="name" required value={outlet?.name ?? vorgabeDomain ?? ""} />
 
     <label for="primaryDomain">Hauptdomain</label>
-    <input id="primaryDomain" name="primaryDomain" required value={outlet?.primaryDomain ?? ""} />
+    <input
+      id="primaryDomain"
+      name="primaryDomain"
+      required
+      value={outlet?.primaryDomain ?? vorgabeDomain ?? ""}
+    />
 
     <label for="publisher">Verlag</label>
     <input id="publisher" name="publisher" value={outlet?.publisher ?? ""} />
@@ -4828,11 +4866,14 @@ const Felder: FC<{ outlet?: OutletRecord }> = ({ outlet }) => (
   </>
 );
 
-export const OutletList: FC<{ outlets: OutletRecord[]; hinweis?: string; fehler?: string }> = ({
-  outlets,
-  hinweis,
-  fehler,
-}) => (
+export const OutletList: FC<{
+  outlets: OutletRecord[];
+  hinweis?: string;
+  fehler?: string;
+  /** Vom Erfassungsformular durchgereicht, wenn dort eine Redaktion fehlte. */
+  vorgabeDomain?: string;
+  zurueck?: string;
+}> = ({ outlets, hinweis, fehler, vorgabeDomain, zurueck }) => (
   <Layout title="Redaktionen">
     {hinweis ? <p class="hinweis">{hinweis}</p> : null}
     {fehler ? <p class="hinweis">{fehler}</p> : null}
@@ -4865,8 +4906,15 @@ export const OutletList: FC<{ outlets: OutletRecord[]; hinweis?: string; fehler?
     </table>
 
     <h2>Neue Redaktion</h2>
+    {vorgabeDomain ? (
+      <p class="hinweis">
+        Domain <strong>{vorgabeDomain}</strong> kommt aus einer Meldung, für die noch
+        keine Kontaktadresse hinterlegt war. Nach dem Anlegen geht es dorthin zurück.
+      </p>
+    ) : null}
     <form method="post" action="/admin/redaktionen">
-      <Felder />
+      {zurueck ? <input type="hidden" name="zurueck" value={zurueck} /> : null}
+      <Felder vorgabeDomain={vorgabeDomain} />
       <button type="submit">Anlegen</button>
     </form>
   </Layout>
@@ -4909,6 +4957,15 @@ import { OutletEdit, OutletList } from "../../views/outlets.js";
 
 const BASE = "/admin/redaktionen";
 
+/**
+ * Der Rueckweg kommt aus der Abfrage und darf deshalb nur auf das
+ * Erfassungsformular zeigen. Ohne diese Pruefung waere die Route eine offene
+ * Weiterleitung — ein praeparierter Link koennte auf eine fremde Seite fuehren.
+ */
+function sicherereRueckweg(wert: string | undefined): string | undefined {
+  return wert?.startsWith("/neu?") ? wert : undefined;
+}
+
 function parseEmails(raw: unknown): string[] {
   if (typeof raw !== "string") return [];
   return raw
@@ -4925,6 +4982,8 @@ export function outletAdminRoutes(db: Db, now: () => number): Hono {
       <OutletList
         outlets={listOutlets(db, { includeArchived: false })}
         hinweis={c.req.query("hinweis") ?? undefined}
+        vorgabeDomain={c.req.query("domain") ?? undefined}
+        zurueck={sicherereRueckweg(c.req.query("zurueck"))}
       />,
     ),
   );
@@ -4945,7 +5004,10 @@ export function outletAdminRoutes(db: Db, now: () => number): Hono {
       );
     }
     createOutlet(db, parsed.data, now());
-    return c.redirect(`${BASE}?hinweis=Angelegt`, 302);
+    const zurueck = sicherereRueckweg(
+      typeof raw["zurueck"] === "string" ? raw["zurueck"] : undefined,
+    );
+    return c.redirect(zurueck ?? `${BASE}?hinweis=Angelegt`, 302);
   });
 
   app.post(`${BASE}/:id`, async (c) => {
