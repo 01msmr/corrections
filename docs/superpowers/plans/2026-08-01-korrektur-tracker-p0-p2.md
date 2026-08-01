@@ -5773,6 +5773,23 @@ describe("App-Verdrahtung", () => {
     ).toBe(200);
   });
 
+  it("gibt ohne Anmeldung nirgends im Adminbereich Inhalte heraus", async () => {
+    // Der Praefixabgleich /admin/* deckt den Pfad ohne Schraegstrich nicht ab,
+    // und Hono unterscheidet Gross- und Kleinschreibung. Beides darf nicht dazu
+    // fuehren, dass eine Seite ohne Anmeldung ausgeliefert wird.
+    for (const pfad of [
+      "/admin",
+      "/admin/",
+      "/admin/redaktionen",
+      "/ADMIN/redaktionen",
+      "/admin/fehlerarten",
+      "/admin/gibt-es-nicht",
+    ]) {
+      const res = await app().request(pfad);
+      expect(res.status).not.toBe(200);
+    }
+  });
+
   it("leitet die Wurzel auf das Erfassungsformular", async () => {
     const res = await app().request("/");
     expect(res.status).toBe(302);
@@ -5822,6 +5839,8 @@ export function createApp(options: AppOptions): Hono {
   app.route("/", health);
 
   app.use("/neu", adminAuth(options.env));
+  // Beide Muster: /admin/* deckt den Pfad ohne abschliessenden Schraegstrich nicht ab.
+  app.use("/admin", adminAuth(options.env));
   app.use("/admin/*", adminAuth(options.env));
 
   app.route(
@@ -5863,7 +5882,9 @@ if (env.DATABASE_PATH !== ":memory:") {
 }
 
 const db = createDb(env.DATABASE_PATH);
-runMigrations(db);
+// Ordner explizit aus der geprueften Umgebung, nicht aus dem Rueckfall in
+// runMigrations selbst — sonst liegt derselbe Wert an zwei Stellen.
+runMigrations(db, env.MIGRATIONS_DIR);
 applyViews(db); // aus den Konstanten neu erzeugt, siehe Task 9
 seed(db);
 
@@ -5960,6 +5981,16 @@ Bookmarklet, das beides vorbefüllt — bewusst optional, weil manche Nachrichte
 
 Ein verteilbarer Kurzbefehl für fremde Nutzer ist vorgesehen, aber nicht Teil von v1 —
 Ablauf in Abschnitt 15 der Spec.
+```
+
+- [ ] **Step 6a: ESLint das Bündel ignorieren lassen**
+
+`eslint.config.js` prüft derzeit auch `build/`, also erzeugten Code — über hundert
+Befunde in einer Datei, die niemand von Hand pflegt. Sie übertönen echte Funde. In die
+`ignores`-Liste aufnehmen:
+
+```js
+{ ignores: ["**/dist/**", "**/build/**", "**/migrations/**", "fixtures.local/**"] },
 ```
 
 - [ ] **Step 6b: Build-Reihenfolge im Deploy-Workflow reparieren**
