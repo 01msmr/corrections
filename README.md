@@ -101,10 +101,14 @@ pnpm bundle    # esbuild-Bündel für den Produktionsbetrieb
 `pnpm build` und `pnpm bundle` kompilieren nur, ohne die Anwendung zu starten. Für
 `pnpm dev` braucht der Server dagegen eine vollständige Umgebung — `web.ts`
 validiert sie beim Start und bricht sonst sofort ab. `.env.example` im
-Repo-Wurzelverzeichnis listet alle nötigen Variablen; sie müssen in der Shell
-gesetzt sein (es gibt kein automatisches Laden einer `.env`-Datei). Beim ersten
-Start legt die Anwendung ein paar erfundene Platzhalter-Redaktionen an (z. B.
-„Beispiel-Zeitung") — keine echten Titel, nur Testdaten.
+Repo-Wurzelverzeichnis listet alle Variablen; ohne eigenen Default sind das
+`ADMIN_USER`, `ADMIN_PASSWORD`, `PUBLIC_BASE_URL`, `SMTP_HOST`, `SMTP_USER`,
+`SMTP_PASSWORD` und `MAIL_FROM` — diese müssen in der Shell gesetzt sein (es gibt
+kein automatisches Laden einer `.env`-Datei). `MIGRATIONS_DIR` gehört nicht dazu:
+`pnpm dev` setzt es für das eigene Arbeitsverzeichnis bereits korrekt, ein eigener
+Wert ist nicht nötig. Beim ersten Start legt die Anwendung ein paar erfundene
+Platzhalter-Redaktionen an (z. B. „Beispiel-Zeitung") — keine echten Titel, nur
+Testdaten.
 
 ## Deployment
 
