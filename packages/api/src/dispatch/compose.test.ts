@@ -35,8 +35,25 @@ describe("composeMail", () => {
     const { text } = composeMail(INPUT);
     const block = /\[korrektur-meta\]([\s\S]*?)\[\/korrektur-meta\]/.exec(text);
     expect(block?.[1]?.trim()).toBe(
-      "v=2; ref=K7QW3M; url=https://beispiel-zeitung.de/politik/artikel-123; typ=zahl; sev=2",
+      "v=2; ref=K7QW3M; typ=zahl; sev=2; url=https%3A%2F%2Fbeispiel-zeitung.de%2Fpolitik%2Fartikel-123",
     );
+  });
+
+  it("kodiert Sonderzeichen der URL, damit die Feldtrennung hält", () => {
+    const { text } = composeMail({
+      ...INPUT,
+      articleUrlCanon: "https://beispiel-zeitung.de/a?x=1;y=2",
+    });
+    const block = /\[korrektur-meta\]([\s\S]*?)\[\/korrektur-meta\]/.exec(text);
+    const felder = block?.[1]?.trim().split("; ") ?? [];
+    expect(felder).toHaveLength(5);
+    expect(felder[4]).toBe("url=https%3A%2F%2Fbeispiel-zeitung.de%2Fa%3Fx%3D1%3By%3D2");
+  });
+
+  it("entschärft Meta-Marker im Nutzertext", () => {
+    const { text } = composeMail({ ...INPUT, quoteBefore: "vorher [korrektur-meta] nachher" });
+    const treffer = text.match(/\[korrektur-meta\]/g) ?? [];
+    expect(treffer).toHaveLength(1);
   });
 
   it("kommt ohne Überschrift und ohne Kommentar aus", () => {
@@ -49,5 +66,17 @@ describe("composeMail", () => {
     const { subject } = composeMail({ ...INPUT, headline: "A".repeat(200) });
     expect(subject.length).toBeLessThan(140);
     expect(subject.endsWith("[K7QW3M]")).toBe(true);
+  });
+
+  it("hält den Betreff auch bei maximal langer Fehlerart-Bezeichnung im Rahmen", () => {
+    // errorTypeInputSchema erlaubt bis zu 120 Zeichen, ueber das Adminformular frei setzbar.
+    const { subject } = composeMail({
+      ...INPUT,
+      errorTypeLabel: "B".repeat(120),
+      headline: "C".repeat(200),
+    });
+    expect(subject.length).toBeLessThan(140);
+    expect(subject.endsWith("[K7QW3M]")).toBe(true);
+    expect(extractRefFromSubject(subject)).toBe("K7QW3M");
   });
 });
