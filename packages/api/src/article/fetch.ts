@@ -29,7 +29,7 @@ export async function fetchArticle(
     if (!response.ok) return { ok: false, status: response.status, reason: "http" };
 
     const contentType = response.headers.get("content-type") ?? "";
-    if (!contentType.includes("html")) {
+    if (!contentType.toLowerCase().includes("html")) {
       return { ok: false, status: response.status, reason: "not_html" };
     }
 

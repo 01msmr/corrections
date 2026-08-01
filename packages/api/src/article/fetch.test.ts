@@ -23,6 +23,18 @@ describe("fetchArticle", () => {
     expect(result).toEqual({ ok: false, status: 403, reason: "http" });
   });
 
+  it("erkennt HTML unabhängig von Groß-/Kleinschreibung des Content-Type", async () => {
+    // Manche Server-Konfigurationen (z. B. IIS) senden "TEXT/HTML" statt "text/html".
+    const stub = stubFetch(
+      new Response("<html><body>Text</body></html>", {
+        status: 200,
+        headers: { "content-type": "TEXT/HTML; charset=utf-8" },
+      }),
+    );
+    const result = await fetchArticle("https://beispiel-zeitung.de/a", { fetchImpl: stub });
+    expect(result).toEqual({ ok: true, status: 200, html: "<html><body>Text</body></html>" });
+  });
+
   it("meldet not_html bei fremdem Content-Type", async () => {
     const stub = stubFetch(
       new Response("{}", { status: 200, headers: { "content-type": "application/json" } }),
