@@ -865,6 +865,10 @@ describe("normalizeText", () => {
     expect(normalizeText("  viel\n\n  Platz\t hier  ")).toBe("viel Platz hier");
   });
 
+  it("bildet das Zollzeichen auf ein doppeltes Anfuehrungszeichen ab", () => {
+    expect(normalizeText("5\u2033 Bildschirm")).toBe('5" Bildschirm');
+  });
+
   it("wendet NFKC an", () => {
     expect(normalizeText("ﬁnal")).toBe("final");
   });
@@ -902,13 +906,16 @@ const ZERO_WIDTH = /[​‌‍﻿]/g;
  */
 export function normalizeText(input: string): string {
   return input
-    .normalize("NFKC")
     .replace(SOFT_HYPHEN, "")
     .replace(ZERO_WIDTH, "")
     .replace(DOUBLE_QUOTES, '"')
     .replace(SINGLE_QUOTES, "'")
     .replace(DASHES, "-")
     .replace(SPACES, " ")
+    // NFKC erst NACH den Ersetzungen: es zerlegt U+2033 (Doppelprime, Zollzeichen)
+    // in zwei U+2032, die danach zu zwei Apostrophen wuerden statt zu einem
+    // Anfuehrungszeichen. Vorher ersetzen haelt die Zuordnung eindeutig.
+    .normalize("NFKC")
     .replace(/\s+/g, " ")
     .trim();
 }
