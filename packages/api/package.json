@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "dev": "node --watch --experimental-strip-types src/web.ts",
+    "dev": "tsx watch src/web.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node dist/db/migrate.js",
     "db:seed": "node dist/db/seed.js"
@@ -24,6 +24,7 @@
   "devDependencies": {
     "@types/node": "^22.10.5",
     "@types/nodemailer": "^8.0.1",
-    "drizzle-kit": "1.0.0-rc.4"
+    "drizzle-kit": "1.0.0-rc.4",
+    "tsx": "^4.23.1"
   }
 }
