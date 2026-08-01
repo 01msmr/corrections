@@ -1,5 +1,6 @@
 import { MATURITY_SECONDS } from "@korrektur/shared";
 import { sql } from "drizzle-orm";
+import { integer, sqliteView, text } from "drizzle-orm/sqlite-core";
 import type { Db } from "./client.js";
 
 /**
@@ -56,3 +57,28 @@ export function applyViews(db: Db): void {
 
   for (const statement of statements) db.run(sql.raw(statement));
 }
+
+/**
+ * Deklaration der bereits per DDL erzeugten Views. `.existing()` sagt Drizzle,
+ * dass es sie nicht anlegen soll — es braucht nur die Spaltentypen, um
+ * `db.select().from(...)` typisiert zu machen. Damit entfaellt der Cast auf
+ * eine handgeschriebene Row-Schnittstelle, und eine umbenannte Spalte faellt
+ * beim Uebersetzen auf statt erst zur Laufzeit als `undefined`.
+ */
+export const vOutletStats = sqliteView("v_outlet_stats", {
+  outletId: text("outlet_id").notNull(),
+  name: text("name").notNull(),
+  nReports: integer("n_reports").notNull(),
+  nCorrectionBase: integer("n_correction_base").notNull(),
+  nCorrected: integer("n_corrected").notNull(),
+  nReplyBase: integer("n_reply_base").notNull(),
+  nReplied: integer("n_replied").notNull(),
+}).existing();
+
+export const vErrorTypeStats = sqliteView("v_error_type_stats", {
+  errorTypeId: text("error_type_id").notNull(),
+  label: text("label").notNull(),
+  nReports: integer("n_reports").notNull(),
+  nCorrectionBase: integer("n_correction_base").notNull(),
+  nCorrected: integer("n_corrected").notNull(),
+}).existing();

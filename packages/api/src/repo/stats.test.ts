@@ -75,12 +75,14 @@ describe("Kennzahlen-Views", () => {
     addCorrection({ dispatchStatus: "bounced" });
     const [row] = outletStats(db);
     expect(row?.nReplyBase).toBe(0);
+    expect(row?.nCorrectionBase).toBe(0);
   });
 
   it("hält eine nur vorbereitete Meldung aus jedem Nenner heraus", () => {
     addCorrection({ dispatchStatus: "prepared", sentAt: null });
     const [row] = outletStats(db);
     expect(row?.nReplyBase).toBe(0);
+    expect(row?.nCorrectionBase).toBe(0);
   });
 
   it("wertet eine Autoreply nicht als Antwort", () => {
