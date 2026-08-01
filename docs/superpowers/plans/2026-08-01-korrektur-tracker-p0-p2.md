@@ -4418,13 +4418,22 @@ describe("POST /neu", () => {
     expect(db.select().from(corrections).all()).toHaveLength(0);
   });
 
-  it("nennt die fehlende Kontaktadresse beim Namen", async () => {
+  it("führt bei fehlender Kontaktadresse zu Impressum und Anlage-Formular", async () => {
     const res = await captureRoutes(deps).request("/neu", {
       method: "POST",
       body: form({ articleUrl: "https://neue-zeitung.de/a" }),
     });
     expect(res.status).toBe(400);
-    await expect(res.text()).resolves.toContain("/admin/redaktionen");
+    const html = await res.text();
+
+    expect(html).toContain("neue-zeitung.de");
+    // Impressum in neuem Tab, mit noopener gegen Zugriff auf das Ursprungsfenster.
+    expect(html).toContain('href="https://neue-zeitung.de/impressum"');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+    // Anlage-Formular mit vorbefüllter Domain und Rückweg.
+    expect(html).toContain("/admin/redaktionen?domain=neue-zeitung.de");
+    expect(html).toContain("zurueck=");
   });
 
   it("warnt, wenn die Fundstelle nicht verankert werden konnte", async () => {
@@ -4455,15 +4464,51 @@ import type { FC } from "hono/jsx";
 import type { ErrorTypeRecord } from "../repo/errorTypes.js";
 import { Layout } from "./layout.js";
 
+/**
+ * Wird gezeigt, wenn fuer die Domain keine Kontaktadresse hinterlegt ist.
+ * Statt nur zu melden, dass es nicht geht, fuehrt der Block zu den beiden
+ * Handgriffen, die dann noetig sind: Adresse im Impressum nachschlagen und
+ * die Redaktion anlegen.
+ *
+ * Sichtbar nur fuer den angemeldeten Betreiber — /neu liegt hinter der
+ * Basic-Auth. Die spaetere oeffentliche Erfassung fuer Fremde (Abschnitt 15
+ * der Spec) darf diesen Block nicht rendern.
+ */
+const FehlendeRedaktion: FC<{ host: string; zurueck: string }> = ({ host, zurueck }) => (
+  <div class="hinweis">
+    <p>
+      Für <strong>{host}</strong> ist keine Kontaktadresse hinterlegt — ohne die kann
+      die Meldung nicht versendet werden.
+    </p>
+    <p>
+      <a href={`https://${host}/impressum`} target="_blank" rel="noopener noreferrer">
+        Impressum von {host} öffnen
+      </a>{" "}
+      — dort steht die Korrektur- oder Leserbriefadresse meistens.
+    </p>
+    <p>
+      <a href={`/admin/redaktionen?domain=${encodeURIComponent(host)}&zurueck=${encodeURIComponent(zurueck)}`}>
+        Redaktion jetzt anlegen
+      </a>{" "}
+      — Domain ist vorausgefüllt, danach geht es zurück zu dieser Meldung.
+    </p>
+  </div>
+);
+
 export const CaptureForm: FC<{
   errorTypes: ErrorTypeRecord[];
   idempotencyKey: string;
   url: string;
   quote: string;
   fehler?: string;
-}> = ({ errorTypes, idempotencyKey, url, quote, fehler }) => (
+  fehlendeRedaktion?: { host: string; zurueck: string };
+}> = ({ errorTypes, idempotencyKey, url, quote, fehler, fehlendeRedaktion }) => (
   <Layout title="Neue Korrekturmeldung">
-    {fehler ? <p class="hinweis">{fehler}</p> : null}
+    {fehlendeRedaktion ? (
+      <FehlendeRedaktion host={fehlendeRedaktion.host} zurueck={fehlendeRedaktion.zurueck} />
+    ) : fehler ? (
+      <p class="hinweis">{fehler}</p>
+    ) : null}
     <form method="post" action="/neu">
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
 
@@ -4535,7 +4580,7 @@ export const CaptureResult: FC<{ ref: string; anchored: boolean; sent: boolean }
 `packages/api/src/routes/capture.ts`:
 
 ```ts
-import { newCorrectionSchema } from "@korrektur/shared";
+import { canonicalizeUrl, newCorrectionSchema } from "@korrektur/shared";
 import { createId } from "@paralleldrive/cuid2";
 import { Hono } from "hono";
 import { listErrorTypes } from "../repo/errorTypes.js";
@@ -4578,13 +4623,21 @@ export function captureRoutes(deps: CreateDeps): Hono {
 
     const result = await createCorrection(deps, parsed.data);
     if (!result.ok) {
+      // Bei fehlender Kontaktadresse fuehrt die Seite weiter, statt nur zu
+      // melden. Der Host kommt aus der Kanonisierung, damit die Orchestrierung
+      // dafuer nichts zurueckgeben muss.
+      const canon =
+        result.error === "no_recipient" ? canonicalizeUrl(parsed.data.articleUrl) : null;
+      const zurueck = `/neu?url=${encodeURIComponent(parsed.data.articleUrl)}&text=${encodeURIComponent(parsed.data.quoteBefore)}`;
+
       return c.html(
         <CaptureForm
           errorTypes={listErrorTypes(deps.db)}
           idempotencyKey={createId()}
           url={parsed.data.articleUrl}
           quote={parsed.data.quoteBefore}
-          fehler={result.message}
+          fehler={canon ? undefined : result.message}
+          fehlendeRedaktion={canon ? { host: canon.host, zurueck } : undefined}
         />,
         400,
       );
