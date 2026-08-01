@@ -5,7 +5,7 @@ Zwei Aktionen, danach nie wieder anzufassen — die gesamte Logik liegt im Serve
 1. **Details der Safari-Webseite abrufen** → liefert die URL der aktuellen Seite.
 2. **URL öffnen** mit:
 
-   `https://korrektur.example.tld/neu?url=[URL]&text=[Kurzbefehl-Eingabe]`
+   `https://korrekturen.msmr.co/neu?url=[URL]&text=[Kurzbefehl-Eingabe]`
 
 Beide Werte URL-kodieren (Aktion *Text kodieren*).
 
@@ -26,6 +26,15 @@ verankern, und die automatische Korrekturerkennung findet dann nichts.
 Kein Kurzbefehl nötig: `/neu` im Browser öffnen, URL und Zitat einfügen. Optional ein
 Bookmarklet, das beides vorbefüllt — bewusst optional, weil manche Nachrichtenseiten
 `javascript:`-URLs per CSP blockieren.
+
+Als neues Lesezeichen anlegen und diesen Text als dessen Adresse eintragen:
+
+```javascript
+javascript:(function(){var q=encodeURIComponent(String(getSelection()||'')),u=encodeURIComponent(location.href);window.open('https://korrekturen.msmr.co/neu?url='+u+'&text='+q,'_blank');})();
+```
+
+`/neu` ist per Basic Auth geschützt; beim ersten Aufruf fragt der Browser nach
+`ADMIN_USER` und `ADMIN_PASSWORD`. Das gilt für den Kurzbefehl genauso.
 
 ## Externer Zugang
 
