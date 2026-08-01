@@ -1274,6 +1274,8 @@ export const corrections = sqliteTable(
       .notNull()
       .default("prepared"),
     sentAt: integer("sent_at"),
+    /** Beleg (smtp, bcc) oder Behauptung (client) — trennt die Nenner (§15.2). */
+    sendConfirmedBy: text("send_confirmed_by", { enum: ["smtp", "bcc", "client"] }),
 
     outcome: text("outcome", {
       enum: ["open", "acknowledged", "corrected", "rejected", "no_response"],
@@ -3415,7 +3417,7 @@ Reihenfolge nach §6: Validierung → Kanonisierung → Outlet → Artikel abruf
 ```ts
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { createDb, runMigrations, type Db } from "../db/client.js";
 import { seed } from "../db/seed.js";
 import { corrections } from "../db/schema.js";
@@ -3556,16 +3558,19 @@ describe("createCorrection", () => {
   });
 
   it("würfelt einen neuen ref, wenn der erste kollidiert", async () => {
-    const shared = await import("@korrektur/shared");
-    const spy = vi.spyOn(shared, "generateRef");
-    spy.mockReturnValueOnce("K7QW3M").mockReturnValueOnce("K7QW3M").mockReturnValue("KAB2CD");
+    const folge = ["K7QW3M", "K7QW3M", "KAB2CD"];
+    let index = 0;
+    const makeRef = () => folge[index++] ?? "KZZZZZ";
 
-    const first = await createCorrection(deps(), INPUT);
-    const second = await createCorrection(deps(), { ...INPUT, idempotencyKey: "fedcba9876543210" });
+    const first = await createCorrection(deps({ generateRef: makeRef }), INPUT);
+    const second = await createCorrection(deps({ generateRef: makeRef }), {
+      ...INPUT,
+      idempotencyKey: "fedcba9876543210",
+    });
 
     expect(first.ok && first.ref).toBe("K7QW3M");
+    // Der zweite Versuch kollidiert, der dritte greift.
     expect(second.ok && second.ref).toBe("KAB2CD");
-    spy.mockRestore();
   });
 });
 ```
@@ -3602,6 +3607,8 @@ export interface CreateDeps {
   fetchArticle: (url: string) => Promise<FetchResult>;
   now: () => number;
   baseUrl: string;
+  /** Injizierbar, damit der Kollisionspfad ohne ESM-Mocking testbar bleibt. */
+  generateRef?: () => string;
 }
 
 export type CreateResult =
@@ -3626,9 +3633,9 @@ export function getCorrectionByRef(db: Db, ref: string): typeof corrections.$inf
   return db.select().from(corrections).where(eq(corrections.ref, ref)).get() ?? null;
 }
 
-function reserveRef(db: Db, insert: (ref: string) => void): string {
+function reserveRef(makeRef: () => string, insert: (ref: string) => void): string {
   for (let attempt = 0; attempt < REF_ATTEMPTS; attempt++) {
-    const ref = generateRef();
+    const ref = makeRef();
     try {
       insert(ref);
       return ref;
@@ -3700,7 +3707,7 @@ export async function createCorrection(
   }
 
   const id = createId();
-  const ref = reserveRef(db, (candidate) => {
+  const ref = reserveRef(deps.generateRef ?? generateRef, (candidate) => {
     db.insert(corrections)
       .values({
         id,
@@ -3746,8 +3753,14 @@ export async function createCorrection(
   const sent = await deps.mailer.send({ to: recipient, subject: mail.subject, text: mail.text });
 
   if (sent.ok) {
+    // Eigener Weg: das Relay hat quittiert, der Versand ist belegt (§15.2).
     db.update(corrections)
-      .set({ dispatchStatus: "sent", sentAt: now, messageId: sent.messageId })
+      .set({
+        dispatchStatus: "sent",
+        sentAt: now,
+        messageId: sent.messageId,
+        sendConfirmedBy: "smtp",
+      })
       .where(eq(corrections.id, id))
       .run();
   } else {
@@ -3945,8 +3958,11 @@ git commit -m "Basic-Auth auf Anwendungsebene und Seitengeruest"
 ### Task 20: Erfassungsformular
 
 **Files:**
-- Create: `packages/api/src/views/capture.tsx`, `packages/api/src/routes/capture.ts`
+- Create: `packages/api/src/views/capture.tsx`, `packages/api/src/routes/capture.tsx`
 - Test: `packages/api/src/routes/capture.test.ts`
+
+Beide Routendateien enthalten JSX und heißen deshalb `.tsx`. Importiert werden sie
+trotzdem als `./capture.js` — TypeScript löst die `.js`-Endung auf die `.tsx`-Quelle auf.
 
 **Interfaces:**
 - Consumes: `Layout` aus Task 19, `listErrorTypes` aus Task 16, `createCorrection`/`CreateDeps` aus Task 18, `newCorrectionSchema` aus Task 17
@@ -4242,8 +4258,6 @@ export function captureRoutes(deps: CreateDeps): Hono {
 }
 ```
 
-Die Datei muss `.tsx` heißen, weil sie JSX enthält — **umbenennen in `packages/api/src/routes/capture.tsx`** und den Import im Test entsprechend als `./capture.js` belassen (TypeScript löst `.tsx` über die `.js`-Endung auf).
-
 - [ ] **Step 5: Test laufen lassen, Erfolg bestätigen**
 
 ```bash
@@ -4260,3 +4274,1213 @@ git commit -m "Erfassungsformular mit Vorbefuellung aus dem Share-Sheet"
 ```
 
 ---
+
+### Task 21: Adminoberfläche Redaktionen
+
+**Files:**
+- Create: `packages/api/src/views/outlets.tsx`, `packages/api/src/routes/admin/outlets.tsx`
+- Test: `packages/api/src/routes/admin/outlets.test.ts`
+
+**Interfaces:**
+- Consumes: `Layout` aus Task 19, Repo-Funktionen aus Task 15, `outletInputSchema` aus Task 17
+- Produces: `outletAdminRoutes(db: Db, now: () => number): Hono` aus `packages/api/src/routes/admin/outlets.tsx`
+
+Routen: `GET /admin/redaktionen` (Liste + Anlageformular), `GET /admin/redaktionen/:id` (Bearbeiten), `POST /admin/redaktionen`, `POST /admin/redaktionen/:id`, `POST /admin/redaktionen/:id/loeschen`, `POST /admin/redaktionen/:id/domains`. Reine Formular-Posts, kein JavaScript.
+
+- [ ] **Step 1: Den fehlschlagenden Test schreiben**
+
+`packages/api/src/routes/admin/outlets.test.ts`:
+
+```ts
+import { createId } from "@paralleldrive/cuid2";
+import { beforeEach, describe, expect, it } from "vitest";
+import { createDb, runMigrations, type Db } from "../../db/client.js";
+import { corrections, errorTypes } from "../../db/schema.js";
+import { createOutlet, listOutlets } from "../../repo/outlets.js";
+import { outletAdminRoutes } from "./outlets.js";
+
+const NOW = 1_800_000_000;
+let db: Db;
+
+function app() {
+  return outletAdminRoutes(db, () => NOW);
+}
+
+function body(fields: Record<string, string>): URLSearchParams {
+  return new URLSearchParams(fields);
+}
+
+function post(path: string, fields: Record<string, string>) {
+  return app().request(path, {
+    method: "POST",
+    body: body(fields),
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+  });
+}
+
+beforeEach(() => {
+  db = createDb(":memory:");
+  runMigrations(db);
+});
+
+describe("Adminoberfläche Redaktionen", () => {
+  it("listet Redaktionen alphabetisch", async () => {
+    createOutlet(db, { name: "Zeta", primaryDomain: "zeta.de", publisher: null, country: null, notes: null, contactEmails: [] }, NOW);
+    createOutlet(db, { name: "Alpha", primaryDomain: "alpha.de", publisher: null, country: null, notes: null, contactEmails: [] }, NOW);
+
+    const html = await (await app().request("/admin/redaktionen")).text();
+    expect(html.indexOf("Alpha")).toBeLessThan(html.indexOf("Zeta"));
+  });
+
+  it("legt eine Redaktion mit Kontaktadressen an", async () => {
+    const res = await post("/admin/redaktionen", {
+      name: "Beispiel-Zeitung",
+      primaryDomain: "Beispiel-Zeitung.DE",
+      contactEmails: "leserbriefe@beispiel-zeitung.de, redaktion@beispiel-zeitung.de",
+    });
+    expect(res.status).toBe(302);
+
+    const [outlet] = listOutlets(db);
+    expect(outlet?.primaryDomain).toBe("beispiel-zeitung.de");
+    expect(outlet?.contactEmails).toHaveLength(2);
+    expect(outlet?.domains).toEqual(["beispiel-zeitung.de"]);
+  });
+
+  it("weist eine ungültige Kontaktadresse ab", async () => {
+    const res = await post("/admin/redaktionen", {
+      name: "X",
+      primaryDomain: "x.de",
+      contactEmails: "keine-adresse",
+    });
+    expect(res.status).toBe(400);
+    expect(listOutlets(db)).toHaveLength(0);
+  });
+
+  it("ergänzt eine weitere Domain", async () => {
+    const outlet = createOutlet(db, { name: "X", primaryDomain: "x.de", publisher: null, country: null, notes: null, contactEmails: [] }, NOW);
+    await post(`/admin/redaktionen/${outlet.id}/domains`, { domain: "magazin.x.de" });
+    expect(listOutlets(db)[0]?.domains).toContain("magazin.x.de");
+  });
+
+  it("löscht eine unbenutzte Redaktion", async () => {
+    const outlet = createOutlet(db, { name: "X", primaryDomain: "x.de", publisher: null, country: null, notes: null, contactEmails: [] }, NOW);
+    await post(`/admin/redaktionen/${outlet.id}/loeschen`, {});
+    expect(listOutlets(db, { includeArchived: true })).toHaveLength(0);
+  });
+
+  it("archiviert eine benutzte Redaktion und sagt das auch", async () => {
+    const outlet = createOutlet(db, { name: "X", primaryDomain: "x.de", publisher: null, country: null, notes: null, contactEmails: [] }, NOW);
+    const errorTypeId = createId();
+    db.insert(errorTypes).values({ id: errorTypeId, key: "zahl", label: "Zahl", sortOrder: 10, createdAt: NOW }).run();
+    db.insert(corrections)
+      .values({
+        id: createId(), ref: "K7QW3M", idempotencyKey: "idem-1", createdAt: NOW, dispatchMode: "smtp",
+        articleUrl: "https://x.de/a", articleUrlCanon: "https://x.de/a", outletId: outlet.id,
+        errorTypeId, severity: 2, quoteBefore: "Z", suggestionAfter: "V",
+        recipientEmail: "leserbriefe@x.de", source: "web",
+      })
+      .run();
+
+    const res = await post(`/admin/redaktionen/${outlet.id}/loeschen`, {});
+    expect(res.headers.get("location")).toContain("archiviert");
+    expect(listOutlets(db)).toHaveLength(0);
+    expect(listOutlets(db, { includeArchived: true })).toHaveLength(1);
+  });
+});
+```
+
+- [ ] **Step 2: Test laufen lassen, Fehlschlag bestätigen**
+
+```bash
+pnpm vitest run packages/api/src/routes/admin/outlets.test.ts
+```
+
+Erwartet: FAIL — `./outlets.js` nicht auflösbar.
+
+- [ ] **Step 3: Ansicht implementieren**
+
+`packages/api/src/views/outlets.tsx`:
+
+```tsx
+import type { FC } from "hono/jsx";
+import type { OutletRecord } from "../repo/outlets.js";
+import { Layout } from "./layout.js";
+
+const Felder: FC<{ outlet?: OutletRecord }> = ({ outlet }) => (
+  <>
+    <label for="name">Name</label>
+    <input id="name" name="name" required value={outlet?.name ?? ""} />
+
+    <label for="primaryDomain">Hauptdomain</label>
+    <input id="primaryDomain" name="primaryDomain" required value={outlet?.primaryDomain ?? ""} />
+
+    <label for="publisher">Verlag</label>
+    <input id="publisher" name="publisher" value={outlet?.publisher ?? ""} />
+
+    <label for="country">Land (zwei Buchstaben)</label>
+    <input id="country" name="country" maxlength={2} value={outlet?.country ?? ""} />
+
+    <label for="contactEmails">
+      Kontaktadressen <span class="zaehler">kommagetrennt, erste ist Standardempfänger</span>
+    </label>
+    <input id="contactEmails" name="contactEmails" value={(outlet?.contactEmails ?? []).join(", ")} />
+
+    <label for="notes">Notizen</label>
+    <textarea id="notes" name="notes">{outlet?.notes ?? ""}</textarea>
+  </>
+);
+
+export const OutletList: FC<{ outlets: OutletRecord[]; hinweis?: string; fehler?: string }> = ({
+  outlets,
+  hinweis,
+  fehler,
+}) => (
+  <Layout title="Redaktionen">
+    {hinweis ? <p class="hinweis">{hinweis}</p> : null}
+    {fehler ? <p class="hinweis">{fehler}</p> : null}
+
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Domains</th>
+          <th>Kontakt</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {outlets.map((outlet) => (
+          <tr>
+            <td>
+              <a href={`/admin/redaktionen/${outlet.id}`}>{outlet.name}</a>
+            </td>
+            <td>{outlet.domains.join(", ")}</td>
+            <td>{outlet.contactEmails.length}</td>
+            <td>
+              <form class="inline" method="post" action={`/admin/redaktionen/${outlet.id}/loeschen`}>
+                <button type="submit">Entfernen</button>
+              </form>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    <h2>Neue Redaktion</h2>
+    <form method="post" action="/admin/redaktionen">
+      <Felder />
+      <button type="submit">Anlegen</button>
+    </form>
+  </Layout>
+);
+
+export const OutletEdit: FC<{ outlet: OutletRecord }> = ({ outlet }) => (
+  <Layout title={`Redaktion: ${outlet.name}`}>
+    <form method="post" action={`/admin/redaktionen/${outlet.id}`}>
+      <Felder outlet={outlet} />
+      <button type="submit">Speichern</button>
+    </form>
+
+    <h2>Domains</h2>
+    <p>{outlet.domains.join(", ")}</p>
+    <form method="post" action={`/admin/redaktionen/${outlet.id}/domains`}>
+      <label for="domain">Weitere Domain</label>
+      <input id="domain" name="domain" required />
+      <button type="submit">Hinzufügen</button>
+    </form>
+  </Layout>
+);
+```
+
+- [ ] **Step 4: Route implementieren**
+
+`packages/api/src/routes/admin/outlets.tsx`:
+
+```tsx
+import { outletInputSchema } from "@korrektur/shared";
+import { Hono } from "hono";
+import type { Db } from "../../db/client.js";
+import {
+  addDomain,
+  createOutlet,
+  listOutlets,
+  removeOutlet,
+  updateOutlet,
+} from "../../repo/outlets.js";
+import { OutletEdit, OutletList } from "../../views/outlets.js";
+
+const BASE = "/admin/redaktionen";
+
+function parseEmails(raw: unknown): string[] {
+  if (typeof raw !== "string") return [];
+  return raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+}
+
+export function outletAdminRoutes(db: Db, now: () => number): Hono {
+  const app = new Hono();
+
+  app.get(BASE, (c) =>
+    c.html(
+      <OutletList
+        outlets={listOutlets(db, { includeArchived: false })}
+        hinweis={c.req.query("hinweis") ?? undefined}
+      />,
+    ),
+  );
+
+  app.get(`${BASE}/:id`, (c) => {
+    const outlet = listOutlets(db, { includeArchived: true }).find((o) => o.id === c.req.param("id"));
+    if (!outlet) return c.notFound();
+    return c.html(<OutletEdit outlet={outlet} />);
+  });
+
+  app.post(BASE, async (c) => {
+    const raw = await c.req.parseBody();
+    const parsed = outletInputSchema.safeParse({ ...raw, contactEmails: parseEmails(raw["contactEmails"]) });
+    if (!parsed.success) {
+      return c.html(
+        <OutletList outlets={listOutlets(db)} fehler={parsed.error.issues[0]?.message ?? "Eingabe ungültig"} />,
+        400,
+      );
+    }
+    createOutlet(db, parsed.data, now());
+    return c.redirect(`${BASE}?hinweis=Angelegt`, 302);
+  });
+
+  app.post(`${BASE}/:id`, async (c) => {
+    const raw = await c.req.parseBody();
+    const parsed = outletInputSchema.safeParse({ ...raw, contactEmails: parseEmails(raw["contactEmails"]) });
+    if (!parsed.success) {
+      return c.html(
+        <OutletList outlets={listOutlets(db)} fehler={parsed.error.issues[0]?.message ?? "Eingabe ungültig"} />,
+        400,
+      );
+    }
+    updateOutlet(db, c.req.param("id"), parsed.data);
+    return c.redirect(`${BASE}?hinweis=Gespeichert`, 302);
+  });
+
+  app.post(`${BASE}/:id/domains`, async (c) => {
+    const raw = await c.req.parseBody();
+    const domain = typeof raw["domain"] === "string" ? raw["domain"] : "";
+    const ok = addDomain(db, c.req.param("id"), domain);
+    const hinweis = ok ? "Domain ergaenzt" : "Domain gehoert bereits zu einer anderen Redaktion";
+    return c.redirect(`${BASE}?hinweis=${encodeURIComponent(hinweis)}`, 302);
+  });
+
+  app.post(`${BASE}/:id/loeschen`, (c) => {
+    const outcome = removeOutlet(db, c.req.param("id"));
+    const hinweis =
+      outcome === "archived"
+        ? "Redaktion archiviert, weil Meldungen darauf verweisen"
+        : outcome === "deleted"
+          ? "Redaktion geloescht"
+          : "Redaktion nicht gefunden";
+    return c.redirect(`${BASE}?hinweis=${encodeURIComponent(hinweis)}`, 302);
+  });
+
+  return app;
+}
+```
+
+- [ ] **Step 5: Test laufen lassen, Erfolg bestätigen**
+
+```bash
+pnpm vitest run packages/api/src/routes/admin/outlets.test.ts
+```
+
+Erwartet: 6 Tests grün.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add packages/api/src/routes/admin/outlets.tsx packages/api/src/routes/admin/outlets.test.ts packages/api/src/views/outlets.tsx
+git commit -m "Adminoberflaeche fuer Redaktionen mit Domains und Kontaktadressen"
+```
+
+---
+
+### Task 22: Adminoberfläche Fehlerarten
+
+**Files:**
+- Create: `packages/api/src/views/errorTypes.tsx`, `packages/api/src/routes/admin/errorTypes.tsx`
+- Test: `packages/api/src/routes/admin/errorTypes.test.ts`
+
+**Interfaces:**
+- Consumes: `Layout` aus Task 19, Repo-Funktionen aus Task 16, `errorTypeInputSchema` und `errorTypeUpdateSchema` aus Task 17
+- Produces: `errorTypeAdminRoutes(db: Db, now: () => number): Hono` aus `packages/api/src/routes/admin/errorTypes.tsx`
+
+Der Schlüssel wird beim Bearbeiten als reiner Text angezeigt, nicht als Eingabefeld — er steht in versendeten Mails und ist dort nicht mehr korrigierbar (§5.0).
+
+- [ ] **Step 1: Den fehlschlagenden Test schreiben**
+
+`packages/api/src/routes/admin/errorTypes.test.ts`:
+
+```ts
+import { beforeEach, describe, expect, it } from "vitest";
+import { createDb, runMigrations, type Db } from "../../db/client.js";
+import { seed } from "../../db/seed.js";
+import { getErrorTypeByKey, listErrorTypes } from "../../repo/errorTypes.js";
+import { errorTypeAdminRoutes } from "./errorTypes.js";
+
+const NOW = 1_800_000_000;
+let db: Db;
+
+function post(path: string, fields: Record<string, string>) {
+  return errorTypeAdminRoutes(db, () => NOW).request(path, {
+    method: "POST",
+    body: new URLSearchParams(fields),
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+  });
+}
+
+beforeEach(() => {
+  db = createDb(":memory:");
+  runMigrations(db);
+  seed(db);
+});
+
+describe("Adminoberfläche Fehlerarten", () => {
+  it("listet die geseedeten Fehlerarten", async () => {
+    const html = await (await errorTypeAdminRoutes(db, () => NOW).request("/admin/fehlerarten")).text();
+    expect(html).toContain("Überschrift deckt nicht");
+    expect(html).toContain("Falschzitat");
+  });
+
+  it("legt eine neue Fehlerart an", async () => {
+    const res = await post("/admin/fehlerarten", {
+      key: "toter_link",
+      label: "Toter Link",
+      description: "Verlinktes Ziel nicht erreichbar.",
+      sortOrder: "130",
+    });
+    expect(res.status).toBe(302);
+    expect(getErrorTypeByKey(db, "toter_link")?.label).toBe("Toter Link");
+  });
+
+  it("weist einen Schlüssel mit Leerzeichen ab", async () => {
+    const res = await post("/admin/fehlerarten", {
+      key: "Toter Link",
+      label: "Toter Link",
+      description: "",
+      sortOrder: "130",
+    });
+    expect(res.status).toBe(400);
+    expect(listErrorTypes(db)).toHaveLength(12);
+  });
+
+  it("meldet einen bereits vergebenen Schlüssel", async () => {
+    const res = await post("/admin/fehlerarten", {
+      key: "zahl",
+      label: "Noch eine Zahl",
+      description: "",
+      sortOrder: "200",
+    });
+    expect(res.status).toBe(400);
+    expect(listErrorTypes(db)).toHaveLength(12);
+  });
+
+  it("bietet den Schlüssel beim Bearbeiten nicht als Eingabefeld an", async () => {
+    const id = getErrorTypeByKey(db, "zahl")?.id ?? "";
+    const html = await (await errorTypeAdminRoutes(db, () => NOW).request(`/admin/fehlerarten/${id}`)).text();
+    expect(html).not.toContain('name="key"');
+    expect(html).toContain("zahl");
+  });
+
+  it("ändert Bezeichnung und Reihenfolge", async () => {
+    const id = getErrorTypeByKey(db, "zahl")?.id ?? "";
+    await post(`/admin/fehlerarten/${id}`, {
+      label: "Zahlendreher",
+      description: "Zahl falsch wiedergegeben.",
+      sortOrder: "5",
+    });
+    const updated = getErrorTypeByKey(db, "zahl");
+    expect(updated?.label).toBe("Zahlendreher");
+    expect(updated?.sortOrder).toBe(5);
+  });
+
+  it("löscht eine unbenutzte Fehlerart und meldet das zurück", async () => {
+    const id = getErrorTypeByKey(db, "zahl")?.id ?? "";
+    const res = await post(`/admin/fehlerarten/${id}/loeschen`, {});
+    expect(res.status).toBe(302);
+    expect(decodeURIComponent(res.headers.get("location") ?? "")).toContain("geloescht");
+    expect(listErrorTypes(db)).toHaveLength(11);
+    expect(listErrorTypes(db, { includeArchived: true })).toHaveLength(11);
+  });
+});
+```
+
+Der Archivierungspfad selbst ist bereits in Task 16 abgedeckt; hier wird nur geprüft,
+dass die Route den Rückgabewert korrekt in eine Weiterleitung mit Hinweis übersetzt.
+
+- [ ] **Step 2: Test laufen lassen, Fehlschlag bestätigen**
+
+```bash
+pnpm vitest run packages/api/src/routes/admin/errorTypes.test.ts
+```
+
+Erwartet: FAIL — `./errorTypes.js` nicht auflösbar.
+
+- [ ] **Step 3: Ansicht implementieren**
+
+`packages/api/src/views/errorTypes.tsx`:
+
+```tsx
+import type { FC } from "hono/jsx";
+import type { ErrorTypeRecord } from "../repo/errorTypes.js";
+import { Layout } from "./layout.js";
+
+export const ErrorTypeList: FC<{ types: ErrorTypeRecord[]; hinweis?: string; fehler?: string }> = ({
+  types,
+  hinweis,
+  fehler,
+}) => (
+  <Layout title="Fehlerarten">
+    {hinweis ? <p class="hinweis">{hinweis}</p> : null}
+    {fehler ? <p class="hinweis">{fehler}</p> : null}
+
+    <table>
+      <thead>
+        <tr>
+          <th>Reihenfolge</th>
+          <th>Bezeichnung</th>
+          <th>Schlüssel</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {types.map((type) => (
+          <tr>
+            <td>{type.sortOrder}</td>
+            <td>
+              <a href={`/admin/fehlerarten/${type.id}`}>{type.label}</a>
+            </td>
+            <td>
+              <code>{type.key}</code>
+            </td>
+            <td>
+              <form class="inline" method="post" action={`/admin/fehlerarten/${type.id}/loeschen`}>
+                <button type="submit">Entfernen</button>
+              </form>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    <h2>Neue Fehlerart</h2>
+    <form method="post" action="/admin/fehlerarten">
+      <label for="key">
+        Schlüssel <span class="zaehler">nur a–z, 0–9 und _, danach unveränderlich</span>
+      </label>
+      <input id="key" name="key" required pattern="[a-z0-9_]+" />
+
+      <label for="label">Bezeichnung</label>
+      <input id="label" name="label" required />
+
+      <label for="description">Beschreibung</label>
+      <textarea id="description" name="description"></textarea>
+
+      <label for="sortOrder">Reihenfolge</label>
+      <input id="sortOrder" name="sortOrder" type="number" value="130" required />
+
+      <button type="submit">Anlegen</button>
+    </form>
+  </Layout>
+);
+
+export const ErrorTypeEdit: FC<{ type: ErrorTypeRecord }> = ({ type }) => (
+  <Layout title={`Fehlerart: ${type.label}`}>
+    <p class="hinweis">
+      Schlüssel <code>{type.key}</code> — nicht änderbar, weil er im Meta-Block bereits
+      versendeter Mails steht.
+    </p>
+    <form method="post" action={`/admin/fehlerarten/${type.id}`}>
+      <label for="label">Bezeichnung</label>
+      <input id="label" name="label" required value={type.label} />
+
+      <label for="description">Beschreibung</label>
+      <textarea id="description" name="description">{type.description ?? ""}</textarea>
+
+      <label for="sortOrder">Reihenfolge</label>
+      <input id="sortOrder" name="sortOrder" type="number" required value={String(type.sortOrder)} />
+
+      <button type="submit">Speichern</button>
+    </form>
+  </Layout>
+);
+```
+
+- [ ] **Step 4: Route implementieren**
+
+`packages/api/src/routes/admin/errorTypes.tsx`:
+
+```tsx
+import { errorTypeInputSchema, errorTypeUpdateSchema } from "@korrektur/shared";
+import { Hono } from "hono";
+import type { Db } from "../../db/client.js";
+import {
+  createErrorType,
+  listErrorTypes,
+  removeErrorType,
+  updateErrorType,
+} from "../../repo/errorTypes.js";
+import { ErrorTypeEdit, ErrorTypeList } from "../../views/errorTypes.js";
+
+const BASE = "/admin/fehlerarten";
+
+export function errorTypeAdminRoutes(db: Db, now: () => number): Hono {
+  const app = new Hono();
+
+  app.get(BASE, (c) =>
+    c.html(<ErrorTypeList types={listErrorTypes(db)} hinweis={c.req.query("hinweis") ?? undefined} />),
+  );
+
+  app.get(`${BASE}/:id`, (c) => {
+    const type = listErrorTypes(db, { includeArchived: true }).find((t) => t.id === c.req.param("id"));
+    if (!type) return c.notFound();
+    return c.html(<ErrorTypeEdit type={type} />);
+  });
+
+  app.post(BASE, async (c) => {
+    const parsed = errorTypeInputSchema.safeParse(await c.req.parseBody());
+    if (!parsed.success) {
+      return c.html(
+        <ErrorTypeList types={listErrorTypes(db)} fehler={parsed.error.issues[0]?.message ?? "Eingabe ungültig"} />,
+        400,
+      );
+    }
+
+    const created = createErrorType(db, parsed.data, now());
+    if (!created) {
+      return c.html(
+        <ErrorTypeList types={listErrorTypes(db)} fehler={`Der Schlüssel ${parsed.data.key} ist bereits vergeben.`} />,
+        400,
+      );
+    }
+    return c.redirect(`${BASE}?hinweis=Angelegt`, 302);
+  });
+
+  app.post(`${BASE}/:id`, async (c) => {
+    const parsed = errorTypeUpdateSchema.safeParse(await c.req.parseBody());
+    if (!parsed.success) {
+      return c.html(
+        <ErrorTypeList types={listErrorTypes(db)} fehler={parsed.error.issues[0]?.message ?? "Eingabe ungültig"} />,
+        400,
+      );
+    }
+    updateErrorType(db, c.req.param("id"), parsed.data);
+    return c.redirect(`${BASE}?hinweis=Gespeichert`, 302);
+  });
+
+  app.post(`${BASE}/:id/loeschen`, (c) => {
+    const outcome = removeErrorType(db, c.req.param("id"));
+    const hinweis =
+      outcome === "archived"
+        ? "Fehlerart archiviert, weil Meldungen darauf verweisen"
+        : outcome === "deleted"
+          ? "Fehlerart geloescht"
+          : "Fehlerart nicht gefunden";
+    return c.redirect(`${BASE}?hinweis=${encodeURIComponent(hinweis)}`, 302);
+  });
+
+  return app;
+}
+```
+
+- [ ] **Step 5: Test laufen lassen, Erfolg bestätigen**
+
+```bash
+pnpm vitest run packages/api/src/routes/admin/errorTypes.test.ts
+```
+
+Erwartet: 7 Tests grün.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add packages/api/src/routes/admin/errorTypes.tsx packages/api/src/routes/admin/errorTypes.test.ts packages/api/src/views/errorTypes.tsx
+git commit -m "Adminoberflaeche fuer Fehlerarten mit gesperrtem Schluessel"
+```
+
+---
+
+### Task 23: Öffentlicher Serializer und Feld-Sperrliste
+
+**Files:**
+- Create: `packages/api/src/serialize/public.ts`
+- Test: `packages/api/src/serialize/public.test.ts`
+
+**Interfaces:**
+- Consumes: Tabellen aus Task 7, `OutletRecord` aus Task 15
+- Produces: aus `packages/api/src/serialize/public.ts`: `type PublicCorrection`, `type PublicOutlet`, `toPublicCorrection(row, outletName, errorTypeLabel): PublicCorrection`, `toPublicOutlet(outlet: OutletRecord): PublicOutlet`, `FORBIDDEN_PUBLIC_FIELDS: readonly string[]`, `assertNoForbiddenFields(value: unknown): void`
+
+Das ist die strukturelle Umsetzung von §2.1: Der öffentliche Typ **besitzt** die kritischen Felder nicht. `assertNoForbiddenFields` ist der Wächter, der jede öffentliche Antwort rekursiv prüft — ein Feld, das versehentlich in den Public-Typ gerät, lässt die Suite rot werden.
+
+- [ ] **Step 1: Den fehlschlagenden Test schreiben**
+
+`packages/api/src/serialize/public.test.ts`:
+
+```ts
+import { describe, expect, it } from "vitest";
+import {
+  assertNoForbiddenFields,
+  FORBIDDEN_PUBLIC_FIELDS,
+  toPublicCorrection,
+  toPublicOutlet,
+} from "./public.js";
+
+const ROW = {
+  id: "c1",
+  ref: "K7QW3M",
+  idempotencyKey: "abcdef0123456789",
+  createdAt: 1_800_000_000,
+  dispatchMode: "smtp" as const,
+  articleUrl: "https://beispiel-zeitung.de/a",
+  articleUrlCanon: "https://beispiel-zeitung.de/a",
+  outletId: "o1",
+  headline: "Fahrgastzahlen steigen deutlich",
+  publishedAt: null,
+  errorTypeId: "e1",
+  severity: 2,
+  quoteBefore: "rund 4,2 Millionen",
+  quotePrefix: "Im vergangenen Jahr nutzten ",
+  quoteSuffix: " Menschen die Linie",
+  quotePositionHint: 0,
+  anchorQuality: "exact" as const,
+  suggestionAfter: "rund 2,4 Millionen",
+  comment: null,
+  recipientEmail: "leserbriefe@beispiel-zeitung.de",
+  messageId: "<abc@example.tld>",
+  dispatchStatus: "sent" as const,
+  sentAt: 1_800_000_000,
+  sendConfirmedBy: "smtp" as const,
+  outcome: "corrected" as const,
+  respondedAt: null,
+  correctedAt: 1_800_100_000,
+  verification: "manual" as const,
+  source: "web" as const,
+  needsReview: false,
+};
+
+const OUTLET = {
+  id: "o1",
+  name: "Beispiel-Zeitung",
+  primaryDomain: "beispiel-zeitung.de",
+  publisher: "Beispiel Verlag",
+  country: "DE",
+  notes: "interne Notiz",
+  contactEmails: ["leserbriefe@beispiel-zeitung.de"],
+  archived: false,
+  createdAt: 1_800_000_000,
+  domains: ["beispiel-zeitung.de"],
+};
+
+describe("toPublicCorrection", () => {
+  it("übernimmt die zulässigen Felder", () => {
+    const result = toPublicCorrection(ROW, "Beispiel-Zeitung", "Zahl");
+    expect(result.ref).toBe("K7QW3M");
+    expect(result.outletName).toBe("Beispiel-Zeitung");
+    expect(result.errorTypeLabel).toBe("Zahl");
+    expect(result.quoteBefore).toBe("rund 4,2 Millionen");
+    expect(result.outcome).toBe("corrected");
+  });
+
+  it("enthält weder Empfänger noch Message-ID noch Ankertexte", () => {
+    const result = toPublicCorrection(ROW, "Beispiel-Zeitung", "Zahl");
+    const keys = Object.keys(result);
+    expect(keys).not.toContain("recipientEmail");
+    expect(keys).not.toContain("messageId");
+    expect(keys).not.toContain("quotePrefix");
+    expect(keys).not.toContain("quoteSuffix");
+    expect(keys).not.toContain("idempotencyKey");
+  });
+
+  it("übersteht den Wächter", () => {
+    expect(() => assertNoForbiddenFields(toPublicCorrection(ROW, "X", "Y"))).not.toThrow();
+  });
+});
+
+describe("toPublicOutlet", () => {
+  it("liefert Name und Verlag, aber keine Adressen und keine Notizen", () => {
+    const result = toPublicOutlet(OUTLET);
+    expect(result.name).toBe("Beispiel-Zeitung");
+    expect(Object.keys(result)).not.toContain("contactEmails");
+    expect(Object.keys(result)).not.toContain("notes");
+    expect(() => assertNoForbiddenFields(result)).not.toThrow();
+  });
+});
+
+describe("assertNoForbiddenFields", () => {
+  it("kennt alle in der Spec genannten Felder", () => {
+    for (const field of ["recipientEmail", "fromAddr", "excerpt", "contactEmails", "observedText", "author"]) {
+      expect(FORBIDDEN_PUBLIC_FIELDS).toContain(field);
+    }
+  });
+
+  it("wirft bei einem verbotenen Feld auf oberster Ebene", () => {
+    expect(() => assertNoForbiddenFields({ ref: "K7QW3M", recipientEmail: "x@y.de" })).toThrow(
+      /recipientEmail/,
+    );
+  });
+
+  it("wirft auch bei verschachtelten und in Listen versteckten Feldern", () => {
+    expect(() => assertNoForbiddenFields({ a: { b: { excerpt: "Danke für den Hinweis" } } })).toThrow(
+      /excerpt/,
+    );
+    expect(() => assertNoForbiddenFields([{ ok: 1 }, { author: "Jemand" }])).toThrow(/author/);
+  });
+
+  it("lässt harmlose Strukturen durch", () => {
+    expect(() => assertNoForbiddenFields({ liste: [{ ref: "K7QW3M", n: 3 }], summe: 3 })).not.toThrow();
+  });
+});
+```
+
+- [ ] **Step 2: Test laufen lassen, Fehlschlag bestätigen**
+
+```bash
+pnpm vitest run packages/api/src/serialize/public.test.ts
+```
+
+Erwartet: FAIL — `./public.js` nicht auflösbar.
+
+- [ ] **Step 3: Implementieren**
+
+`packages/api/src/serialize/public.ts`:
+
+```ts
+import type { corrections } from "../db/schema.js";
+import type { OutletRecord } from "../repo/outlets.js";
+
+type CorrectionRow = typeof corrections.$inferSelect;
+
+/**
+ * Öffentliche Sicht auf eine Meldung. Besitzt die kritischen Felder nicht —
+ * es wird nichts zur Laufzeit herausgefiltert (§2.1).
+ */
+export interface PublicCorrection {
+  ref: string;
+  createdAt: number;
+  sentAt: number | null;
+  outletName: string;
+  errorTypeLabel: string;
+  severity: number;
+  articleUrl: string;
+  headline: string | null;
+  quoteBefore: string;
+  suggestionAfter: string;
+  outcome: CorrectionRow["outcome"];
+  correctedAt: number | null;
+}
+
+export interface PublicOutlet {
+  name: string;
+  publisher: string | null;
+  country: string | null;
+}
+
+export function toPublicCorrection(
+  row: CorrectionRow,
+  outletName: string,
+  errorTypeLabel: string,
+): PublicCorrection {
+  return {
+    ref: row.ref,
+    createdAt: row.createdAt,
+    sentAt: row.sentAt,
+    outletName,
+    errorTypeLabel,
+    severity: row.severity,
+    articleUrl: row.articleUrl,
+    headline: row.headline,
+    quoteBefore: row.quoteBefore,
+    suggestionAfter: row.suggestionAfter,
+    outcome: row.outcome,
+    correctedAt: row.correctedAt,
+  };
+}
+
+export function toPublicOutlet(outlet: OutletRecord): PublicOutlet {
+  return { name: outlet.name, publisher: outlet.publisher, country: outlet.country };
+}
+
+/** Feldnamen, die in keiner öffentlichen Antwort auftauchen dürfen (§2.1, §12, §13). */
+export const FORBIDDEN_PUBLIC_FIELDS = [
+  "author",
+  "authorName",
+  "contactEmails",
+  "contact_emails",
+  "excerpt",
+  "fromAddr",
+  "from_addr",
+  "idempotencyKey",
+  "idempotency_key",
+  "messageId",
+  "message_id",
+  "notes",
+  "observedText",
+  "observed_text",
+  "quotePrefix",
+  "quoteSuffix",
+  "quote_prefix",
+  "quote_suffix",
+  "recipientEmail",
+  "recipient_email",
+] as const;
+
+const FORBIDDEN = new Set<string>(FORBIDDEN_PUBLIC_FIELDS);
+
+/** Wächter: prüft rekursiv, auch in Listen und verschachtelten Objekten. */
+export function assertNoForbiddenFields(value: unknown, path = "$"): void {
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) => assertNoForbiddenFields(entry, `${path}[${index}]`));
+    return;
+  }
+  if (value === null || typeof value !== "object") return;
+
+  for (const [key, nested] of Object.entries(value)) {
+    if (FORBIDDEN.has(key)) {
+      throw new Error(`Verbotenes Feld in oeffentlicher Antwort: ${path}.${key}`);
+    }
+    assertNoForbiddenFields(nested, `${path}.${key}`);
+  }
+}
+```
+
+- [ ] **Step 4: Test laufen lassen, Erfolg bestätigen**
+
+```bash
+pnpm vitest run packages/api/src/serialize/public.test.ts
+```
+
+Erwartet: 8 Tests grün.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add packages/api/src/serialize/public.ts packages/api/src/serialize/public.test.ts
+git commit -m "Oeffentlicher Serializer mit rekursivem Feld-Waechter"
+```
+
+---
+
+### Task 24: Verdrahtung, Bootstrap und Dokumentation
+
+**Files:**
+- Modify: `packages/api/src/app.ts`, `packages/api/src/index.ts`
+- Create: `CLAUDE.md`, `docs/kurzbefehl.md`
+- Test: `packages/api/src/app.test.ts`
+
+**Interfaces:**
+- Consumes: alles Bisherige
+- Produces: `createApp(options: AppOptions): Hono` aus `packages/api/src/app.ts` mit `AppOptions = { env: Env; db: Db; mailer: Mailer; fetchArticle: (url: string) => Promise<FetchResult>; now?: () => number }`
+
+Damit wird die Signatur aus Task 2 erweitert — der dortige Test ruft `createApp()` ohne Argumente auf und muss angepasst werden.
+
+- [ ] **Step 1: Den fehlschlagenden Test schreiben**
+
+`packages/api/src/app.test.ts`:
+
+```ts
+import { describe, expect, it } from "vitest";
+import { createApp } from "./app.js";
+import { createDb, runMigrations } from "./db/client.js";
+import { applyViews } from "./db/views.js";
+import { seed } from "./db/seed.js";
+import { createJsonMailer } from "./dispatch/send.js";
+import type { Env } from "./env.js";
+
+const ENV = {
+  PORT: 3000,
+  DATABASE_PATH: ":memory:",
+  ADMIN_USER: "admin",
+  ADMIN_PASSWORD: "geheimes-passwort",
+  PUBLIC_BASE_URL: "https://korrektur.example.tld",
+  SMTP_HOST: "smtp.example.tld",
+  SMTP_PORT: 587,
+  SMTP_USER: "korrektur@example.tld",
+  SMTP_PASSWORD: "x",
+  MAIL_FROM: "korrektur@example.tld",
+} satisfies Env;
+
+function app() {
+  const db = createDb(":memory:");
+  runMigrations(db);
+  applyViews(db);
+  seed(db);
+  return createApp({
+    env: ENV,
+    db,
+    mailer: createJsonMailer(ENV.MAIL_FROM),
+    fetchArticle: async () => ({ ok: false, status: null, reason: "network" }),
+    now: () => 1_800_000_000,
+  });
+}
+
+const AUTH = `Basic ${Buffer.from("admin:geheimes-passwort").toString("base64")}`;
+
+describe("App-Verdrahtung", () => {
+  it("lässt den Healthcheck ohne Anmeldung durch", async () => {
+    const res = await app().request("/healthz");
+    expect(res.status).toBe(200);
+  });
+
+  it("schützt das Erfassungsformular", async () => {
+    expect((await app().request("/neu")).status).toBe(401);
+    expect((await app().request("/neu", { headers: { authorization: AUTH } })).status).toBe(200);
+  });
+
+  it("schützt beide Adminbereiche", async () => {
+    expect((await app().request("/admin/redaktionen")).status).toBe(401);
+    expect((await app().request("/admin/fehlerarten")).status).toBe(401);
+    expect(
+      (await app().request("/admin/fehlerarten", { headers: { authorization: AUTH } })).status,
+    ).toBe(200);
+  });
+
+  it("leitet die Wurzel auf das Erfassungsformular", async () => {
+    const res = await app().request("/");
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBe("/neu");
+  });
+});
+```
+
+`packages/api/src/routes/health.test.ts` anpassen — `createApp` braucht jetzt Argumente. Ersetze dort den Aufbau durch dieselbe `app()`-Hilfsfunktion wie oben und behalte die Erwartung `{ status: "ok" }`.
+
+- [ ] **Step 2: Test laufen lassen, Fehlschlag bestätigen**
+
+```bash
+pnpm vitest run packages/api/src/app.test.ts
+```
+
+Erwartet: FAIL — `createApp` nimmt keine Argumente entgegen.
+
+- [ ] **Step 3: Implementieren**
+
+`packages/api/src/app.ts`:
+
+```ts
+import { Hono } from "hono";
+import type { FetchResult } from "./article/fetch.js";
+import { adminAuth } from "./auth.js";
+import type { Db } from "./db/client.js";
+import type { Mailer } from "./dispatch/send.js";
+import type { Env } from "./env.js";
+import { errorTypeAdminRoutes } from "./routes/admin/errorTypes.js";
+import { outletAdminRoutes } from "./routes/admin/outlets.js";
+import { captureRoutes } from "./routes/capture.js";
+import { health } from "./routes/health.js";
+
+export interface AppOptions {
+  env: Env;
+  db: Db;
+  mailer: Mailer;
+  fetchArticle: (url: string) => Promise<FetchResult>;
+  now?: () => number;
+}
+
+export function createApp(options: AppOptions): Hono {
+  const now = options.now ?? (() => Math.floor(Date.now() / 1000));
+  const app = new Hono();
+
+  app.route("/", health);
+
+  app.use("/neu", adminAuth(options.env));
+  app.use("/admin/*", adminAuth(options.env));
+
+  app.route(
+    "/",
+    captureRoutes({
+      db: options.db,
+      mailer: options.mailer,
+      fetchArticle: options.fetchArticle,
+      now,
+      baseUrl: options.env.PUBLIC_BASE_URL,
+    }),
+  );
+  app.route("/", outletAdminRoutes(options.db, now));
+  app.route("/", errorTypeAdminRoutes(options.db, now));
+
+  app.get("/", (c) => c.redirect("/neu", 302));
+  return app;
+}
+```
+
+`packages/api/src/index.ts`:
+
+```ts
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+import { serve } from "@hono/node-server";
+import { createApp } from "./app.js";
+import { fetchArticle } from "./article/fetch.js";
+import { createDb, runMigrations } from "./db/client.js";
+import { seed } from "./db/seed.js";
+import { applyViews } from "./db/views.js";
+import { createSmtpMailer } from "./dispatch/send.js";
+import { loadEnv } from "./env.js";
+
+const env = loadEnv();
+
+if (env.DATABASE_PATH !== ":memory:") {
+  mkdirSync(dirname(env.DATABASE_PATH), { recursive: true });
+}
+
+const db = createDb(env.DATABASE_PATH);
+runMigrations(db);
+applyViews(db); // aus den Konstanten neu erzeugt, siehe Task 9
+seed(db);
+
+const app = createApp({
+  env,
+  db,
+  mailer: createSmtpMailer(env),
+  fetchArticle: (url) => fetchArticle(url),
+});
+
+serve({ fetch: app.fetch, port: env.PORT }, (info) => {
+  console.log(JSON.stringify({ level: "info", msg: "server gestartet", port: info.port }));
+});
+```
+
+- [ ] **Step 4: Test laufen lassen, Erfolg bestätigen**
+
+```bash
+pnpm vitest run
+pnpm typecheck
+pnpm lint
+```
+
+Erwartet: alle Suiten grün, Typecheck und Lint ohne Befund.
+
+- [ ] **Step 5: `CLAUDE.md` anlegen**
+
+```md
+# Korrektur-Tracker
+
+## Kontext
+Erfasst gemeldete Fehler in Online-Artikeln, verfolgt die Reaktionen der Redaktionen
+und stellt beides auswertbar dar. Spec: `docs/superpowers/specs/2026-08-01-korrektur-tracker-design.md`.
+
+## Befehle
+- `pnpm dev` / `pnpm build` / `pnpm test` / `pnpm test:watch`
+- `pnpm db:generate` (Migration erzeugen), `pnpm db:seed`
+- `pnpm typecheck` / `pnpm lint`
+
+## Regeln
+- TypeScript strict. Kein `any`, kein `as` außer in Typ-Guards.
+- Zod-Schemas leben in `packages/shared` und sind die einzige Typquelle.
+- Parser und Normalisierer sind reine Funktionen ohne IO. IO nur in `db/client.ts`,
+  `article/fetch.ts`, `dispatch/send.ts`, `repo/*.ts`.
+- Zeitstempel als UTC-Epoch-Sekunden (int) in der Datenbank, Formatierung nur in der Ansicht.
+- Datenbankänderungen nur über Drizzle-Migrationen. Ausnahme: die Kennzahlen-Views,
+  die beim Start aus den Konstanten in `shared` neu erzeugt werden.
+- **`author` wird nicht erhoben, nicht gespeichert, nicht extrahiert.**
+- Neue Felder in öffentlichen Antworten nur über `PublicCorrection` / `PublicOutlet`.
+  Bei Zweifel `FORBIDDEN_PUBLIC_FIELDS` erweitern.
+- Kein Ranking, keine Bestenliste, keine Ampelfarben auf Werten. Quoten nie ohne ihr n.
+- Nie echte Mailinhalte, Adressen oder Tokens committen.
+
+## Nicht anfassen
+- `tests/fixtures/**` (nur ergänzen)
+- `fixtures.local/**`, `.env`
+```
+
+- [ ] **Step 6: Kurzbefehl dokumentieren**
+
+`docs/kurzbefehl.md`:
+
+```md
+# Kurzbefehl „Korrektur melden"
+
+Zwei Aktionen, danach nie wieder anzufassen — die gesamte Logik liegt im Server.
+
+1. **Details der Safari-Webseite abrufen** → liefert die URL der aktuellen Seite.
+2. **URL öffnen** mit:
+
+   `https://korrektur.example.tld/neu?url=[URL]&text=[Kurzbefehl-Eingabe]`
+
+Beide Werte URL-kodieren (Aktion *Text kodieren*).
+
+## Zitat mitgeben
+
+Beim Teilen aus Safari mit **markiertem Text** liefert das Share-Sheet die Auswahl als
+Kurzbefehl-Eingabe. Diese in den Parameter `text` legen — dann steht die Fundstelle
+wortgleich im Formular. Das ist wichtig: Abgetipptes lässt sich später nicht im Artikel
+verankern, und die automatische Korrekturerkennung findet dann nichts.
+
+## Einrichtung
+
+- Kurzbefehle → Details → *Im Teilen-Menü anzeigen* aktivieren
+- Als Eingabetypen *URLs* und *Text* zulassen
+
+## Desktop
+
+Kein Kurzbefehl nötig: `/neu` im Browser öffnen, URL und Zitat einfügen. Optional ein
+Bookmarklet, das beides vorbefüllt — bewusst optional, weil manche Nachrichtenseiten
+`javascript:`-URLs per CSP blockieren.
+
+## Externer Zugang
+
+Ein verteilbarer Kurzbefehl für fremde Nutzer ist vorgesehen, aber nicht Teil von v1 —
+Ablauf in Abschnitt 15 der Spec.
+```
+
+- [ ] **Step 7: Vollständigen Durchlauf prüfen**
+
+```bash
+pnpm build
+docker compose up -d --build
+curl -fsS http://localhost:3000/healthz
+curl -fsS -u admin:$(grep ^ADMIN_PASSWORD .env | cut -d= -f2) http://localhost:3000/neu | head -5
+docker compose down
+```
+
+Erwartet: Healthcheck 200, Formular-HTML mit `name="quoteBefore"`.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add packages/api/src/app.ts packages/api/src/app.test.ts packages/api/src/index.ts packages/api/src/routes/health.test.ts CLAUDE.md docs/kurzbefehl.md
+git commit -m "App verdrahten, Bootstrap und Kurzbefehl-Dokumentation"
+```
+
+---
+
+## Abnahme P0–P2
+
+Nach Task 24 sind erfüllt:
+
+- **P0:** `pnpm build && pnpm test` grün, `docker compose up` liefert `/healthz` = 200.
+- **P1:** Migration idempotent, Seed läuft, Kennzahlen-Views liefern gegen Bounce,
+  Autoreply, frische Meldung, nicht abrufbare Seite, `mailto:`-Datensatz und n = 1 die
+  erwarteten Zahlen.
+- **P2:** Eine vom iPhone erfasste Meldung erzeugt einen Datensatz mit Ankern, versendet
+  eine Mail mit `[K…]` im Betreff und Meta-Block im Text; zweimal derselbe
+  Idempotency-Key ergibt einen Datensatz. Redaktionen und Fehlerarten sind über
+  Formulare anlegbar, änderbar und archivierbar; ein Löschversuch bei vorhandenen
+  Referenzen archiviert statt zu löschen.
+
+**Erster echter Lauf:** `.env` mit den tatsächlichen SMTP-Zugangsdaten füllen, unter
+`/admin/redaktionen` eine reale Redaktion mit Kontaktadresse anlegen und die erste
+Meldung an eine **eigene Testadresse** schicken, bevor die erste echte Redaktion
+angeschrieben wird. Vorher SPF, DKIM und DMARC für die Absenderdomain prüfen — ohne die
+landen genau die Mails im Spam, die ankommen sollen.
+
+## Folgepläne
+
+Diese Phasen bekommen eigene Pläne, jeweils nach Abschluss der vorigen:
+
+| Phase | Inhalt |
+|---|---|
+| **P3** | IMAP-Antworten: `imapflow`, Cursor-Persistenz, Zuordnungskaskade, Autoreply- und Bounce-Klassifikation |
+| **P4** | Altbestand: Korpus-Export, Vorlagen-Parser, Konfidenz-Scoring, Review-Queue, `References`-Matching der Altantworten |
+| **P5** | Artikel-Checks per Cron mit Anker-Kaskade, `robots.txt`, Domain-Rate-Limit |
+| **P6** | Öffentliches Frontend: `packages/web` mit TanStack Table und Recharts, Review-Queues |
+| **P7** | `/anleitung`, „Was diese Zahlen nicht sagen", Impressum, Datenschutzerklärung |
+| **später** | Externer Zugang für fremde Nutzer nach Abschnitt 15 der Spec |
