@@ -68,6 +68,8 @@ export const FORBIDDEN_PUBLIC_FIELDS = [
   "messageId",
   "message_id",
   "notes",
+  "rawMessageId",
+  "raw_message_id",
   "observedText",
   "observed_text",
   "quotePrefix",
@@ -79,6 +81,25 @@ export const FORBIDDEN_PUBLIC_FIELDS = [
 ] as const;
 
 const FORBIDDEN = new Set<string>(FORBIDDEN_PUBLIC_FIELDS);
+
+type VerboteneFeldnamen = (typeof FORBIDDEN_PUBLIC_FIELDS)[number];
+
+/** `true`, wenn der Typ keinen verbotenen Feldnamen deklariert — sonst `never`. */
+type OhneVerbotenerFelder<T> = Extract<keyof T, VerboteneFeldnamen> extends never
+  ? true
+  : never;
+
+/**
+ * Prüfung zur Übersetzungszeit, nicht zur Laufzeit. `assertNoForbiddenFields`
+ * sieht nur, was tatsächlich in einem Objekt steht — ein verbotenes Feld, das
+ * jemand deklariert, aber nie befüllt, käme durch jeden Laufzeittest. Diese
+ * Zeile lässt stattdessen `tsc` fehlschlagen, sobald der Name überhaupt im Typ
+ * auftaucht. Exportiert, damit sie nicht als ungenutzt entfernt wird.
+ */
+export const PUBLIC_TYPEN_SIND_SAUBER: [
+  OhneVerbotenerFelder<PublicCorrection>,
+  OhneVerbotenerFelder<PublicOutlet>,
+] = [true, true];
 
 /** Wächter: prüft rekursiv, auch in Listen und verschachtelten Objekten. */
 export function assertNoForbiddenFields(value: unknown, path = "$"): void {

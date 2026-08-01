@@ -89,8 +89,31 @@ describe("toPublicOutlet", () => {
 
 describe("assertNoForbiddenFields", () => {
   it("kennt alle in der Spec genannten Felder", () => {
-    for (const field of ["recipientEmail", "fromAddr", "excerpt", "contactEmails", "observedText", "author"]) {
+    for (const field of [
+      "recipientEmail",
+      "fromAddr",
+      "excerpt",
+      "contactEmails",
+      "observedText",
+      "author",
+      "messageId",
+      "rawMessageId",
+    ]) {
       expect(FORBIDDEN_PUBLIC_FIELDS).toContain(field);
+    }
+  });
+
+  it("führt jeden mehrteiligen Namen in beiden Schreibweisen", () => {
+    // Die Spalten heißen snake_case, die Felder camelCase — ein Serialisierungs-
+    // fehler könnte in beiden Formen auftauchen.
+    for (const feld of FORBIDDEN_PUBLIC_FIELDS) {
+      if (feld.includes("_")) {
+        const camel = feld.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+        expect(FORBIDDEN_PUBLIC_FIELDS).toContain(camel);
+      } else if (/[A-Z]/.test(feld)) {
+        const snake = feld.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+        expect(FORBIDDEN_PUBLIC_FIELDS).toContain(snake);
+      }
     }
   });
 
