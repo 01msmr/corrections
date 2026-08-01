@@ -873,9 +873,17 @@ describe("normalizeText", () => {
     expect(normalizeText("ﬁnal")).toBe("final");
   });
 
-  it("ist idempotent", () => {
-    const once = normalizeText("„Test“ –  mit Raum");
-    expect(normalizeText(once)).toBe(once);
+  it("faengt auch Zeichen ab, die erst NFKC erzeugt", () => {
+    expect(normalizeText("12\u2034 Winkel")).toBe("12''' Winkel");
+    expect(normalizeText("a\ufe31b")).toBe("a-b");
+  });
+
+  it("ist idempotent, auch fuer Zeichen die NFKC erst zerlegt", () => {
+    const eingaben = ["„Test“ –  mit Raum", "5\u2033 Zoll", "12\u2034 Winkel", "a\ufe31b"];
+    for (const input of eingaben) {
+      const once = normalizeText(input);
+      expect(normalizeText(once)).toBe(once);
+    }
   });
 });
 ```
@@ -904,18 +912,31 @@ const ZERO_WIDTH = /[​‌‍﻿]/g;
  * Bringt Text in eine Form, in der Vergleiche nicht an Renderer-Eigenheiten
  * scheitern. Muss bei Erfassung und Check identisch angewendet werden (§8.2).
  */
-export function normalizeText(input: string): string {
-  return input
+/** Einmal geschrieben, zweimal aufgerufen — siehe normalizeText. */
+function replaceTypography(value: string): string {
+  return value
     .replace(SOFT_HYPHEN, "")
     .replace(ZERO_WIDTH, "")
     .replace(DOUBLE_QUOTES, '"')
     .replace(SINGLE_QUOTES, "'")
     .replace(DASHES, "-")
-    .replace(SPACES, " ")
-    // NFKC erst NACH den Ersetzungen: es zerlegt U+2033 (Doppelprime, Zollzeichen)
-    // in zwei U+2032, die danach zu zwei Apostrophen wuerden statt zu einem
-    // Anfuehrungszeichen. Vorher ersetzen haelt die Zuordnung eindeutig.
-    .normalize("NFKC")
+    .replace(SPACES, " ");
+}
+
+/**
+ * Bringt Text in eine Form, in der Vergleiche nicht an Renderer-Eigenheiten
+ * scheitern. Muss bei Erfassung und Check identisch angewendet werden (§8.2).
+ *
+ * Zweimal ersetzen mit NFKC dazwischen, und beide Durchgaenge sind noetig:
+ * Der erste bildet U+2033 (Zollzeichen) auf " ab, bevor NFKC es in zwei U+2032
+ * zerlegen und daraus zwei Apostrophe machen kann. Der zweite faengt ab, was
+ * NFKC selbst erst erzeugt — U+2034, U+2057 und die Bindestrich-
+ * Praesentationsformen zerfallen in Klassenmitglieder. Erst dadurch enthaelt
+ * die Ausgabe garantiert kein Zeichen der Klassen mehr; die Idempotenz haengt
+ * dann an der Struktur und nicht an den zufaellig getesteten Eingaben.
+ */
+export function normalizeText(input: string): string {
+  return replaceTypography(replaceTypography(input).normalize("NFKC"))
     .replace(/\s+/g, " ")
     .trim();
 }
