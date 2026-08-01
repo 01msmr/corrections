@@ -52,18 +52,20 @@ jobs:
 
       - name: Hochladen
         run: |
-          rsync -az --delete \
-            --exclude 'tmp/' \
-            --exclude 'data/' \
-            -e "ssh -i ~/.ssh/id_ed25519" \
-            build/ \
-            "${{ secrets.NETCUP_USER }}@${{ secrets.NETCUP_HOST }}:${{ secrets.NETCUP_APP_ROOT }}/"
+          tar -czf - -C build --exclude './tmp' . \
+            | ssh -i ~/.ssh/id_ed25519 \
+                "${{ secrets.NETCUP_USER }}@${{ secrets.NETCUP_HOST }}" \
+                "mkdir -p '${{ secrets.NETCUP_APP_ROOT }}' \
+                 && tar -xzf - -C '${{ secrets.NETCUP_APP_ROOT }}'"
+          # Kein rsync: netcups Chroot-Umgebung stellt es nicht bereit, und rsync
+          # braucht das Programm auf beiden Seiten. tar ist dort vorhanden.
           # tmp/: von Passenger verwaltet (u.a. restart.txt fuer den Neustart-Trigger).
-          #       Nicht Teil des Codestands, darf beim Deploy nicht angefasst werden.
+          #       `pnpm bundle` legt ein leeres build/tmp an, deshalb der Ausschluss --
+          #       ohne ihn ueberschriebe das Deployment Passengers Arbeitsverzeichnis.
           # data/: enthaelt korrektur.db (SQLite, WAL-/SHM-Dateien inklusive) ausserhalb
-          #        von httpdocs. --delete wuerde sie sonst bei jedem Push loeschen, siehe
-          #        Design-Spec §13. Diese Verzeichnisse existieren nicht im Quell-Build
-          #        und wuerden ohne Ausschluss auf dem Server geloescht.
+          #        von httpdocs, siehe Design-Spec §13. tar legt nur an und ueberschreibt,
+          #        loescht also nichts -- die Datenbank ueberlebt jedes Deployment.
+          #        Im Gegenzug bleiben entfallene Dateien auf dem Server liegen.
 
       - name: Anwendung neu starten
         run: |
