@@ -2085,7 +2085,7 @@ export function errorTypeStats(db: Db): ErrorTypeStatRow[] {
 pnpm vitest run packages/api/src/repo/stats.test.ts
 ```
 
-Erwartet: 10 Tests grün. Damit ist die Abnahme von P1 erfüllt: Migration idempotent, Seed läuft, Views liefern gegen Bounce, Autoreply, frische Meldung, Paywall, `mailto:` und n=1 die erwarteten Zahlen.
+Erwartet: 9 Tests grün. Damit ist die Abnahme von P1 erfüllt: Migration idempotent, Seed läuft, Views liefern gegen Bounce, Autoreply, frische Meldung, Paywall, `mailto:` und n=1 die erwarteten Zahlen.
 
 - [ ] **Step 6: Commit**
 
@@ -3293,7 +3293,7 @@ export function removeDomain(db: Db, outletId: string, domain: string): boolean 
 pnpm vitest run packages/api/src/repo/outlets.test.ts
 ```
 
-Erwartet: 10 Tests grün.
+Erwartet: 9 Tests grün.
 
 - [ ] **Step 5: Commit**
 
@@ -3701,7 +3701,7 @@ export const errorTypeUpdateSchema = errorTypeInputSchema.omit({ key: true });
 pnpm vitest run packages/shared/src/schemas.test.ts
 ```
 
-Erwartet: 10 Tests grün.
+Erwartet: 9 Tests grün.
 
 - [ ] **Step 5: Commit**
 
@@ -4107,7 +4107,7 @@ export async function createCorrection(
 pnpm vitest run packages/api/src/repo/corrections.test.ts
 ```
 
-Erwartet: 10 Tests grün.
+Erwartet: 9 Tests grün.
 
 - [ ] **Step 5: Commit**
 
@@ -5477,7 +5477,7 @@ export function assertNoForbiddenFields(value: unknown, path = "$"): void {
 pnpm vitest run packages/api/src/serialize/public.test.ts
 ```
 
-Erwartet: 10 Tests grün.
+Erwartet: 9 Tests grün.
 
 - [ ] **Step 5: Commit**
 
