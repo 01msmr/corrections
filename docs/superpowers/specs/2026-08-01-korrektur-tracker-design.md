@@ -459,6 +459,23 @@ Review-Queue; die Bestätigung ist manuell (`verification='manual'`). Auf einer
 Cron: Tag 1, 3, 7, 30 und 90 nach `sent_at`. `robots.txt` respektieren, höchstens ein
 Request pro Domain und Minute, klarer User-Agent mit Kontakt-URL.
 
+### 8.4 Bibliotheken statt Eigenbau
+
+Für P5 sind die Bausteine vorgegeben, damit dort nichts nachgebaut wird, was es fertig
+gibt:
+
+| Aufgabe | Bibliothek | Warum nicht selbst |
+|---|---|---|
+| Fundstelle über `prefix`/`exact`/`suffix` wiederfinden | **`dom-anchor-text-quote`** (Hypothes.is) oder **`@apache-annotator/dom`** | Referenzimplementierung des W3C-Selektors, jahrelang gegen echte Webseiten gehärtet |
+| unscharfe Stufe der Kaskade | **`diff-match-patch`** | Bitap-Matching mit Toleranzsteuerung; Eigenbau wäre aufwendig und schwer zu prüfen |
+| `robots.txt` auswerten | **`robots-parser`** | Das Format hat mehr Sonderfälle, als es aussieht |
+| ein Request pro Domain und Minute | **`bottleneck`** oder **`p-queue`** | Warteschlange mit Schlüssel-Gruppierung, fertig und getestet |
+
+Bewusst **nicht** durch Bibliotheken ersetzt: `normalizeText` (die verfügbaren
+Faltungs-Pakete sind zu aggressiv und zerstören Umlaute) und `wilsonInterval` (die
+vorhandenen Pakete sind winzig und unwartet; zwölf an einem Literaturwert verankerte
+Zeilen sind vertrauenswürdiger).
+
 ---
 
 ## 9. Kennzahlen
