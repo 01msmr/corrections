@@ -14,6 +14,8 @@ export interface PublicCorrection {
   outletName: string;
   errorTypeLabel: string;
   severity: number;
+  /** Kanonisierte URL (`articleUrlCanon`) — die rohe Eingabe kann Tracking-Parameter
+   *  oder personalisierte Tokens (z. B. Gift-Article-Links) enthalten. */
   articleUrl: string;
   headline: string | null;
   quoteBefore: string;
@@ -40,7 +42,7 @@ export function toPublicCorrection(
     outletName,
     errorTypeLabel,
     severity: row.severity,
-    articleUrl: row.articleUrl,
+    articleUrl: row.articleUrlCanon,
     headline: row.headline,
     quoteBefore: row.quoteBefore,
     suggestionAfter: row.suggestionAfter,

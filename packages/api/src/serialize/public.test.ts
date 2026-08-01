@@ -12,7 +12,7 @@ const ROW = {
   idempotencyKey: "abcdef0123456789",
   createdAt: 1_800_000_000,
   dispatchMode: "smtp" as const,
-  articleUrl: "https://beispiel-zeitung.de/a",
+  articleUrl: "https://beispiel-zeitung.de/a?utm_source=newsletter&utm_medium=mail",
   articleUrlCanon: "https://beispiel-zeitung.de/a",
   outletId: "o1",
   headline: "Fahrgastzahlen steigen deutlich",
@@ -74,6 +74,12 @@ describe("toPublicCorrection", () => {
 
   it("übersteht den Wächter", () => {
     expect(() => assertNoForbiddenFields(toPublicCorrection(ROW, "X", "Y"))).not.toThrow();
+  });
+
+  it("veröffentlicht die kanonisierte URL, nicht die rohe", () => {
+    const result = toPublicCorrection(ROW, "Beispiel-Zeitung", "Zahl");
+    expect(result.articleUrl).toBe(ROW.articleUrlCanon);
+    expect(result.articleUrl).not.toContain("utm_source");
   });
 });
 
