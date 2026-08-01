@@ -62,6 +62,32 @@ describe("Adminoberfläche Redaktionen", () => {
     expect(listOutlets(db)).toHaveLength(0);
   });
 
+  it("behält bei fehlgeschlagener Validierung die getippten Werte und den Rückweg", async () => {
+    // Reproduziert den vom Reviewer beschriebenen Fall: aus der Erfassung kommend
+    // ("Redaktion jetzt anlegen") einen Tippfehler in der E-Mail-Adresse gemacht --
+    // die Route back-Verbindung zur halb ausgefüllten Meldung darf nicht verloren gehen.
+    const zurueck = "/neu?url=https%3A%2F%2Fneue-zeitung.de%2Fa&text=Zitat";
+    const res = await post("/admin/redaktionen", {
+      name: "Neue Zeitung",
+      primaryDomain: "neue-zeitung.de",
+      publisher: "Neue Verlag",
+      country: "DE",
+      contactEmails: "keine-adresse",
+      notes: "Wichtige Notiz",
+      zurueck,
+    });
+    expect(res.status).toBe(400);
+    const html = await res.text();
+    expect(html).toContain('value="Neue Zeitung"');
+    expect(html).toContain('value="neue-zeitung.de"');
+    expect(html).toContain('value="Neue Verlag"');
+    expect(html).toContain('value="DE"');
+    expect(html).toContain('value="keine-adresse"');
+    expect(html).toContain("Wichtige Notiz");
+    expect(html).toContain(`name="zurueck" value="${zurueck.replaceAll("&", "&amp;")}"`);
+    expect(listOutlets(db)).toHaveLength(0);
+  });
+
   it("übernimmt eine vorgegebene Domain und leitet danach zurück", async () => {
     const zurueck = "/neu?url=https%3A%2F%2Fneue-zeitung.de%2Fa&text=Zitat";
     const html = await (

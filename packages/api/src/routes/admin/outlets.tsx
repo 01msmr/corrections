@@ -8,7 +8,7 @@ import {
   removeOutlet,
   updateOutlet,
 } from "../../repo/outlets.js";
-import { OutletEdit, OutletList } from "../../views/outlets.js";
+import { OutletEdit, OutletList, type OutletFormValues } from "../../views/outlets.js";
 
 const BASE = "/admin/redaktionen";
 
@@ -43,6 +43,23 @@ function parseEmails(raw: unknown): string[] {
     .filter((value) => value.length > 0);
 }
 
+function stringFeld(raw: unknown): string | undefined {
+  return typeof raw === "string" ? raw : undefined;
+}
+
+/** Baut die Formularwerte aus dem rohen Body, damit eine fehlgeschlagene
+ *  Validierung die Eingabe zurueckgibt statt sie zu verwerfen. */
+function eingabeAusRoh(raw: Record<string, unknown>): OutletFormValues {
+  return {
+    name: stringFeld(raw["name"]),
+    primaryDomain: stringFeld(raw["primaryDomain"]),
+    publisher: stringFeld(raw["publisher"]),
+    country: stringFeld(raw["country"]),
+    contactEmails: stringFeld(raw["contactEmails"]),
+    notes: stringFeld(raw["notes"]),
+  };
+}
+
 export function outletAdminRoutes(db: Db, now: () => number): Hono {
   const app = new Hono();
 
@@ -65,17 +82,22 @@ export function outletAdminRoutes(db: Db, now: () => number): Hono {
 
   app.post(BASE, async (c) => {
     const raw = await c.req.parseBody();
+    const zurueck = sicherereRueckweg(
+      typeof raw["zurueck"] === "string" ? raw["zurueck"] : undefined,
+    );
     const parsed = outletInputSchema.safeParse({ ...raw, contactEmails: parseEmails(raw["contactEmails"]) });
     if (!parsed.success) {
       return c.html(
-        <OutletList outlets={listOutlets(db)} fehler={parsed.error.issues[0]?.message ?? "Eingabe ungültig"} />,
+        <OutletList
+          outlets={listOutlets(db)}
+          fehler={parsed.error.issues[0]?.message ?? "Eingabe ungültig"}
+          eingabe={eingabeAusRoh(raw)}
+          zurueck={zurueck}
+        />,
         400,
       );
     }
     createOutlet(db, parsed.data, now());
-    const zurueck = sicherereRueckweg(
-      typeof raw["zurueck"] === "string" ? raw["zurueck"] : undefined,
-    );
     return c.redirect(zurueck ?? `${BASE}?hinweis=Angelegt`, 302);
   });
 

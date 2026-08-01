@@ -2,35 +2,64 @@ import type { FC } from "hono/jsx";
 import type { OutletRecord } from "../repo/outlets.js";
 import { Layout } from "./layout.js";
 
-const Felder: FC<{ outlet?: OutletRecord | undefined; vorgabeDomain?: string | undefined }> = ({
-  outlet,
-  vorgabeDomain,
-}) => (
+/**
+ * Roh eingegebene Formularwerte, um sie nach einem fehlgeschlagenen Validieren
+ * unveraendert zurueckzugeben — statt sie stillschweigend zu verwerfen (§Formular-
+ * Grundsatz, siehe CaptureForm-Pfad in routes/capture.tsx für dasselbe Muster).
+ */
+export interface OutletFormValues {
+  name?: string | undefined;
+  primaryDomain?: string | undefined;
+  publisher?: string | undefined;
+  country?: string | undefined;
+  contactEmails?: string | undefined;
+  notes?: string | undefined;
+}
+
+const Felder: FC<{
+  outlet?: OutletRecord | undefined;
+  vorgabeDomain?: string | undefined;
+  eingabe?: OutletFormValues | undefined;
+}> = ({ outlet, vorgabeDomain, eingabe }) => (
   <>
     <label for="name">Name</label>
-    <input id="name" name="name" required value={outlet?.name ?? vorgabeDomain ?? ""} />
+    <input
+      id="name"
+      name="name"
+      required
+      value={eingabe?.name ?? outlet?.name ?? vorgabeDomain ?? ""}
+    />
 
     <label for="primaryDomain">Hauptdomain</label>
     <input
       id="primaryDomain"
       name="primaryDomain"
       required
-      value={outlet?.primaryDomain ?? vorgabeDomain ?? ""}
+      value={eingabe?.primaryDomain ?? outlet?.primaryDomain ?? vorgabeDomain ?? ""}
     />
 
     <label for="publisher">Verlag</label>
-    <input id="publisher" name="publisher" value={outlet?.publisher ?? ""} />
+    <input id="publisher" name="publisher" value={eingabe?.publisher ?? outlet?.publisher ?? ""} />
 
     <label for="country">Land (zwei Buchstaben)</label>
-    <input id="country" name="country" maxlength={2} value={outlet?.country ?? ""} />
+    <input
+      id="country"
+      name="country"
+      maxlength={2}
+      value={eingabe?.country ?? outlet?.country ?? ""}
+    />
 
     <label for="contactEmails">
       Kontaktadressen <span class="zaehler">kommagetrennt, erste ist Standardempfänger</span>
     </label>
-    <input id="contactEmails" name="contactEmails" value={(outlet?.contactEmails ?? []).join(", ")} />
+    <input
+      id="contactEmails"
+      name="contactEmails"
+      value={eingabe?.contactEmails ?? (outlet?.contactEmails ?? []).join(", ")}
+    />
 
     <label for="notes">Notizen</label>
-    <textarea id="notes" name="notes">{outlet?.notes ?? ""}</textarea>
+    <textarea id="notes" name="notes">{eingabe?.notes ?? outlet?.notes ?? ""}</textarea>
   </>
 );
 
@@ -41,7 +70,9 @@ export const OutletList: FC<{
   /** Vom Erfassungsformular durchgereicht, wenn dort eine Redaktion fehlte. */
   vorgabeDomain?: string | undefined;
   zurueck?: string | undefined;
-}> = ({ outlets, hinweis, fehler, vorgabeDomain, zurueck }) => (
+  /** Nach fehlgeschlagener Validierung: die getippten Werte, nicht verworfen. */
+  eingabe?: OutletFormValues | undefined;
+}> = ({ outlets, hinweis, fehler, vorgabeDomain, zurueck, eingabe }) => (
   <Layout title="Redaktionen">
     {hinweis ? <p class="hinweis">{hinweis}</p> : null}
     {fehler ? <p class="hinweis">{fehler}</p> : null}
@@ -82,7 +113,7 @@ export const OutletList: FC<{
     ) : null}
     <form method="post" action="/admin/redaktionen">
       {zurueck ? <input type="hidden" name="zurueck" value={zurueck} /> : null}
-      <Felder vorgabeDomain={vorgabeDomain} />
+      <Felder vorgabeDomain={vorgabeDomain} eingabe={eingabe} />
       <button type="submit">Anlegen</button>
     </form>
   </Layout>
