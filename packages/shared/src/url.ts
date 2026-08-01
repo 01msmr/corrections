@@ -8,17 +8,20 @@ const TRACKING_PARAMS = [
   /^utm_/i,
   /^pk_/i,
   /^at_/i,
-  "fbclid",
-  "gclid",
-  "igshid",
-  "mc_cid",
-  "mc_eid",
-  "msclkid",
-  "ref",
-  "ref_src",
-  "wt_mc",
-  "wt_zmc",
-  "xtor",
+  // Durchgaengig als Regex mit i-Flag: normale Zeichenketten vergleicht
+  // normalize-url case-sensitiv, dann bliebe "?FBCLID=1" stehen und derselbe
+  // Artikel bekaeme je nach Schreibweise zwei verschiedene Dedupe-Schluessel.
+  /^fbclid$/i,
+  /^gclid$/i,
+  /^igshid$/i,
+  /^mc_cid$/i,
+  /^mc_eid$/i,
+  /^msclkid$/i,
+  /^ref$/i,
+  /^ref_src$/i,
+  /^wt_mc$/i,
+  /^wt_zmc$/i,
+  /^xtor$/i,
 ];
 
 export function canonicalizeUrl(raw: string): { canonical: string; host: string } | null {

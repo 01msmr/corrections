@@ -18,6 +18,15 @@ describe("canonicalizeUrl", () => {
     );
   });
 
+  it("entfernt Tracking-Parameter unabhängig von der Schreibweise", () => {
+    expect(canonicalizeUrl("https://example.de/x?FBCLID=1&id=2")?.canonical).toBe(
+      "https://example.de/x?id=2",
+    );
+    expect(canonicalizeUrl("https://example.de/x?UTM_Source=a&id=2")?.canonical).toBe(
+      "https://example.de/x?id=2",
+    );
+  });
+
   it("sortiert verbleibende Parameter stabil", () => {
     expect(canonicalizeUrl("https://example.de/a?b=2&a=1")?.canonical).toBe(
       "https://example.de/a?a=1&b=2",
