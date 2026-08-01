@@ -174,14 +174,22 @@ Regeln:
 
 ```
 outlets
-  id, name, domain (unique), publisher, country, notes
+  id, name, primary_domain, publisher, country, notes
   contact_emails (json)            ← intern, nie öffentlich; Rollenadressen bevorzugt
+  archived (bool)
+
+outlet_domains
+  id, outlet_id fk, domain (unique)
+
+error_types
+  id, key (unique, unveränderlich), label, description
+  sort_order, archived (bool), created_at
 
 corrections
   id, ref (unique), idempotency_key (unique)
   created_at, dispatch_mode ('smtp' | 'mailto')
   article_url, article_url_canon, outlet_id, headline, published_at
-  error_type, severity (1..3)
+  error_type_id fk, severity (1..3)
   quote_before (≤200 Zeichen, wortgleich)
   quote_prefix, quote_suffix, quote_position_hint
   anchor_quality ('exact' | 'context' | 'none')
@@ -209,16 +217,42 @@ imap_cursor
   folder, uidvalidity, last_uid
 ```
 
-`error_type`: `rechtschreibung | grammatik | zeichensetzung | zahl | datum | name |
-faktenfehler | falschzitat | uebersetzung | bild | ueberschrift_deckt_nicht | sonstiges`
-
 `quote_state`: `unchanged | changed_as_suggested | changed_otherwise | passage_gone |
 unreachable`
 
 **Indizes:** `corrections(ref)` UNIQUE, `corrections(idempotency_key)` UNIQUE,
-`corrections(outlet_id, sent_at)`,
+`corrections(outlet_id, sent_at)`, `corrections(error_type_id)`,
 `corrections(dispatch_status)`, `corrections(article_url_canon)`,
+`outlet_domains(domain)` UNIQUE, `error_types(key)` UNIQUE,
 `response_events(correction_id)`, `article_checks(correction_id, checked_at)`.
+
+### 5.0 Stammdaten sind Daten, keine Enums
+
+Redaktionen und Fehlerarten werden über Admin-Formulare gepflegt (Abschnitt 10).
+Daraus folgt Dreierlei:
+
+**`error_type` ist eine Tabelle, kein Enum.** Seed mit den zwölf Ausgangswerten:
+`rechtschreibung`, `grammatik`, `zeichensetzung`, `zahl`, `datum`, `name`,
+`faktenfehler`, `falschzitat`, `uebersetzung`, `bild`, `ueberschrift_deckt_nicht`,
+`sonstiges`. Der `key` ist nach der Anlage **unveränderlich**, weil er im Meta-Block
+versendeter Mails steht (`typ=zahl`) und dort nicht nachträglich korrigierbar ist.
+`label`, `description` und `sort_order` sind frei änderbar.
+
+**Kein Hard-Delete von referenzierten Stammdaten.** Wird eine Fehlerart oder ein
+Outlet gelöscht, das in `corrections` vorkommt, wird `archived = true` gesetzt: der
+Eintrag verschwindet aus allen Auswahllisten, bleibt aber in Historie, Tabelle und
+Kennzahlen erhalten. Ein echtes `DELETE` ist nur zulässig, wenn keine Referenzen
+existieren — typischerweise bei einem versehentlich automatisch angelegten Outlet.
+Rückwirkend Datensätze verschwinden zu lassen, würde jede veröffentlichte Zahl
+unbemerkt verändern.
+
+**Ein Outlet, mehrere Domains.** Die automatische Anlage bei unbekannter Domain
+(Abschnitt 6) erzeugt zwangsläufig Dubletten — `sz-magazin.sueddeutsche.de` neben
+`sueddeutsche.de`. Statt einer Merge-Funktion löst das `outlet_domains`: die Auflösung
+läuft über diese Tabelle, ein Outlet kann beliebig viele Domains führen. Die
+Review-Queue für neu angelegte Outlets bietet deshalb „als weitere Domain zu
+bestehendem Outlet zuordnen" an; das leere Outlet wird dabei hart gelöscht, weil es
+noch keine Referenzen hat.
 
 ### 5.1 Zwei Achsen statt eines Status
 
@@ -290,7 +324,7 @@ Subject: Korrekturhinweis: <Kurzbeschreibung> [K7QW3]
 --
 Diese Meldung wurde über <host> erstellt.
 [korrektur-meta]
-v=2; ref=K7QW3; url=<canon>; typ=<error_type>; sev=<1..3>
+v=2; ref=K7QW3; url=<canon>; typ=<error_types.key>; sev=<1..3>
 [/korrektur-meta]
 ```
 
@@ -479,8 +513,14 @@ belegten Versand.
   n stets sichtbar, Quoten unter der Schwelle unterdrückt.
 - **Detailansicht** einer Meldung: Artikel-Link, Zitat, Vorschlag, Status, Verlauf der
   Artikel-Checks. **Kein** Antwortwortlaut, **keine** Adressen.
+- **Admin-Stammdaten** hinter Auth:
+  - **Redaktionen**: anlegen, bearbeiten, archivieren; Name, Verlag, Land, Notizen,
+    Kontaktadressen (mehrere), Domains (mehrere). Löschen nur ohne Referenzen.
+  - **Fehlerarten**: anlegen, bearbeiten, archivieren, Reihenfolge ändern. `key` nach
+    Anlage gesperrt (siehe 5.0).
 - **Admin-Review-Queues** hinter Auth: nicht zugeordnete Antworten, automatische
-  Änderungsbefunde, unbekannte Outlets, Backfill-Kandidaten.
+  Änderungsbefunde, neu angelegte Outlets (mit „zu bestehendem Outlet zuordnen"),
+  Backfill-Kandidaten.
 - Serverseitige Pagination. Keine Virtualisierung — bei realistischen Bestandsgrößen
   spekulativ.
 
@@ -583,12 +623,12 @@ Inhalte.
 | | Phase | Abnahme |
 |---|---|---|
 | **P0** | Monorepo (`shared`/`api`/`web`), TS strict, Vitest, ESLint, ein Dockerfile, compose + Traefik, `.env.example` | `pnpm build && pnpm test` grün, `docker compose up` → `/healthz` = 200 |
-| **P1** | Drizzle-Schema, Migrationen, URL-Kanonisierung, Text-Normalisierung, Zod-Schemas, Kennzahlen-Konstanten, SQL-Views, Seed mit 3 Outlets | Migration idempotent; Views liefern gegen den Fixture-Datensatz aus 9.5 die erwarteten Zahlen |
+| **P1** | Drizzle-Schema, Migrationen, URL-Kanonisierung, Text-Normalisierung, Zod-Schemas, Kennzahlen-Konstanten, SQL-Views, Seed (12 Fehlerarten, 3 Outlets) | Migration idempotent; Views liefern gegen den Fixture-Datensatz aus 9.5 die erwarteten Zahlen |
 | **P2** | **Erfassung + Versand.** Formular `/neu` hinter Auth, Artikel-Fetch + Extraktion + Anker, Outlet-Auflösung, `ref`-Vergabe, Mail-Bau, SMTP-Relay, Meta-Block, Kurzbefehl-Launcher | Meldung vom iPhone erfasst → Mail an Testadresse angekommen, Betreff trägt `[K…]`, Record `sent` mit Ankern; zweimal derselbe Idempotency-Key ⇒ ein Record |
 | **P3** | IMAP-Antworten: `imapflow`, Cursor, Zuordnungskaskade, Autoreply-/Bounce-Klassifikation; Parser als reine Funktionen | Dry-Run read-only meldet n Meldungen / m Antworten; Schreiblauf ohne Duplikate; Autoreply erhöht die Antwortquote nicht |
 | **P4** | Altbestand: Korpus-Export, Vorlagen-Parser, Konfidenz-Scoring, Review-Queue, `References`-Matching der Altantworten | Bestand durchlaufen; Kennzahlen decken rückwirkend Jahre ab |
 | **P5** | Artikel-Checks per Cron: Tag 1/3/7/30/90, `robots.txt`, ein Request pro Domain und Minute, Anker-Kaskade | Lokal servierte HTML-Varianten → alle fünf `quote_state`-Werte korrekt erkannt |
-| **P6** | Öffentliches Frontend nach Abschnitt 10, Admin-Review-Queues | Sperrlistentest der Public-Serializer grün, Lighthouse ≥ 90 |
+| **P6** | Öffentliches Frontend nach Abschnitt 10, Admin-Stammdatenpflege (Redaktionen, Fehlerarten), Admin-Review-Queues | Sperrlistentest der Public-Serializer grün; Redaktion und Fehlerart über das Formular anlegbar, änderbar, archivierbar; Löschversuch bei Referenzen archiviert statt zu löschen; Lighthouse ≥ 90 |
 | **P7** | `/anleitung`: Methodik, „Was diese Zahlen nicht sagen", Einrichtung, Fehlerbehebung. Impressum, Datenschutzerklärung | — |
 
 Der Parser war im Ursprungsplan P2 und ist jetzt P4: Er war dort der Kern, weil der
@@ -651,6 +691,8 @@ Plus-Adressierung beim Provider wird **nicht** benötigt (Abschnitt 7).
 | Dauerbetriebs-Parsing des Gesendet-Ordners | nur einmalig in P4 | dito |
 | `ref = sha256(url + ISO-Minute)`, 8 Hex | Server vergibt `K` + 5 Zeichen Base32 | Kollision bei zwei Fehlern pro Minute; Drift beim Nachrechnen; 8 Zeichen unnötig lang |
 | VERP-Tag im `Reply-To` als Zuordnungsstufe | ersatzlos gestrichen | Greift ausgerechnet bei Ticketsystemen unzuverlässig; zuverlässig nur im `From`, das widerspricht 3.1 |
+| `error_type` als festes Enum | Tabelle `error_types` | Soll im Formular pflegbar sein; `key` bleibt gesperrt, weil er in versendeten Mails steht |
+| `outlets.domain` als einziges Feld | Tabelle `outlet_domains` | Automatische Anlage erzeugt zwangsläufig Dubletten; ersetzt eine Merge-Funktion |
 | Bearer-Token im Kurzbefehl | Browser-Session hinter Auth | Klartext-Geheimnis auf Endgeräten, Rotationsproblem |
 | Outlet-Wörterbuch im Kurzbefehl | Outlet-Tabelle in der Datenbank | Adressänderung erforderte neue Kurzbefehl-Version |
 | Drei Container (api/worker/web) | ein Container, ein Prozess | Zwei Schreiber auf einer SQLite-Datei; ein Nutzer |
