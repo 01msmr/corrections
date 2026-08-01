@@ -1,6 +1,8 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import type { Env } from "../env.js";
 
+const IMPLICIT_TLS_PORT = 465;
+
 export interface OutgoingMail {
   to: string;
   subject: string;
@@ -13,7 +15,11 @@ export interface Mailer {
   send(message: OutgoingMail): Promise<SendResult>;
 }
 
-function wrap(transport: Transporter, from: string): Mailer {
+interface TransportInfo {
+  messageId: string;
+}
+
+function wrap(transport: Transporter<TransportInfo>, from: string): Mailer {
   return {
     async send(message: OutgoingMail): Promise<SendResult> {
       if (message.to.trim().length === 0) {
@@ -39,8 +45,8 @@ export function createSmtpMailer(env: Env): Mailer {
   const transport = nodemailer.createTransport({
     host: env.SMTP_HOST,
     port: env.SMTP_PORT,
-    secure: env.SMTP_PORT === 465,
-    requireTLS: env.SMTP_PORT !== 465,
+    secure: env.SMTP_PORT === IMPLICIT_TLS_PORT,
+    requireTLS: env.SMTP_PORT !== IMPLICIT_TLS_PORT,
     auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD },
   });
   return wrap(transport, env.MAIL_FROM);
