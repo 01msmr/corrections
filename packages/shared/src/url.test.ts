@@ -24,9 +24,9 @@ describe("canonicalizeUrl", () => {
     );
   });
 
-  it("entfernt einen abschließenden Schrägstrich, außer bei der Wurzel", () => {
+  it("entfernt einen abschließenden Schrägstrich", () => {
     expect(canonicalizeUrl("https://example.de/pfad/")?.canonical).toBe("https://example.de/pfad");
-    expect(canonicalizeUrl("https://example.de/")?.canonical).toBe("https://example.de/");
+    expect(canonicalizeUrl("https://example.de/")?.canonical).toBe("https://example.de");
   });
 
   it("behält Subdomains, die kein www sind", () => {
