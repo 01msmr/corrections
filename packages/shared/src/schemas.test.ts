@@ -28,6 +28,10 @@ describe("newCorrectionSchema", () => {
 
   it("weist eine unzulässige Schwere ab", () => {
     expect(newCorrectionSchema.safeParse({ ...VALID, severity: 4 }).success).toBe(false);
+    expect(newCorrectionSchema.safeParse({ ...VALID, severity: 0 }).success).toBe(false);
+    expect(newCorrectionSchema.safeParse({ ...VALID, severity: "2.5" }).success).toBe(false);
+    // Ohne die union-Stufe waere true zu 1 geworden.
+    expect(newCorrectionSchema.safeParse({ ...VALID, severity: true }).success).toBe(false);
   });
 
   it("weist eine ungültige URL ab", () => {
@@ -49,6 +53,22 @@ describe("outletInputSchema", () => {
     });
     expect(parsed.primaryDomain).toBe("beispiel-zeitung.de");
     expect(parsed.contactEmails).toHaveLength(2);
+  });
+
+  it("prüft die Domainlänge nach dem Entfernen von www.", () => {
+    const kurz = outletInputSchema.safeParse({
+      name: "X",
+      primaryDomain: "www.ab",
+      contactEmails: [],
+    });
+    expect(kurz.success).toBe(false);
+
+    const lang = outletInputSchema.parse({
+      name: "X",
+      primaryDomain: `www.${"a".repeat(250)}`,
+      contactEmails: [],
+    });
+    expect(lang.primaryDomain).toHaveLength(250);
   });
 
   it("weist eine ungültige Adresse ab", () => {

@@ -19,7 +19,9 @@ export const newCorrectionSchema = z.object({
   articleUrl: z.string().url(),
   headline: nullableTrimmed(300),
   errorTypeKey: z.string().min(1).max(64),
-  severity: z.coerce.number().int().min(1).max(3),
+  // union vor coerce: z.coerce.number() allein wuerde true zu 1 machen und
+  // damit als gueltige Schwere durchgehen lassen.
+  severity: z.union([z.string(), z.number()]).pipe(z.coerce.number().int().min(1).max(3)),
   quoteBefore: z.string().trim().min(1).max(QUOTE_MAX_LENGTH),
   suggestionAfter: z.string().trim().min(1).max(500),
   comment: nullableTrimmed(1000),
@@ -30,12 +32,15 @@ export type NewCorrectionInput = z.infer<typeof newCorrectionSchema>;
 
 export const outletInputSchema = z.object({
   name: z.string().trim().min(1).max(200),
+  // Erst transformieren, dann pruefen: laufen die Laengenpruefungen vorher,
+  // besteht "www.ab" die Mindestlaenge mit sechs Zeichen und landet danach als
+  // zweizeichige Domain in der Datenbank. Umgekehrt wuerde eine 250 Zeichen
+  // lange Domain mit www.-Praefix faelschlich an der Obergrenze scheitern.
   primaryDomain: z
     .string()
     .trim()
-    .min(3)
-    .max(253)
-    .transform((v) => v.toLowerCase().replace(/^www\./, "")),
+    .transform((v) => v.toLowerCase().replace(/^www\./, ""))
+    .pipe(z.string().min(3).max(253)),
   publisher: nullableTrimmed(200),
   country: nullableTrimmed(2),
   notes: nullableTrimmed(2000),

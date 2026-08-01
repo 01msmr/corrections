@@ -3575,6 +3575,10 @@ describe("newCorrectionSchema", () => {
 
   it("weist eine unzulässige Schwere ab", () => {
     expect(newCorrectionSchema.safeParse({ ...VALID, severity: 4 }).success).toBe(false);
+    expect(newCorrectionSchema.safeParse({ ...VALID, severity: 0 }).success).toBe(false);
+    expect(newCorrectionSchema.safeParse({ ...VALID, severity: "2.5" }).success).toBe(false);
+    // Ohne die union-Stufe waere true zu 1 geworden.
+    expect(newCorrectionSchema.safeParse({ ...VALID, severity: true }).success).toBe(false);
   });
 
   it("weist eine ungültige URL ab", () => {
@@ -3596,6 +3600,22 @@ describe("outletInputSchema", () => {
     });
     expect(parsed.primaryDomain).toBe("beispiel-zeitung.de");
     expect(parsed.contactEmails).toHaveLength(2);
+  });
+
+  it("prüft die Domainlänge nach dem Entfernen von www.", () => {
+    const kurz = outletInputSchema.safeParse({
+      name: "X",
+      primaryDomain: "www.ab",
+      contactEmails: [],
+    });
+    expect(kurz.success).toBe(false);
+
+    const lang = outletInputSchema.parse({
+      name: "X",
+      primaryDomain: `www.${"a".repeat(250)}`,
+      contactEmails: [],
+    });
+    expect(lang.primaryDomain).toHaveLength(250);
   });
 
   it("weist eine ungültige Adresse ab", () => {
@@ -3650,7 +3670,9 @@ export const newCorrectionSchema = z.object({
   articleUrl: z.string().url(),
   headline: nullableTrimmed(300),
   errorTypeKey: z.string().min(1).max(64),
-  severity: z.coerce.number().int().min(1).max(3),
+  // union vor coerce: z.coerce.number() allein wuerde true zu 1 machen und
+  // damit als gueltige Schwere durchgehen lassen.
+  severity: z.union([z.string(), z.number()]).pipe(z.coerce.number().int().min(1).max(3)),
   quoteBefore: z.string().trim().min(1).max(QUOTE_MAX_LENGTH),
   suggestionAfter: z.string().trim().min(1).max(500),
   comment: nullableTrimmed(1000),
@@ -3661,12 +3683,15 @@ export type NewCorrectionInput = z.infer<typeof newCorrectionSchema>;
 
 export const outletInputSchema = z.object({
   name: z.string().trim().min(1).max(200),
+  // Erst transformieren, dann pruefen: laufen die Laengenpruefungen vorher,
+  // besteht "www.ab" die Mindestlaenge mit sechs Zeichen und landet danach als
+  // zweizeichige Domain in der Datenbank. Umgekehrt wuerde eine 250 Zeichen
+  // lange Domain mit www.-Praefix faelschlich an der Obergrenze scheitern.
   primaryDomain: z
     .string()
     .trim()
-    .min(3)
-    .max(253)
-    .transform((v) => v.toLowerCase().replace(/^www\./, "")),
+    .transform((v) => v.toLowerCase().replace(/^www\./, ""))
+    .pipe(z.string().min(3).max(253)),
   publisher: nullableTrimmed(200),
   country: nullableTrimmed(2),
   notes: nullableTrimmed(2000),
