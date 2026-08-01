@@ -26,8 +26,16 @@ describe("normalizeText", () => {
     expect(normalizeText("ﬁnal")).toBe("final");
   });
 
-  it("ist idempotent", () => {
-    const once = normalizeText("„Test“ –  mit Raum");
-    expect(normalizeText(once)).toBe(once);
+  it("faengt auch Zeichen ab, die erst NFKC erzeugt", () => {
+    expect(normalizeText("12\u2034 Winkel")).toBe("12''' Winkel");
+    expect(normalizeText("a\ufe31b")).toBe("a-b");
+  });
+
+  it("ist idempotent, auch fuer Zeichen die NFKC erst zerlegt", () => {
+    const eingaben = ["„Test“ –  mit Raum", "5\u2033 Zoll", "12\u2034 Winkel", "a\ufe31b"];
+    for (const input of eingaben) {
+      const once = normalizeText(input);
+      expect(normalizeText(once)).toBe(once);
+    }
   });
 });
