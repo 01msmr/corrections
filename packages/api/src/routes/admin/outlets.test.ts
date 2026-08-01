@@ -85,6 +85,32 @@ describe("Adminoberfläche Redaktionen", () => {
     expect(res.headers.get("location")).toBe(zurueck);
   });
 
+  it("rendert einen fremden Rückweg nicht in das versteckte Feld", async () => {
+    // Die Absicherung muss auf beiden Wegen greifen: hier beim Rendern,
+    // im Test darunter beim Weiterleiten. Geprueft wird gezielt das
+    // versteckte Feld (nicht die ganze Seite): "/admin/redaktionen" taucht
+    // z. B. im Nav-Link und im Formular-"action" der Seite ohnehin immer auf,
+    // unabhaengig vom Rueckweg — ein Volltextvergleich waere fuer diesen Wert
+    // nie erfuellbar und truege eine Pruefung der Absicherung nur vor.
+    for (const boese of ["https://boese.example/", "//boese.example/", "/admin/redaktionen"]) {
+      const html = await (
+        await app().request(`/admin/redaktionen?zurueck=${encodeURIComponent(boese)}`)
+      ).text();
+      expect(html).not.toContain(`name="zurueck" value="${boese}"`);
+    }
+  });
+
+  it("weist einen Rückweg mit Steuerzeichen ab, statt abzustürzen", async () => {
+    const res = await post("/admin/redaktionen", {
+      name: "X",
+      primaryDomain: "steuerzeichen.de",
+      contactEmails: "",
+      zurueck: "/neu?a=1\r\nSet-Cookie: evil=1",
+    });
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toContain("/admin/redaktionen?hinweis=");
+  });
+
   it("weist einen fremden Rückweg ab", async () => {
     const res = await post("/admin/redaktionen", {
       name: "X",

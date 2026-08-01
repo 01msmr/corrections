@@ -12,13 +12,27 @@ import { OutletEdit, OutletList } from "../../views/outlets.js";
 
 const BASE = "/admin/redaktionen";
 
+/** Zeichencode statt Regex, damit kein Steuerzeichen-Literal im Quelltext steht. */
+function enthaeltSteuerzeichen(wert: string): boolean {
+  for (let i = 0; i < wert.length; i++) {
+    const code = wert.charCodeAt(i);
+    if (code <= 0x1f || code === 0x7f) return true;
+  }
+  return false;
+}
+
 /**
  * Der Rueckweg kommt aus der Abfrage und darf deshalb nur auf das
  * Erfassungsformular zeigen. Ohne diese Pruefung waere die Route eine offene
  * Weiterleitung — ein praeparierter Link koennte auf eine fremde Seite fuehren.
  */
 function sicherereRueckweg(wert: string | undefined): string | undefined {
-  return wert?.startsWith("/neu?") ? wert : undefined;
+  if (wert === undefined || !wert.startsWith("/neu?")) return undefined;
+  // Steuerzeichen ebenfalls abweisen: ein eingebetteter Zeilenumbruch besteht
+  // die Praefixpruefung, laesst aber das Setzen des Location-Headers mit einer
+  // unbehandelten Ausnahme scheitern — 500 statt sanftem Rueckfall.
+  if (enthaeltSteuerzeichen(wert)) return undefined;
+  return wert;
 }
 
 function parseEmails(raw: unknown): string[] {
