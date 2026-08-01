@@ -1,4 +1,4 @@
-import { outletInputSchema } from "@korrektur/shared";
+import { domainSchema, outletInputSchema } from "@korrektur/shared";
 import { Hono } from "hono";
 import type { Db } from "../../db/client.js";
 import {
@@ -94,8 +94,12 @@ export function outletAdminRoutes(db: Db, now: () => number): Hono {
 
   app.post(`${BASE}/:id/domains`, async (c) => {
     const raw = await c.req.parseBody();
-    const domain = typeof raw["domain"] === "string" ? raw["domain"] : "";
-    const ok = addDomain(db, c.req.param("id"), domain);
+    const parsed = domainSchema.safeParse(raw["domain"]);
+    if (!parsed.success) {
+      const hinweis = "Domain ungueltig";
+      return c.redirect(`${BASE}?hinweis=${encodeURIComponent(hinweis)}`, 302);
+    }
+    const ok = addDomain(db, c.req.param("id"), parsed.data);
     const hinweis = ok ? "Domain ergaenzt" : "Domain gehoert bereits zu einer anderen Redaktion";
     return c.redirect(`${BASE}?hinweis=${encodeURIComponent(hinweis)}`, 302);
   });

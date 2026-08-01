@@ -128,6 +128,27 @@ describe("Adminoberfläche Redaktionen", () => {
     expect(listOutlets(db)[0]?.domains).toContain("magazin.x.de");
   });
 
+  it("normalisiert eine weitere Domain wie das Anlageformular (www. entfernt, getrimmt)", async () => {
+    // Ohne dieselbe Validierung wie outletInputSchema landet "www.zweitdomain.example"
+    // roh in der Datenbank; canonicalizeUrl entfernt www. vor dem Lookup, sodass eine
+    // Meldung von dieser Domain nie auf dieses Outlet aufgelöst haette werden können.
+    const outlet = createOutlet(db, { name: "X", primaryDomain: "x.de", publisher: null, country: null, notes: null, contactEmails: [] }, NOW);
+    const res = await post(`/admin/redaktionen/${outlet.id}/domains`, {
+      domain: "  WWW.Zweitdomain.example  ",
+    });
+    expect(res.status).toBe(302);
+    expect(listOutlets(db)[0]?.domains).toContain("zweitdomain.example");
+    expect(listOutlets(db)[0]?.domains).not.toContain("  WWW.Zweitdomain.example  ");
+  });
+
+  it("weist eine zu kurze/ungültige weitere Domain ab, statt sie zu speichern", async () => {
+    const outlet = createOutlet(db, { name: "X", primaryDomain: "x.de", publisher: null, country: null, notes: null, contactEmails: [] }, NOW);
+    const res = await post(`/admin/redaktionen/${outlet.id}/domains`, { domain: "  ab  " });
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toContain(encodeURIComponent("Domain ungueltig"));
+    expect(listOutlets(db)[0]?.domains).toEqual(["x.de"]);
+  });
+
   it("löscht eine unbenutzte Redaktion", async () => {
     const outlet = createOutlet(db, { name: "X", primaryDomain: "x.de", publisher: null, country: null, notes: null, contactEmails: [] }, NOW);
     await post(`/admin/redaktionen/${outlet.id}/loeschen`, {});

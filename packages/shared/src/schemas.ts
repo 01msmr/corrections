@@ -30,17 +30,24 @@ export const newCorrectionSchema = z.object({
 
 export type NewCorrectionInput = z.infer<typeof newCorrectionSchema>;
 
+// Erst transformieren, dann pruefen: laufen die Laengenpruefungen vorher,
+// besteht "www.ab" die Mindestlaenge mit sechs Zeichen und landet danach als
+// zweizeichige Domain in der Datenbank. Umgekehrt wuerde eine 250 Zeichen
+// lange Domain mit www.-Praefix faelschlich an der Obergrenze scheitern.
+//
+// Eigene, exportierte Schema-Definition statt eines Inline-Felds in
+// outletInputSchema: jeder Ort, an dem eine einzelne Domain entgegengenommen
+// wird (z. B. "weitere Domain ergaenzen"), muss dieselbe Regel durchlaufen.
+// Eine zweite, abweichende Pruefung ist die Ursache, nicht die Loesung.
+export const domainSchema = z
+  .string()
+  .trim()
+  .transform((v) => v.toLowerCase().replace(/^www\./, ""))
+  .pipe(z.string().min(3).max(253));
+
 export const outletInputSchema = z.object({
   name: z.string().trim().min(1).max(200),
-  // Erst transformieren, dann pruefen: laufen die Laengenpruefungen vorher,
-  // besteht "www.ab" die Mindestlaenge mit sechs Zeichen und landet danach als
-  // zweizeichige Domain in der Datenbank. Umgekehrt wuerde eine 250 Zeichen
-  // lange Domain mit www.-Praefix faelschlich an der Obergrenze scheitern.
-  primaryDomain: z
-    .string()
-    .trim()
-    .transform((v) => v.toLowerCase().replace(/^www\./, ""))
-    .pipe(z.string().min(3).max(253)),
+  primaryDomain: domainSchema,
   publisher: nullableTrimmed(200),
   country: nullableTrimmed(2),
   notes: nullableTrimmed(2000),
