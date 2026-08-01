@@ -2,5 +2,7 @@
 .env.local
 node_modules/
 dist/
+build/
 fixtures.local/
 data/
+*.tsbuildinfo

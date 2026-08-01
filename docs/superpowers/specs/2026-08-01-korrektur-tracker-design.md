@@ -143,11 +143,21 @@ wäre still tot, ohne Fehlermeldung. Der Worker läuft kurz, tut seine Arbeit un
 Da nie zwei Prozesse gleichzeitig schreiben (der Worker läuft im Minutentakt, nicht
 dauerhaft), bleibt SQLite im WAL-Modus unproblematisch.
 
-**Persistenz: `node:sqlite` über `drizzle-orm/node-sqlite`.** Der in Node eingebaute
+**Persistenz: `node:sqlite` über `drizzle-orm/node-sqlite`** (exakt gepinnt auf
+`1.0.0-rc.4`; der Treiber existiert erst in der 1.0-Linie, die stabile 0.45.2 kennt
+ihn nicht — Begründung in Task 7 des Plans)**.** Der in Node eingebaute
 Treiber, kein `better-sqlite3`. Entscheidend auf gemanagtem Hosting: Damit hat das
 Projekt **keine einzige native Abhängigkeit**. Nichts wird kompiliert, es braucht
 weder Build-Tools noch passende Prebuilds — beides ist im chroot der Shell ohnehin
 nicht verfügbar. Kein libSQL, die Turso-Infrastruktur wird nicht genutzt.
+
+**Fallstrick des Treibers, zweimal aufgetreten:** `drizzle-orm@1.0.0-rc.4` verpackt
+Datenbankfehler in einen `DrizzleQueryError`, dessen `message` nur „Failed query: …"
+lautet. Die eigentliche SQLite-Meldung — `UNIQUE constraint failed: …` — steht in
+`error.cause`. Wer auf `error.message` prüft, schreibt toten Code: In Task 7 traf es
+eine Testassertion, in Task 18 die Wiederholungsschleife bei Token-Kollisionen. Prüfungen
+auf Constraint-Verletzungen müssen die `cause`-Kette entlanggehen und dabei eng genug
+bleiben, um Fremdschlüssel-Fehler nicht mitzufangen.
 
 **Deployment über GitHub Actions.** Der Workflow baut auf dem Runner — Installieren,
 Übersetzen, Tests, Bündeln — und lädt das fertige Ergebnis per rsync über SSH hoch.
@@ -456,6 +466,23 @@ Review-Queue; die Bestätigung ist manuell (`verification='manual'`). Auf einer
 
 Cron: Tag 1, 3, 7, 30 und 90 nach `sent_at`. `robots.txt` respektieren, höchstens ein
 Request pro Domain und Minute, klarer User-Agent mit Kontakt-URL.
+
+### 8.4 Bibliotheken statt Eigenbau
+
+Für P5 sind die Bausteine vorgegeben, damit dort nichts nachgebaut wird, was es fertig
+gibt:
+
+| Aufgabe | Bibliothek | Warum nicht selbst |
+|---|---|---|
+| Fundstelle über `prefix`/`exact`/`suffix` wiederfinden | **`dom-anchor-text-quote`** (Hypothes.is) oder **`@apache-annotator/dom`** | Referenzimplementierung des W3C-Selektors, jahrelang gegen echte Webseiten gehärtet |
+| unscharfe Stufe der Kaskade | **`diff-match-patch`** | Bitap-Matching mit Toleranzsteuerung; Eigenbau wäre aufwendig und schwer zu prüfen |
+| `robots.txt` auswerten | **`robots-parser`** | Das Format hat mehr Sonderfälle, als es aussieht |
+| ein Request pro Domain und Minute | **`bottleneck`** oder **`p-queue`** | Warteschlange mit Schlüssel-Gruppierung, fertig und getestet |
+
+Bewusst **nicht** durch Bibliotheken ersetzt: `normalizeText` (die verfügbaren
+Faltungs-Pakete sind zu aggressiv und zerstören Umlaute) und `wilsonInterval` (die
+vorhandenen Pakete sind winzig und unwartet; zwölf an einem Literaturwert verankerte
+Zeilen sind vertrauenswürdiger).
 
 ---
 

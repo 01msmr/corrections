@@ -342,7 +342,7 @@ git commit -m "Monorepo-Geruest mit shared-Paket und Kennzahlen-Konstanten"
 
 **Interfaces:**
 - Consumes: `@korrektur/shared`
-- Produces: `createApp(): Hono` aus `packages/api/src/app.ts`; `loadEnv(source?: Record<string, string | undefined>): Env` aus `packages/api/src/env.ts` mit `Env = { PORT: number; DATABASE_PATH: string; ADMIN_USER: string; ADMIN_PASSWORD: string; PUBLIC_BASE_URL: string; SMTP_HOST: string; SMTP_PORT: number; SMTP_USER: string; SMTP_PASSWORD: string; MAIL_FROM: string }`
+- Produces: `createApp(): Hono` aus `packages/api/src/app.ts`; `loadEnv(source?: Record<string, string | undefined>): Env` aus `packages/api/src/env.ts` mit `Env = { PORT: number; DATABASE_PATH: string; MIGRATIONS_DIR: string; ADMIN_USER: string; ADMIN_PASSWORD: string; PUBLIC_BASE_URL: string; SMTP_HOST: string; SMTP_PORT: number; SMTP_USER: string; SMTP_PASSWORD: string; MAIL_FROM: string }`
 
 **Zielumgebung:** netcup Webhosting mit Plesk, Node 26.5, kein Docker, kein Root. Gebaut wird auf dem GitHub-Runner, hochgeladen wird ein fertiges Bündel. Auf dem Server läuft weder npm noch ein Compiler.
 
@@ -428,6 +428,8 @@ import { z } from "zod";
 const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   DATABASE_PATH: z.string().min(1).default("./data/korrektur.db"),
+  /** Explizit, weil das CJS-Buendel kein import.meta.url kennt (Task 7). */
+  MIGRATIONS_DIR: z.string().min(1).default("./packages/api/src/db/migrations"),
   ADMIN_USER: z.string().min(1),
   ADMIN_PASSWORD: z.string().min(8),
   PUBLIC_BASE_URL: z.string().url(),
@@ -543,6 +545,7 @@ tmp/          → für restart.txt
 ```
 PORT=3000
 DATABASE_PATH=./data/korrektur.db
+MIGRATIONS_DIR=./packages/api/src/db/migrations
 PUBLIC_BASE_URL=https://korrekturen.msmr.co
 
 ADMIN_USER=admin
@@ -651,7 +654,7 @@ Vier Secrets werden gebraucht — GitHub → Settings → Secrets and variables 
 1. **Subdomain anlegen**: Plesk → Websites & Domains → Subdomain hinzufügen.
 2. **Deploy-Schlüssel hinterlegen**: lokal `ssh-keygen -t ed25519 -f ~/.ssh/netcup_deploy -N ""`, dann `ssh-copy-id -i ~/.ssh/netcup_deploy.pub BENUTZER@HOST`. Der private Teil wird zum Secret `NETCUP_SSH_KEY`, er verlässt den eigenen Rechner sonst nicht.
 3. **Node.js aktivieren**: Plesk → die Subdomain → Node.js → *Node.js aktivieren*. Anwendungsstamm auf das Subdomain-Verzeichnis, **Anwendungsstartdatei `app.js`**, Anwendungsmodus `production`.
-4. **Umgebungsvariablen** aus `.env.example` dort eintragen, mit den echten Werten.
+4. **Umgebungsvariablen** aus `.env.example` dort eintragen, mit den echten Werten. `MIGRATIONS_DIR` steht auf dem Server auf `./migrations` — der Ordner liegt neben `app.js`. `DATABASE_PATH` zeigt auf einen Pfad ausserhalb von `httpdocs`.
 5. **Cronjob** anlegen: Plesk → Geplante Aufgaben, stündlich, Befehl `/opt/plesk/node/26/bin/node /var/www/vhosts/…/korrekturen.msmr.co/worker.js`. Den genauen Node-Pfad zeigt Plesk in der Node.js-Ansicht an.
 
 - [ ] **Step 11: Deployment prüfen**
@@ -690,6 +693,17 @@ git commit -m "Hono-Server, Passenger-Einstiegspunkte und Deploy-Workflow"
 - Consumes: nichts
 - Produces: `canonicalizeUrl(raw: string): { canonical: string; host: string } | null` aus `@korrektur/shared`
 
+- [ ] **Step 0: Bibliothek statt Eigenbau**
+
+```bash
+pnpm --filter @korrektur/shared add normalize-url
+```
+
+`normalize-url` erledigt www-Strippen, Query-Sortierung, Fragment-Entfernung und
+Tracking-Parameter-Filter und deckt dabei Faelle ab, die man von Hand vergisst:
+IDN, Standard-Ports, protokollrelative URLs. **Nicht** abgedeckt ist die Pruefung —
+`"kein-url"` wird bei ihr zu `http://kein-url`. Der eigene Guard bleibt deshalb davor.
+
 - [ ] **Step 1: Den fehlschlagenden Test schreiben**
 
 `packages/shared/src/url.test.ts`:
@@ -715,15 +729,24 @@ describe("canonicalizeUrl", () => {
     );
   });
 
+  it("entfernt Tracking-Parameter unabhängig von der Schreibweise", () => {
+    expect(canonicalizeUrl("https://example.de/x?FBCLID=1&id=2")?.canonical).toBe(
+      "https://example.de/x?id=2",
+    );
+    expect(canonicalizeUrl("https://example.de/x?UTM_Source=a&id=2")?.canonical).toBe(
+      "https://example.de/x?id=2",
+    );
+  });
+
   it("sortiert verbleibende Parameter stabil", () => {
     expect(canonicalizeUrl("https://example.de/a?b=2&a=1")?.canonical).toBe(
       "https://example.de/a?a=1&b=2",
     );
   });
 
-  it("entfernt einen abschließenden Schrägstrich, außer bei der Wurzel", () => {
+  it("entfernt einen abschließenden Schrägstrich", () => {
     expect(canonicalizeUrl("https://example.de/pfad/")?.canonical).toBe("https://example.de/pfad");
-    expect(canonicalizeUrl("https://example.de/")?.canonical).toBe("https://example.de/");
+    expect(canonicalizeUrl("https://example.de/")?.canonical).toBe("https://example.de");
   });
 
   it("behält Subdomains, die kein www sind", () => {
@@ -750,53 +773,53 @@ Erwartet: FAIL — `Failed to resolve import "./url.js"`.
 `packages/shared/src/url.ts`:
 
 ```ts
-const TRACKING_PARAMS = new Set([
-  "fbclid",
-  "gclid",
-  "igshid",
-  "mc_cid",
-  "mc_eid",
-  "msclkid",
-  "ref",
-  "ref_src",
-  "wt_mc",
-  "wt_zmc",
-  "xtor",
-]);
+import normalizeUrl from "normalize-url";
 
-const TRACKING_PREFIXES = ["utm_", "pk_", "at_"];
-
-function isTracking(key: string): boolean {
-  const lower = key.toLowerCase();
-  return TRACKING_PARAMS.has(lower) || TRACKING_PREFIXES.some((p) => lower.startsWith(p));
-}
+/**
+ * Parameter, die nur der Nachverfolgung dienen. Alles andere bleibt stehen —
+ * eine Artikel-ID in der Query gehoert zur Identitaet des Artikels.
+ */
+const TRACKING_PARAMS = [
+  /^utm_/i,
+  /^pk_/i,
+  /^at_/i,
+  // Durchgaengig als Regex mit i-Flag: normale Zeichenketten vergleicht
+  // normalize-url case-sensitiv, dann bliebe "?FBCLID=1" stehen und derselbe
+  // Artikel bekaeme je nach Schreibweise zwei verschiedene Dedupe-Schluessel.
+  /^fbclid$/i,
+  /^gclid$/i,
+  /^igshid$/i,
+  /^mc_cid$/i,
+  /^mc_eid$/i,
+  /^msclkid$/i,
+  /^ref$/i,
+  /^ref_src$/i,
+  /^wt_mc$/i,
+  /^wt_zmc$/i,
+  /^xtor$/i,
+];
 
 export function canonicalizeUrl(raw: string): { canonical: string; host: string } | null {
-  let url: URL;
+  // normalize-url validiert nicht: "kein-url" wuerde zu "http://kein-url" und
+  // ftp:// ginge unveraendert durch. Die Pruefung muss deshalb davor stehen und
+  // kann nicht an die Bibliothek delegiert werden.
+  let parsed: URL;
   try {
-    url = new URL(raw.trim());
+    parsed = new URL(raw.trim());
   } catch {
     return null;
   }
-  if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
 
-  const host = url.hostname.toLowerCase().replace(/^www\./, "");
-  url.hostname = host;
-  url.protocol = url.protocol.toLowerCase();
-  url.hash = "";
-  url.username = "";
-  url.password = "";
+  const canonical = normalizeUrl(parsed.toString(), {
+    stripWWW: true,
+    stripHash: true,
+    sortQueryParameters: true,
+    removeTrailingSlash: true,
+    removeQueryParameters: TRACKING_PARAMS,
+  });
 
-  const kept = [...url.searchParams.entries()].filter(([key]) => !isTracking(key));
-  kept.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-  url.search = "";
-  for (const [key, value] of kept) url.searchParams.append(key, value);
-
-  if (url.pathname.length > 1 && url.pathname.endsWith("/")) {
-    url.pathname = url.pathname.slice(0, -1);
-  }
-
-  return { canonical: url.toString(), host };
+  return { canonical, host: new URL(canonical).hostname };
 }
 ```
 
@@ -862,13 +885,25 @@ describe("normalizeText", () => {
     expect(normalizeText("  viel\n\n  Platz\t hier  ")).toBe("viel Platz hier");
   });
 
+  it("bildet das Zollzeichen auf ein doppeltes Anfuehrungszeichen ab", () => {
+    expect(normalizeText("5\u2033 Bildschirm")).toBe('5" Bildschirm');
+  });
+
   it("wendet NFKC an", () => {
     expect(normalizeText("ﬁnal")).toBe("final");
   });
 
-  it("ist idempotent", () => {
-    const once = normalizeText("„Test“ –  mit Raum");
-    expect(normalizeText(once)).toBe(once);
+  it("faengt auch Zeichen ab, die erst NFKC erzeugt", () => {
+    expect(normalizeText("12\u2034 Winkel")).toBe("12''' Winkel");
+    expect(normalizeText("a\ufe31b")).toBe("a-b");
+  });
+
+  it("ist idempotent, auch fuer Zeichen die NFKC erst zerlegt", () => {
+    const eingaben = ["„Test“ –  mit Raum", "5\u2033 Zoll", "12\u2034 Winkel", "a\ufe31b"];
+    for (const input of eingaben) {
+      const once = normalizeText(input);
+      expect(normalizeText(once)).toBe(once);
+    }
   });
 });
 ```
@@ -897,15 +932,31 @@ const ZERO_WIDTH = /[​‌‍﻿]/g;
  * Bringt Text in eine Form, in der Vergleiche nicht an Renderer-Eigenheiten
  * scheitern. Muss bei Erfassung und Check identisch angewendet werden (§8.2).
  */
-export function normalizeText(input: string): string {
-  return input
-    .normalize("NFKC")
+/** Einmal geschrieben, zweimal aufgerufen — siehe normalizeText. */
+function replaceTypography(value: string): string {
+  return value
     .replace(SOFT_HYPHEN, "")
     .replace(ZERO_WIDTH, "")
     .replace(DOUBLE_QUOTES, '"')
     .replace(SINGLE_QUOTES, "'")
     .replace(DASHES, "-")
-    .replace(SPACES, " ")
+    .replace(SPACES, " ");
+}
+
+/**
+ * Bringt Text in eine Form, in der Vergleiche nicht an Renderer-Eigenheiten
+ * scheitern. Muss bei Erfassung und Check identisch angewendet werden (§8.2).
+ *
+ * Zweimal ersetzen mit NFKC dazwischen, und beide Durchgaenge sind noetig:
+ * Der erste bildet U+2033 (Zollzeichen) auf " ab, bevor NFKC es in zwei U+2032
+ * zerlegen und daraus zwei Apostrophe machen kann. Der zweite faengt ab, was
+ * NFKC selbst erst erzeugt — U+2034, U+2057 und die Bindestrich-
+ * Praesentationsformen zerfallen in Klassenmitglieder. Erst dadurch enthaelt
+ * die Ausgabe garantiert kein Zeichen der Klassen mehr; die Idempotenz haengt
+ * dann an der Struktur und nicht an den zufaellig getesteten Eingaben.
+ */
+export function normalizeText(input: string): string {
+  return replaceTypography(replaceTypography(input).normalize("NFKC"))
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -940,6 +991,16 @@ git commit -m "Textnormalisierung fuer Ankervergleiche"
 **Interfaces:**
 - Consumes: nichts
 - Produces: `generateRef(): string`, `isRef(value: string): boolean`, `REF_PATTERN: RegExp`, `extractRefFromSubject(subject: string): string | null` aus `@korrektur/shared`
+
+- [ ] **Step 0: Bibliothek statt Eigenbau**
+
+```bash
+pnpm --filter @korrektur/shared add nanoid
+```
+
+`customAlphabet` erzeugt unverzerrte Zufallsketten aus einem vorgegebenen Alphabet —
+genau das, wofuer sonst eine Schleife ueber `randomInt` noetig waere. Das Alphabet
+bleibt die einzige Quelle: Generator und Muster werden beide daraus abgeleitet.
 
 - [ ] **Step 1: Den fehlschlagenden Test schreiben**
 
@@ -1008,21 +1069,28 @@ Erwartet: FAIL — Modul nicht auflösbar.
 `packages/shared/src/ref.ts`:
 
 ```ts
-import { randomInt } from "node:crypto";
+import { customAlphabet } from "nanoid";
 
 /** Crockford-Base32 ohne I, L, O, U — nichts Verwechselbares (§5.2). */
 const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const REF_BODY_LENGTH = 5;
 
-export const REF_PATTERN = /^K[0-9A-HJKMNP-TV-Z]{5}$/;
-const SUBJECT_PATTERN = /\[(K[0-9A-HJKMNP-TV-Z]{5})\]/;
+/**
+ * Beide Muster werden aus ALPHABET abgeleitet, nicht danebengeschrieben.
+ * Eine zweite, von Hand gepflegte Zeichenklasse koennte vom Alphabet
+ * abweichen — dann erzeugte generateRef Token, die isRef ablehnt, und der
+ * Fehler zeigte sich erst, wenn genau dieses Zeichen gezogen wird.
+ */
+const BODY_CLASS = `[${ALPHABET}]{${REF_BODY_LENGTH}}`;
+
+export const REF_PATTERN = new RegExp(`^K${BODY_CLASS}$`);
+const SUBJECT_PATTERN = new RegExp(`\\[(K${BODY_CLASS})\\]`);
+
+/** Aus demselben ALPHABET wie die Muster — keine zweite Quelle. */
+const nanoRef = customAlphabet(ALPHABET, REF_BODY_LENGTH);
 
 export function generateRef(): string {
-  let body = "";
-  for (let i = 0; i < REF_BODY_LENGTH; i++) {
-    body += ALPHABET[randomInt(ALPHABET.length)];
-  }
-  return `K${body}`;
+  return `K${nanoRef()}`;
 }
 
 export function isRef(value: string): boolean {
@@ -1077,10 +1145,19 @@ import { describe, expect, it } from "vitest";
 import { rateOrNull, wilsonInterval } from "./stats.js";
 
 describe("wilsonInterval", () => {
-  it("liefert für 5 von 12 ein plausibles 95-%-Intervall", () => {
+  it("reproduziert einen aus der Literatur bekannten Kontrollfall", () => {
+    // Wilson-Score-Intervall fuer 40 von 100, 95 % — Standardwert aus der
+    // Literatur. Verankert den Test an einer externen Quelle statt an der
+    // eigenen Implementierung.
+    const { lower, upper } = wilsonInterval(40, 100);
+    expect(lower).toBeCloseTo(0.3094, 4);
+    expect(upper).toBeCloseTo(0.498, 3);
+  });
+
+  it("liefert für 5 von 12 ein enges 95-%-Intervall", () => {
     const { lower, upper } = wilsonInterval(5, 12);
-    expect(lower).toBeCloseTo(0.1979, 3);
-    expect(upper).toBeCloseTo(0.6816, 3);
+    expect(lower).toBeCloseTo(0.1933, 4);
+    expect(upper).toBeCloseTo(0.6805, 4);
   });
 
   it("gibt bei n=0 das volle Intervall zurück", () => {
@@ -1187,9 +1264,19 @@ git commit -m "Wilson-Intervall und Quotenschwelle"
 - [ ] **Step 1: Abhängigkeiten ergänzen**
 
 ```bash
-pnpm --filter @korrektur/api add drizzle-orm @paralleldrive/cuid2
-pnpm --filter @korrektur/api add -D drizzle-kit
+pnpm --filter @korrektur/api add --save-exact drizzle-orm@1.0.0-rc.4 @paralleldrive/cuid2
+pnpm --filter @korrektur/api add -D --save-exact drizzle-kit@1.0.0-rc.4
 ```
+
+**Warum eine Vorabversion, und warum exakt gepinnt.** Der Treiber
+`drizzle-orm/node-sqlite` existiert erst in der 1.0-Linie; die stabile 0.45.2 kennt
+ihn nicht. Die Alternative wäre `better-sqlite3` — ein natives Modul, das sich nicht
+bündeln lässt und damit das Deployment aus Task 2 aufhebt: statt drei Dateien müssten
+`node_modules` samt einer zu Node 26 und der glibc des Hosters passenden
+`.node`-Binärdatei mit hochgeladen werden. `1.0.0-rc.4` ist ein Release Candidate
+(Funktionsumfang eingefroren, seit Ende Juni veröffentlicht, aktiv gepatcht), der
+Treiber ist seit `beta.16` dabei. `--save-exact` verhindert, dass eine spätere
+Installation unbemerkt auf eine andere Vorabversion springt.
 
 `packages/api/package.json` um Skripte ergänzen:
 
@@ -1456,8 +1543,7 @@ export default {
 `packages/api/src/db/client.ts`:
 
 ```ts
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { drizzle, type NodeSQLiteDatabase } from "drizzle-orm/node-sqlite";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
@@ -1473,9 +1559,16 @@ export function createDb(path: string): Db {
   return drizzle(sqlite, { schema }) as Db;
 }
 
-export function runMigrations(db: Db): void {
-  const here = dirname(fileURLToPath(import.meta.url));
-  migrate(db, { migrationsFolder: resolve(here, "migrations") });
+const DEFAULT_MIGRATIONS_DIR = "./packages/api/src/db/migrations";
+
+/**
+ * Der Ordner wird uebergeben statt aus import.meta.url abgeleitet: Das
+ * ausgelieferte CJS-Buendel kennt import.meta.url nicht (§3.4). Auf dem Server
+ * steht MIGRATIONS_DIR auf "./migrations", neben app.js.
+ */
+export function runMigrations(db: Db, migrationsFolder?: string): void {
+  const folder = migrationsFolder ?? process.env["MIGRATIONS_DIR"] ?? DEFAULT_MIGRATIONS_DIR;
+  migrate(db, { migrationsFolder: resolve(process.cwd(), folder) });
 }
 ```
 
@@ -1761,12 +1854,14 @@ describe("Kennzahlen-Views", () => {
     addCorrection({ dispatchStatus: "bounced" });
     const [row] = outletStats(db);
     expect(row?.nReplyBase).toBe(0);
+    expect(row?.nCorrectionBase).toBe(0);
   });
 
   it("hält eine nur vorbereitete Meldung aus jedem Nenner heraus", () => {
     addCorrection({ dispatchStatus: "prepared", sentAt: null });
     const [row] = outletStats(db);
     expect(row?.nReplyBase).toBe(0);
+    expect(row?.nCorrectionBase).toBe(0);
   });
 
   it("wertet eine Autoreply nicht als Antwort", () => {
@@ -1896,11 +1991,44 @@ export function applyViews(db: Db): void {
 
 - [ ] **Step 4: Abfragen implementieren**
 
+`packages/api/src/db/views.ts` ergänzen — die Views zusätzlich als typisierte
+Drizzle-Objekte, damit die Abfrage ohne Cast auskommt:
+
+```ts
+import { integer, sqliteView, text } from "drizzle-orm/sqlite-core";
+
+/**
+ * Deklaration der bereits per DDL erzeugten Views. `.existing()` sagt Drizzle,
+ * dass es sie nicht anlegen soll — es braucht nur die Spaltentypen, um
+ * `db.select().from(...)` typisiert zu machen. Damit entfaellt der Cast auf
+ * eine handgeschriebene Row-Schnittstelle, und eine umbenannte Spalte faellt
+ * beim Uebersetzen auf statt erst zur Laufzeit als `undefined`.
+ */
+export const vOutletStats = sqliteView("v_outlet_stats", {
+  outletId: text("outlet_id").notNull(),
+  name: text("name").notNull(),
+  nReports: integer("n_reports").notNull(),
+  nCorrectionBase: integer("n_correction_base").notNull(),
+  nCorrected: integer("n_corrected").notNull(),
+  nReplyBase: integer("n_reply_base").notNull(),
+  nReplied: integer("n_replied").notNull(),
+}).existing();
+
+export const vErrorTypeStats = sqliteView("v_error_type_stats", {
+  errorTypeId: text("error_type_id").notNull(),
+  label: text("label").notNull(),
+  nReports: integer("n_reports").notNull(),
+  nCorrectionBase: integer("n_correction_base").notNull(),
+  nCorrected: integer("n_corrected").notNull(),
+}).existing();
+```
+
 `packages/api/src/repo/stats.ts`:
 
 ```ts
 import { rateOrNull } from "@korrektur/shared";
 import type { Db } from "../db/client.js";
+import { vErrorTypeStats, vOutletStats } from "../db/views.js";
 
 export interface OutletStatRow {
   outletId: string;
@@ -1923,56 +2051,31 @@ export interface ErrorTypeStatRow {
   correctionRate: number | null;
 }
 
-interface RawOutletRow {
-  outlet_id: string;
-  name: string;
-  n_reports: number;
-  n_correction_base: number;
-  n_corrected: number;
-  n_reply_base: number;
-  n_replied: number;
-}
-
-interface RawErrorTypeRow {
-  error_type_id: string;
-  label: string;
-  n_reports: number;
-  n_correction_base: number;
-  n_corrected: number;
-}
-
-/** Alphabetisch sortiert — die Reihenfolge ist keine Aussage (§2.2). */
+/**
+ * Alphabetisch sortiert — die Reihenfolge ist keine Aussage (§2.2).
+ * Sortiert wird mit deutscher Collation statt SQLites NOCASE: letzteres kennt
+ * nur ASCII und ordnet Umlaute falsch ein.
+ */
 export function outletStats(db: Db): OutletStatRow[] {
-  const rows = db.$client
-    .prepare("SELECT * FROM v_outlet_stats ORDER BY name COLLATE NOCASE")
-    .all() as RawOutletRow[];
-
-  return rows.map((r) => ({
-    outletId: r.outlet_id,
-    name: r.name,
-    nReports: r.n_reports,
-    nCorrectionBase: r.n_correction_base,
-    nCorrected: r.n_corrected,
-    nReplyBase: r.n_reply_base,
-    nReplied: r.n_replied,
-    correctionRate: rateOrNull(r.n_corrected, r.n_correction_base),
-    replyRate: rateOrNull(r.n_replied, r.n_reply_base),
-  }));
+  return db
+    .select()
+    .from(vOutletStats)
+    .all()
+    .map((r) => ({
+      ...r,
+      correctionRate: rateOrNull(r.nCorrected, r.nCorrectionBase),
+      replyRate: rateOrNull(r.nReplied, r.nReplyBase),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "de"));
 }
 
 export function errorTypeStats(db: Db): ErrorTypeStatRow[] {
-  const rows = db.$client
-    .prepare("SELECT * FROM v_error_type_stats ORDER BY label COLLATE NOCASE")
-    .all() as RawErrorTypeRow[];
-
-  return rows.map((r) => ({
-    errorTypeId: r.error_type_id,
-    label: r.label,
-    nReports: r.n_reports,
-    nCorrectionBase: r.n_correction_base,
-    nCorrected: r.n_corrected,
-    correctionRate: rateOrNull(r.n_corrected, r.n_correction_base),
-  }));
+  return db
+    .select()
+    .from(vErrorTypeStats)
+    .all()
+    .map((r) => ({ ...r, correctionRate: rateOrNull(r.nCorrected, r.nCorrectionBase) }))
+    .sort((a, b) => a.label.localeCompare(b.label, "de"));
 }
 ```
 
@@ -1982,7 +2085,7 @@ export function errorTypeStats(db: Db): ErrorTypeStatRow[] {
 pnpm vitest run packages/api/src/repo/stats.test.ts
 ```
 
-Erwartet: 10 Tests grün. Damit ist die Abnahme von P1 erfüllt: Migration idempotent, Seed läuft, Views liefern gegen Bounce, Autoreply, frische Meldung, Paywall, `mailto:` und n=1 die erwarteten Zahlen.
+Erwartet: 9 Tests grün. Damit ist die Abnahme von P1 erfüllt: Migration idempotent, Seed läuft, Views liefern gegen Bounce, Autoreply, frische Meldung, Paywall, `mailto:` und n=1 die erwarteten Zahlen.
 
 - [ ] **Step 6: Commit**
 
@@ -2085,6 +2188,13 @@ describe("extractArticle", () => {
   it("gibt null zurück, wenn kein Artikelinhalt erkennbar ist", () => {
     expect(extractArticle("<html><body></body></html>", "https://beispiel-zeitung.de/c")).toBeNull();
   });
+
+  it("gibt null zurück statt zu werfen, wenn das HTML unbrauchbar ist", () => {
+    // Kommt vom fremden Server: leere Antwort, Klartext, abgeschnittenes Markup.
+    expect(extractArticle("", "https://beispiel-zeitung.de/d")).toBeNull();
+    expect(extractArticle("kein HTML, nur Text", "https://beispiel-zeitung.de/e")).toBeNull();
+    expect(() => extractArticle("<html><body><p>abgeschnitten", "https://beispiel-zeitung.de/f")).not.toThrow();
+  });
 });
 ```
 
@@ -2113,19 +2223,31 @@ export function extractArticle(
   html: string,
   url: string,
 ): { title: string | null; text: string } | null {
-  const { document } = parseHTML(html);
-  const base = document.createElement("base");
-  base.setAttribute("href", url);
-  document.head?.appendChild(base);
+  try {
+    const { document } = parseHTML(html);
 
-  const article = new Readability(document as unknown as Document).parse();
-  if (!article) return null;
+    // Ohne Wurzelelement wirft linkedom schon beim Lesen von document.head —
+    // Optional Chaining hilft dort nicht, die Pruefung muss vorher stehen.
+    if (!document.documentElement) return null;
 
-  const text = normalizeText(article.textContent ?? "");
-  if (text.length === 0) return null;
+    const base = document.createElement("base");
+    base.setAttribute("href", url);
+    document.head?.appendChild(base);
 
-  const title = article.title ? normalizeText(article.title) : null;
-  return { title: title && title.length > 0 ? title : null, text };
+    const article = new Readability(document as unknown as Document).parse();
+    if (!article) return null;
+
+    const text = normalizeText(article.textContent ?? "");
+    if (text.length === 0) return null;
+
+    const title = article.title ? normalizeText(article.title) : null;
+    return { title: title && title.length > 0 ? title : null, text };
+  } catch {
+    // Das HTML stammt von fremden Servern. Parser und Readability duerfen an
+    // kaputtem Markup scheitern; der Aufrufer bekommt dann null statt einer
+    // Ausnahme, die einen ganzen Request abbrechen wuerde.
+    return null;
+  }
 }
 ```
 
@@ -2507,8 +2629,25 @@ describe("composeMail", () => {
     const { text } = composeMail(INPUT);
     const block = /\[korrektur-meta\]([\s\S]*?)\[\/korrektur-meta\]/.exec(text);
     expect(block?.[1]?.trim()).toBe(
-      "v=2; ref=K7QW3M; url=https://beispiel-zeitung.de/politik/artikel-123; typ=zahl; sev=2",
+      "v=2; ref=K7QW3M; typ=zahl; sev=2; url=https%3A%2F%2Fbeispiel-zeitung.de%2Fpolitik%2Fartikel-123",
     );
+  });
+
+  it("kodiert Sonderzeichen der URL, damit die Feldtrennung hält", () => {
+    const { text } = composeMail({
+      ...INPUT,
+      articleUrlCanon: "https://beispiel-zeitung.de/a?x=1;y=2",
+    });
+    const block = /\[korrektur-meta\]([\s\S]*?)\[\/korrektur-meta\]/.exec(text);
+    const felder = block?.[1]?.trim().split("; ") ?? [];
+    expect(felder).toHaveLength(5);
+    expect(felder[4]).toBe("url=https%3A%2F%2Fbeispiel-zeitung.de%2Fa%3Fx%3D1%3By%3D2");
+  });
+
+  it("entschärft Meta-Marker im Nutzertext", () => {
+    const { text } = composeMail({ ...INPUT, quoteBefore: "vorher [korrektur-meta] nachher" });
+    const treffer = text.match(/\[korrektur-meta\]/g) ?? [];
+    expect(treffer).toHaveLength(1);
   });
 
   it("kommt ohne Überschrift und ohne Kommentar aus", () => {
@@ -2521,6 +2660,18 @@ describe("composeMail", () => {
     const { subject } = composeMail({ ...INPUT, headline: "A".repeat(200) });
     expect(subject.length).toBeLessThan(140);
     expect(subject.endsWith("[K7QW3M]")).toBe(true);
+  });
+
+  it("hält den Betreff auch bei maximal langer Fehlerart-Bezeichnung im Rahmen", () => {
+    // errorTypeInputSchema erlaubt bis zu 120 Zeichen, ueber das Adminformular frei setzbar.
+    const { subject } = composeMail({
+      ...INPUT,
+      errorTypeLabel: "B".repeat(120),
+      headline: "C".repeat(200),
+    });
+    expect(subject.length).toBeLessThan(140);
+    expect(subject.endsWith("[K7QW3M]")).toBe(true);
+    expect(extractRefFromSubject(subject)).toBe("K7QW3M");
   });
 });
 ```
@@ -2552,18 +2703,36 @@ export interface ComposeInput {
   baseUrl: string;
 }
 
-const HEADLINE_MAX = 60;
+/** Obergrenze fuer den Betreff ohne den angehaengten Token. */
+const SUBJECT_MAX = 120;
+const SUBJECT_PREFIX = "Korrekturhinweis: ";
+const META_OPEN = "[korrektur-meta]";
+const META_CLOSE = "[/korrektur-meta]";
 
 function truncate(value: string, max: number): string {
+  if (max <= 0) return "";
   return value.length <= max ? value : `${value.slice(0, max - 1).trimEnd()}…`;
+}
+
+/**
+ * Nutzertext darf die Marker des Meta-Blocks nicht enthalten, sonst faende ein
+ * Parser spaeter zwei Bloecke und griffe den falschen ab.
+ */
+function neutralizeMetaMarkers(value: string): string {
+  return value.split(META_OPEN).join("(korrektur-meta)").split(META_CLOSE).join("(/korrektur-meta)");
 }
 
 /** Rein. Baut Betreff und Textkörper; Header und Versand liegen in send.ts (§6). */
 export function composeMail(input: ComposeInput): { subject: string; text: string } {
-  const headlinePart = input.headline
-    ? ` in "${truncate(input.headline, HEADLINE_MAX)}"`
-    : "";
-  const subject = `Korrekturhinweis: ${input.errorTypeLabel}${headlinePart} [${input.ref}]`;
+  // Der Token muss immer ans Ende passen, unabhaengig davon wie lang die
+  // Fehlerart-Bezeichnung ist — die ist ueber das Adminformular frei setzbar.
+  // Deshalb wird der gesamte mittlere Teil gegen ein Budget gekuerzt, nicht
+  // nur die Ueberschrift.
+  const tokenPart = ` [${input.ref}]`;
+  const headlinePart = input.headline ? ` in "${input.headline}"` : "";
+  const budget = SUBJECT_MAX - SUBJECT_PREFIX.length - tokenPart.length;
+  const middle = truncate(`${input.errorTypeLabel}${headlinePart}`, budget);
+  const subject = `${SUBJECT_PREFIX}${middle}${tokenPart}`;
 
   const lines = [
     "Sehr geehrte Redaktion,",
@@ -2574,14 +2743,14 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
     `Art des Fehlers: ${input.errorTypeLabel}`,
     "",
     "Im Text steht:",
-    input.quoteBefore,
+    neutralizeMetaMarkers(input.quoteBefore),
     "",
     "Zutreffend wäre:",
-    input.suggestionAfter,
+    neutralizeMetaMarkers(input.suggestionAfter),
   ];
 
   if (input.comment && input.comment.trim().length > 0) {
-    lines.push("", `Anmerkung: ${input.comment.trim()}`);
+    lines.push("", `Anmerkung: ${neutralizeMetaMarkers(input.comment.trim())}`);
   }
 
   lines.push(
@@ -2593,9 +2762,11 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
     "",
     "--",
     `Diese Meldung wurde über ${input.baseUrl} erstellt.`,
-    "[korrektur-meta]",
-    `v=2; ref=${input.ref}; url=${input.articleUrlCanon}; typ=${input.errorTypeKey}; sev=${input.severity}`,
-    "[/korrektur-meta]",
+    META_OPEN,
+    // url steht zuletzt und ist prozentkodiert: ein Semikolon in der Query ist
+    // syntaktisch erlaubt und wuerde die Feldtrennung sonst zerreissen.
+    `v=2; ref=${input.ref}; typ=${input.errorTypeKey}; sev=${input.severity}; url=${encodeURIComponent(input.articleUrlCanon)}`,
+    META_CLOSE,
   );
 
   return { subject, text: lines.join("\n") };
@@ -2791,6 +2962,7 @@ import {
   createOutlet,
   ensureOutletForHost,
   listOutlets,
+  removeDomain,
   removeOutlet,
   resolveOutletByHost,
   updateOutlet,
@@ -2839,6 +3011,26 @@ describe("Outlet-Auflösung", () => {
     const a = createOutlet(db, baseInput("A", "a.de"), NOW);
     createOutlet(db, baseInput("B", "b.de"), NOW);
     expect(addDomain(db, a.id, "b.de")).toBe(false);
+  });
+
+  it("meldet Erfolg, wenn die Domain bereits zu diesem Outlet gehört", () => {
+    const a = createOutlet(db, baseInput("A", "a.de"), NOW);
+    // Idempotent: erneutes Hinzufügen derselben Domain ist kein Fehler und
+    // erzeugt keine zweite Zeile.
+    expect(addDomain(db, a.id, "a.de")).toBe(true);
+    expect(listOutlets(db)[0]?.domains).toEqual(["a.de"]);
+  });
+
+  it("entfernt eine zusätzliche Domain, aber nie die letzte", () => {
+    const a = createOutlet(db, baseInput("A", "a.de"), NOW);
+    addDomain(db, a.id, "magazin.a.de");
+
+    expect(removeDomain(db, a.id, "magazin.a.de")).toBe(true);
+    expect(listOutlets(db)[0]?.domains).toEqual(["a.de"]);
+
+    // Ohne Domain waere das Outlet nie wieder ueber eine URL auffindbar.
+    expect(removeDomain(db, a.id, "a.de")).toBe(false);
+    expect(listOutlets(db)[0]?.domains).toEqual(["a.de"]);
   });
 });
 
@@ -2905,6 +3097,37 @@ Erwartet: FAIL — `./outlets.js` nicht auflösbar.
 
 - [ ] **Step 3: Implementieren**
 
+Zuerst der gemeinsame Helfer, den auch Task 16 benutzt:
+
+`packages/api/src/repo/removal.ts`:
+
+```ts
+export type RemovalOutcome = "deleted" | "archived" | "missing";
+
+/**
+ * Die Entscheidung, ob ein Stammdatensatz geloescht oder nur archiviert wird,
+ * lebt an genau einer Stelle (§5.0). Wuerden Redaktionen und Fehlerarten sie
+ * getrennt treffen, koennte eine der beiden Seiten spaeter abweichen und einen
+ * referenzierten Eintrag hart loeschen — veroeffentlichte Zahlen aenderten sich
+ * dann rueckwirkend. Die Abfragen bringt jeder Aufrufer selbst mit, nur die
+ * Regel ist geteilt.
+ */
+export function removeOrArchive(steps: {
+  exists: () => boolean;
+  isReferenced: () => boolean;
+  archive: () => void;
+  hardDelete: () => void;
+}): RemovalOutcome {
+  if (!steps.exists()) return "missing";
+  if (steps.isReferenced()) {
+    steps.archive();
+    return "archived";
+  }
+  steps.hardDelete();
+  return "deleted";
+}
+```
+
 `packages/api/src/repo/outlets.ts`:
 
 ```ts
@@ -2912,6 +3135,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { corrections, outletDomains, outlets } from "../db/schema.js";
+import { removeOrArchive, type RemovalOutcome } from "./removal.js";
 
 export type OutletRecord = typeof outlets.$inferSelect & { domains: string[] };
 
@@ -3018,23 +3242,20 @@ export function updateOutlet(db: Db, id: string, input: OutletInput): OutletReco
   return row ? withDomains(db, row) : null;
 }
 
-/**
- * Referenzierte Stammdaten werden archiviert, nie gelöscht — sonst änderten sich
- * veröffentlichte Zahlen rückwirkend (§5.0).
- */
-export function removeOutlet(db: Db, id: string): "deleted" | "archived" | "missing" {
-  const existing = db.select().from(outlets).where(eq(outlets.id, id)).get();
-  if (!existing) return "missing";
-
-  const referenced = db.select().from(corrections).where(eq(corrections.outletId, id)).get();
-  if (referenced) {
-    db.update(outlets).set({ archived: true }).where(eq(outlets.id, id)).run();
-    return "archived";
-  }
-
-  db.delete(outletDomains).where(eq(outletDomains.outletId, id)).run();
-  db.delete(outlets).where(eq(outlets.id, id)).run();
-  return "deleted";
+/** Regel in removal.ts, Abfragen hier — siehe dort, warum das getrennt ist. */
+export function removeOutlet(db: Db, id: string): RemovalOutcome {
+  return removeOrArchive({
+    exists: () => db.select().from(outlets).where(eq(outlets.id, id)).get() !== undefined,
+    isReferenced: () =>
+      db.select().from(corrections).where(eq(corrections.outletId, id)).get() !== undefined,
+    archive: () => {
+      db.update(outlets).set({ archived: true }).where(eq(outlets.id, id)).run();
+    },
+    hardDelete: () => {
+      db.delete(outletDomains).where(eq(outletDomains.outletId, id)).run();
+      db.delete(outlets).where(eq(outlets.id, id)).run();
+    },
+  });
 }
 
 export function addDomain(db: Db, outletId: string, domain: string): boolean {
@@ -3072,7 +3293,7 @@ export function removeDomain(db: Db, outletId: string, domain: string): boolean 
 pnpm vitest run packages/api/src/repo/outlets.test.ts
 ```
 
-Erwartet: 8 Tests grün.
+Erwartet: 9 Tests grün.
 
 - [ ] **Step 5: Commit**
 
@@ -3215,6 +3436,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { asc, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { corrections, errorTypes } from "../db/schema.js";
+import { removeOrArchive, type RemovalOutcome } from "./removal.js";
 
 export type ErrorTypeRecord = typeof errorTypes.$inferSelect;
 
@@ -3272,18 +3494,19 @@ export function updateErrorType(
   return db.select().from(errorTypes).where(eq(errorTypes.id, id)).get() ?? null;
 }
 
-export function removeErrorType(db: Db, id: string): "deleted" | "archived" | "missing" {
-  const existing = db.select().from(errorTypes).where(eq(errorTypes.id, id)).get();
-  if (!existing) return "missing";
-
-  const referenced = db.select().from(corrections).where(eq(corrections.errorTypeId, id)).get();
-  if (referenced) {
-    db.update(errorTypes).set({ archived: true }).where(eq(errorTypes.id, id)).run();
-    return "archived";
-  }
-
-  db.delete(errorTypes).where(eq(errorTypes.id, id)).run();
-  return "deleted";
+/** Dieselbe Regel wie bei Redaktionen — der Helfer liegt in removal.ts (Task 15). */
+export function removeErrorType(db: Db, id: string): RemovalOutcome {
+  return removeOrArchive({
+    exists: () => db.select().from(errorTypes).where(eq(errorTypes.id, id)).get() !== undefined,
+    isReferenced: () =>
+      db.select().from(corrections).where(eq(corrections.errorTypeId, id)).get() !== undefined,
+    archive: () => {
+      db.update(errorTypes).set({ archived: true }).where(eq(errorTypes.id, id)).run();
+    },
+    hardDelete: () => {
+      db.delete(errorTypes).where(eq(errorTypes.id, id)).run();
+    },
+  });
 }
 ```
 
@@ -3352,6 +3575,10 @@ describe("newCorrectionSchema", () => {
 
   it("weist eine unzulässige Schwere ab", () => {
     expect(newCorrectionSchema.safeParse({ ...VALID, severity: 4 }).success).toBe(false);
+    expect(newCorrectionSchema.safeParse({ ...VALID, severity: 0 }).success).toBe(false);
+    expect(newCorrectionSchema.safeParse({ ...VALID, severity: "2.5" }).success).toBe(false);
+    // Ohne die union-Stufe waere true zu 1 geworden.
+    expect(newCorrectionSchema.safeParse({ ...VALID, severity: true }).success).toBe(false);
   });
 
   it("weist eine ungültige URL ab", () => {
@@ -3373,6 +3600,22 @@ describe("outletInputSchema", () => {
     });
     expect(parsed.primaryDomain).toBe("beispiel-zeitung.de");
     expect(parsed.contactEmails).toHaveLength(2);
+  });
+
+  it("prüft die Domainlänge nach dem Entfernen von www.", () => {
+    const kurz = outletInputSchema.safeParse({
+      name: "X",
+      primaryDomain: "www.ab",
+      contactEmails: [],
+    });
+    expect(kurz.success).toBe(false);
+
+    const lang = outletInputSchema.parse({
+      name: "X",
+      primaryDomain: `www.${"a".repeat(250)}`,
+      contactEmails: [],
+    });
+    expect(lang.primaryDomain).toHaveLength(250);
   });
 
   it("weist eine ungültige Adresse ab", () => {
@@ -3427,7 +3670,9 @@ export const newCorrectionSchema = z.object({
   articleUrl: z.string().url(),
   headline: nullableTrimmed(300),
   errorTypeKey: z.string().min(1).max(64),
-  severity: z.coerce.number().int().min(1).max(3),
+  // union vor coerce: z.coerce.number() allein wuerde true zu 1 machen und
+  // damit als gueltige Schwere durchgehen lassen.
+  severity: z.union([z.string(), z.number()]).pipe(z.coerce.number().int().min(1).max(3)),
   quoteBefore: z.string().trim().min(1).max(QUOTE_MAX_LENGTH),
   suggestionAfter: z.string().trim().min(1).max(500),
   comment: nullableTrimmed(1000),
@@ -3438,12 +3683,15 @@ export type NewCorrectionInput = z.infer<typeof newCorrectionSchema>;
 
 export const outletInputSchema = z.object({
   name: z.string().trim().min(1).max(200),
+  // Erst transformieren, dann pruefen: laufen die Laengenpruefungen vorher,
+  // besteht "www.ab" die Mindestlaenge mit sechs Zeichen und landet danach als
+  // zweizeichige Domain in der Datenbank. Umgekehrt wuerde eine 250 Zeichen
+  // lange Domain mit www.-Praefix faelschlich an der Obergrenze scheitern.
   primaryDomain: z
     .string()
     .trim()
-    .min(3)
-    .max(253)
-    .transform((v) => v.toLowerCase().replace(/^www\./, "")),
+    .transform((v) => v.toLowerCase().replace(/^www\./, ""))
+    .pipe(z.string().min(3).max(253)),
   publisher: nullableTrimmed(200),
   country: nullableTrimmed(2),
   notes: nullableTrimmed(2000),
@@ -3478,7 +3726,7 @@ export const errorTypeUpdateSchema = errorTypeInputSchema.omit({ key: true });
 pnpm vitest run packages/shared/src/schemas.test.ts
 ```
 
-Erwartet: 8 Tests grün.
+Erwartet: 9 Tests grün.
 
 - [ ] **Step 5: Commit**
 
@@ -3884,7 +4132,7 @@ export async function createCorrection(
 pnpm vitest run packages/api/src/repo/corrections.test.ts
 ```
 
-Erwartet: 8 Tests grün.
+Erwartet: 9 Tests grün.
 
 - [ ] **Step 5: Commit**
 
@@ -3920,8 +4168,8 @@ const ENV = {
   DATABASE_PATH: ":memory:",
   ADMIN_USER: "admin",
   ADMIN_PASSWORD: "geheimes-passwort",
-  PUBLIC_BASE_URL: "https://korrektur.example.tld",
-  SMTP_HOST: "smtp.example.tld",
+  PUBLIC_BASE_URL: "https://korrekturen.msmr.co",
+  SMTP_HOST: "mail.example.tld",
   SMTP_PORT: 587,
   SMTP_USER: "korrektur@example.tld",
   SMTP_PASSWORD: "x",
@@ -4170,13 +4418,22 @@ describe("POST /neu", () => {
     expect(db.select().from(corrections).all()).toHaveLength(0);
   });
 
-  it("nennt die fehlende Kontaktadresse beim Namen", async () => {
+  it("führt bei fehlender Kontaktadresse zu Impressum und Anlage-Formular", async () => {
     const res = await captureRoutes(deps).request("/neu", {
       method: "POST",
       body: form({ articleUrl: "https://neue-zeitung.de/a" }),
     });
     expect(res.status).toBe(400);
-    await expect(res.text()).resolves.toContain("/admin/redaktionen");
+    const html = await res.text();
+
+    expect(html).toContain("neue-zeitung.de");
+    // Impressum in neuem Tab, mit noopener gegen Zugriff auf das Ursprungsfenster.
+    expect(html).toContain('href="https://neue-zeitung.de/impressum"');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+    // Anlage-Formular mit vorbefüllter Domain und Rückweg.
+    expect(html).toContain("/admin/redaktionen?domain=neue-zeitung.de");
+    expect(html).toContain("zurueck=");
   });
 
   it("warnt, wenn die Fundstelle nicht verankert werden konnte", async () => {
@@ -4207,15 +4464,51 @@ import type { FC } from "hono/jsx";
 import type { ErrorTypeRecord } from "../repo/errorTypes.js";
 import { Layout } from "./layout.js";
 
+/**
+ * Wird gezeigt, wenn fuer die Domain keine Kontaktadresse hinterlegt ist.
+ * Statt nur zu melden, dass es nicht geht, fuehrt der Block zu den beiden
+ * Handgriffen, die dann noetig sind: Adresse im Impressum nachschlagen und
+ * die Redaktion anlegen.
+ *
+ * Sichtbar nur fuer den angemeldeten Betreiber — /neu liegt hinter der
+ * Basic-Auth. Die spaetere oeffentliche Erfassung fuer Fremde (Abschnitt 15
+ * der Spec) darf diesen Block nicht rendern.
+ */
+const FehlendeRedaktion: FC<{ host: string; zurueck: string }> = ({ host, zurueck }) => (
+  <div class="hinweis">
+    <p>
+      Für <strong>{host}</strong> ist keine Kontaktadresse hinterlegt — ohne die kann
+      die Meldung nicht versendet werden.
+    </p>
+    <p>
+      <a href={`https://${host}/impressum`} target="_blank" rel="noopener noreferrer">
+        Impressum von {host} öffnen
+      </a>{" "}
+      — dort steht die Korrektur- oder Leserbriefadresse meistens.
+    </p>
+    <p>
+      <a href={`/admin/redaktionen?domain=${encodeURIComponent(host)}&zurueck=${encodeURIComponent(zurueck)}`}>
+        Redaktion jetzt anlegen
+      </a>{" "}
+      — Domain ist vorausgefüllt, danach geht es zurück zu dieser Meldung.
+    </p>
+  </div>
+);
+
 export const CaptureForm: FC<{
   errorTypes: ErrorTypeRecord[];
   idempotencyKey: string;
   url: string;
   quote: string;
   fehler?: string;
-}> = ({ errorTypes, idempotencyKey, url, quote, fehler }) => (
+  fehlendeRedaktion?: { host: string; zurueck: string };
+}> = ({ errorTypes, idempotencyKey, url, quote, fehler, fehlendeRedaktion }) => (
   <Layout title="Neue Korrekturmeldung">
-    {fehler ? <p class="hinweis">{fehler}</p> : null}
+    {fehlendeRedaktion ? (
+      <FehlendeRedaktion host={fehlendeRedaktion.host} zurueck={fehlendeRedaktion.zurueck} />
+    ) : fehler ? (
+      <p class="hinweis">{fehler}</p>
+    ) : null}
     <form method="post" action="/neu">
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
 
@@ -4287,7 +4580,7 @@ export const CaptureResult: FC<{ ref: string; anchored: boolean; sent: boolean }
 `packages/api/src/routes/capture.ts`:
 
 ```ts
-import { newCorrectionSchema } from "@korrektur/shared";
+import { canonicalizeUrl, newCorrectionSchema } from "@korrektur/shared";
 import { createId } from "@paralleldrive/cuid2";
 import { Hono } from "hono";
 import { listErrorTypes } from "../repo/errorTypes.js";
@@ -4330,13 +4623,21 @@ export function captureRoutes(deps: CreateDeps): Hono {
 
     const result = await createCorrection(deps, parsed.data);
     if (!result.ok) {
+      // Bei fehlender Kontaktadresse fuehrt die Seite weiter, statt nur zu
+      // melden. Der Host kommt aus der Kanonisierung, damit die Orchestrierung
+      // dafuer nichts zurueckgeben muss.
+      const canon =
+        result.error === "no_recipient" ? canonicalizeUrl(parsed.data.articleUrl) : null;
+      const zurueck = `/neu?url=${encodeURIComponent(parsed.data.articleUrl)}&text=${encodeURIComponent(parsed.data.quoteBefore)}`;
+
       return c.html(
         <CaptureForm
           errorTypes={listErrorTypes(deps.db)}
           idempotencyKey={createId()}
           url={parsed.data.articleUrl}
           quote={parsed.data.quoteBefore}
-          fehler={result.message}
+          fehler={canon ? undefined : result.message}
+          fehlendeRedaktion={canon ? { host: canon.host, zurueck } : undefined}
         />,
         400,
       );
@@ -4453,6 +4754,58 @@ describe("Adminoberfläche Redaktionen", () => {
     expect(listOutlets(db)).toHaveLength(0);
   });
 
+  it("übernimmt eine vorgegebene Domain und leitet danach zurück", async () => {
+    const zurueck = "/neu?url=https%3A%2F%2Fneue-zeitung.de%2Fa&text=Zitat";
+    const html = await (
+      await app().request(
+        `/admin/redaktionen?domain=neue-zeitung.de&zurueck=${encodeURIComponent(zurueck)}`,
+      )
+    ).text();
+    expect(html).toContain('value="neue-zeitung.de"');
+    expect(html).toContain(zurueck);
+
+    const res = await post("/admin/redaktionen", {
+      name: "Neue Zeitung",
+      primaryDomain: "neue-zeitung.de",
+      contactEmails: "leserbriefe@neue-zeitung.de",
+      zurueck,
+    });
+    expect(res.headers.get("location")).toBe(zurueck);
+  });
+
+  it("rendert einen fremden Rückweg nicht in das versteckte Feld", async () => {
+    // Die Absicherung muss auf beiden Wegen greifen: hier beim Rendern,
+    // im Test darunter beim Weiterleiten.
+    for (const boese of ["https://boese.example/", "//boese.example/", "/admin/redaktionen"]) {
+      const html = await (
+        await app().request(`/admin/redaktionen?zurueck=${encodeURIComponent(boese)}`)
+      ).text();
+      expect(html).not.toContain(boese);
+    }
+  });
+
+  it("weist einen Rückweg mit Steuerzeichen ab, statt abzustürzen", async () => {
+    const res = await post("/admin/redaktionen", {
+      name: "X",
+      primaryDomain: "steuerzeichen.de",
+      contactEmails: "",
+      zurueck: "/neu?a=1\r\nSet-Cookie: evil=1",
+    });
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toContain("/admin/redaktionen?hinweis=");
+  });
+
+  it("weist einen fremden Rückweg ab", async () => {
+    const res = await post("/admin/redaktionen", {
+      name: "X",
+      primaryDomain: "x.de",
+      contactEmails: "",
+      zurueck: "https://boese.example/",
+    });
+    // Offene Weiterleitung verhindert: es geht zur Liste, nicht nach draussen.
+    expect(res.headers.get("location")).toContain("/admin/redaktionen?hinweis=");
+  });
+
   it("ergänzt eine weitere Domain", async () => {
     const outlet = createOutlet(db, { name: "X", primaryDomain: "x.de", publisher: null, country: null, notes: null, contactEmails: [] }, NOW);
     await post(`/admin/redaktionen/${outlet.id}/domains`, { domain: "magazin.x.de" });
@@ -4503,13 +4856,21 @@ import type { FC } from "hono/jsx";
 import type { OutletRecord } from "../repo/outlets.js";
 import { Layout } from "./layout.js";
 
-const Felder: FC<{ outlet?: OutletRecord }> = ({ outlet }) => (
+const Felder: FC<{ outlet?: OutletRecord; vorgabeDomain?: string }> = ({
+  outlet,
+  vorgabeDomain,
+}) => (
   <>
     <label for="name">Name</label>
-    <input id="name" name="name" required value={outlet?.name ?? ""} />
+    <input id="name" name="name" required value={outlet?.name ?? vorgabeDomain ?? ""} />
 
     <label for="primaryDomain">Hauptdomain</label>
-    <input id="primaryDomain" name="primaryDomain" required value={outlet?.primaryDomain ?? ""} />
+    <input
+      id="primaryDomain"
+      name="primaryDomain"
+      required
+      value={outlet?.primaryDomain ?? vorgabeDomain ?? ""}
+    />
 
     <label for="publisher">Verlag</label>
     <input id="publisher" name="publisher" value={outlet?.publisher ?? ""} />
@@ -4527,11 +4888,14 @@ const Felder: FC<{ outlet?: OutletRecord }> = ({ outlet }) => (
   </>
 );
 
-export const OutletList: FC<{ outlets: OutletRecord[]; hinweis?: string; fehler?: string }> = ({
-  outlets,
-  hinweis,
-  fehler,
-}) => (
+export const OutletList: FC<{
+  outlets: OutletRecord[];
+  hinweis?: string;
+  fehler?: string;
+  /** Vom Erfassungsformular durchgereicht, wenn dort eine Redaktion fehlte. */
+  vorgabeDomain?: string;
+  zurueck?: string;
+}> = ({ outlets, hinweis, fehler, vorgabeDomain, zurueck }) => (
   <Layout title="Redaktionen">
     {hinweis ? <p class="hinweis">{hinweis}</p> : null}
     {fehler ? <p class="hinweis">{fehler}</p> : null}
@@ -4564,8 +4928,15 @@ export const OutletList: FC<{ outlets: OutletRecord[]; hinweis?: string; fehler?
     </table>
 
     <h2>Neue Redaktion</h2>
+    {vorgabeDomain ? (
+      <p class="hinweis">
+        Domain <strong>{vorgabeDomain}</strong> kommt aus einer Meldung, für die noch
+        keine Kontaktadresse hinterlegt war. Nach dem Anlegen geht es dorthin zurück.
+      </p>
+    ) : null}
     <form method="post" action="/admin/redaktionen">
-      <Felder />
+      {zurueck ? <input type="hidden" name="zurueck" value={zurueck} /> : null}
+      <Felder vorgabeDomain={vorgabeDomain} />
       <button type="submit">Anlegen</button>
     </form>
   </Layout>
@@ -4608,6 +4979,20 @@ import { OutletEdit, OutletList } from "../../views/outlets.js";
 
 const BASE = "/admin/redaktionen";
 
+/**
+ * Der Rueckweg kommt aus der Abfrage und darf deshalb nur auf das
+ * Erfassungsformular zeigen. Ohne diese Pruefung waere die Route eine offene
+ * Weiterleitung — ein praeparierter Link koennte auf eine fremde Seite fuehren.
+ */
+function sicherereRueckweg(wert: string | undefined): string | undefined {
+  if (wert === undefined || !wert.startsWith("/neu?")) return undefined;
+  // Steuerzeichen ebenfalls abweisen: ein eingebetteter Zeilenumbruch besteht
+  // die Praefixpruefung, laesst aber das Setzen des Location-Headers mit einer
+  // unbehandelten Ausnahme scheitern — 500 statt sanftem Rueckfall.
+  if (/[\u0000-\u001F\u007F]/.test(wert)) return undefined;
+  return wert;
+}
+
 function parseEmails(raw: unknown): string[] {
   if (typeof raw !== "string") return [];
   return raw
@@ -4624,6 +5009,8 @@ export function outletAdminRoutes(db: Db, now: () => number): Hono {
       <OutletList
         outlets={listOutlets(db, { includeArchived: false })}
         hinweis={c.req.query("hinweis") ?? undefined}
+        vorgabeDomain={c.req.query("domain") ?? undefined}
+        zurueck={sicherereRueckweg(c.req.query("zurueck"))}
       />,
     ),
   );
@@ -4644,7 +5031,10 @@ export function outletAdminRoutes(db: Db, now: () => number): Hono {
       );
     }
     createOutlet(db, parsed.data, now());
-    return c.redirect(`${BASE}?hinweis=Angelegt`, 302);
+    const zurueck = sicherereRueckweg(
+      typeof raw["zurueck"] === "string" ? raw["zurueck"] : undefined,
+    );
+    return c.redirect(zurueck ?? `${BASE}?hinweis=Angelegt`, 302);
   });
 
   app.post(`${BASE}/:id`, async (c) => {
@@ -5113,8 +5503,31 @@ describe("toPublicOutlet", () => {
 
 describe("assertNoForbiddenFields", () => {
   it("kennt alle in der Spec genannten Felder", () => {
-    for (const field of ["recipientEmail", "fromAddr", "excerpt", "contactEmails", "observedText", "author"]) {
+    for (const field of [
+      "recipientEmail",
+      "fromAddr",
+      "excerpt",
+      "contactEmails",
+      "observedText",
+      "author",
+      "messageId",
+      "rawMessageId",
+    ]) {
       expect(FORBIDDEN_PUBLIC_FIELDS).toContain(field);
+    }
+  });
+
+  it("führt jeden mehrteiligen Namen in beiden Schreibweisen", () => {
+    // Die Spalten heißen snake_case, die Felder camelCase — ein Serialisierungs-
+    // fehler könnte in beiden Formen auftauchen.
+    for (const feld of FORBIDDEN_PUBLIC_FIELDS) {
+      if (feld.includes("_")) {
+        const camel = feld.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+        expect(FORBIDDEN_PUBLIC_FIELDS).toContain(camel);
+      } else if (/[A-Z]/.test(feld)) {
+        const snake = feld.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+        expect(FORBIDDEN_PUBLIC_FIELDS).toContain(snake);
+      }
     }
   });
 
@@ -5219,6 +5632,8 @@ export const FORBIDDEN_PUBLIC_FIELDS = [
   "messageId",
   "message_id",
   "notes",
+  "rawMessageId",
+  "raw_message_id",
   "observedText",
   "observed_text",
   "quotePrefix",
@@ -5230,6 +5645,25 @@ export const FORBIDDEN_PUBLIC_FIELDS = [
 ] as const;
 
 const FORBIDDEN = new Set<string>(FORBIDDEN_PUBLIC_FIELDS);
+
+type VerboteneFeldnamen = (typeof FORBIDDEN_PUBLIC_FIELDS)[number];
+
+/** `true`, wenn der Typ keinen verbotenen Feldnamen deklariert — sonst `never`. */
+type OhneVerbotenerFelder<T> = Extract<keyof T, VerboteneFeldnamen> extends never
+  ? true
+  : never;
+
+/**
+ * Prüfung zur Übersetzungszeit, nicht zur Laufzeit. `assertNoForbiddenFields`
+ * sieht nur, was tatsächlich in einem Objekt steht — ein verbotenes Feld, das
+ * jemand deklariert, aber nie befüllt, käme durch jeden Laufzeittest. Diese
+ * Zeile lässt stattdessen `tsc` fehlschlagen, sobald der Name überhaupt im Typ
+ * auftaucht. Exportiert, damit sie nicht als ungenutzt entfernt wird.
+ */
+export const PUBLIC_TYPEN_SIND_SAUBER: [
+  OhneVerbotenerFelder<PublicCorrection>,
+  OhneVerbotenerFelder<PublicOutlet>,
+] = [true, true];
 
 /** Wächter: prüft rekursiv, auch in Listen und verschachtelten Objekten. */
 export function assertNoForbiddenFields(value: unknown, path = "$"): void {
@@ -5254,7 +5688,7 @@ export function assertNoForbiddenFields(value: unknown, path = "$"): void {
 pnpm vitest run packages/api/src/serialize/public.test.ts
 ```
 
-Erwartet: 8 Tests grün.
+Erwartet: 9 Tests grün.
 
 - [ ] **Step 5: Commit**
 
@@ -5268,7 +5702,7 @@ git commit -m "Oeffentlicher Serializer mit rekursivem Feld-Waechter"
 ### Task 24: Verdrahtung, Bootstrap und Dokumentation
 
 **Files:**
-- Modify: `packages/api/src/app.ts`, `packages/api/src/index.ts`
+- Modify: `packages/api/src/app.ts`, `packages/api/src/web.ts`
 - Create: `CLAUDE.md`, `docs/kurzbefehl.md`
 - Test: `packages/api/src/app.test.ts`
 
@@ -5296,8 +5730,8 @@ const ENV = {
   DATABASE_PATH: ":memory:",
   ADMIN_USER: "admin",
   ADMIN_PASSWORD: "geheimes-passwort",
-  PUBLIC_BASE_URL: "https://korrektur.example.tld",
-  SMTP_HOST: "smtp.example.tld",
+  PUBLIC_BASE_URL: "https://korrekturen.msmr.co",
+  SMTP_HOST: "mail.example.tld",
   SMTP_PORT: 587,
   SMTP_USER: "korrektur@example.tld",
   SMTP_PASSWORD: "x",
@@ -5337,6 +5771,23 @@ describe("App-Verdrahtung", () => {
     expect(
       (await app().request("/admin/fehlerarten", { headers: { authorization: AUTH } })).status,
     ).toBe(200);
+  });
+
+  it("gibt ohne Anmeldung nirgends im Adminbereich Inhalte heraus", async () => {
+    // Der Praefixabgleich /admin/* deckt den Pfad ohne Schraegstrich nicht ab,
+    // und Hono unterscheidet Gross- und Kleinschreibung. Beides darf nicht dazu
+    // fuehren, dass eine Seite ohne Anmeldung ausgeliefert wird.
+    for (const pfad of [
+      "/admin",
+      "/admin/",
+      "/admin/redaktionen",
+      "/ADMIN/redaktionen",
+      "/admin/fehlerarten",
+      "/admin/gibt-es-nicht",
+    ]) {
+      const res = await app().request(pfad);
+      expect(res.status).not.toBe(200);
+    }
   });
 
   it("leitet die Wurzel auf das Erfassungsformular", async () => {
@@ -5388,6 +5839,8 @@ export function createApp(options: AppOptions): Hono {
   app.route("/", health);
 
   app.use("/neu", adminAuth(options.env));
+  // Beide Muster: /admin/* deckt den Pfad ohne abschliessenden Schraegstrich nicht ab.
+  app.use("/admin", adminAuth(options.env));
   app.use("/admin/*", adminAuth(options.env));
 
   app.route(
@@ -5408,7 +5861,7 @@ export function createApp(options: AppOptions): Hono {
 }
 ```
 
-`packages/api/src/index.ts`:
+`packages/api/src/web.ts`:
 
 ```ts
 import { mkdirSync } from "node:fs";
@@ -5429,7 +5882,9 @@ if (env.DATABASE_PATH !== ":memory:") {
 }
 
 const db = createDb(env.DATABASE_PATH);
-runMigrations(db);
+// Ordner explizit aus der geprueften Umgebung, nicht aus dem Rueckfall in
+// runMigrations selbst — sonst liegt derselbe Wert an zwei Stellen.
+runMigrations(db, env.MIGRATIONS_DIR);
 applyViews(db); // aus den Konstanten neu erzeugt, siehe Task 9
 seed(db);
 
@@ -5528,6 +5983,29 @@ Ein verteilbarer Kurzbefehl für fremde Nutzer ist vorgesehen, aber nicht Teil v
 Ablauf in Abschnitt 15 der Spec.
 ```
 
+- [ ] **Step 6a: ESLint das Bündel ignorieren lassen**
+
+`eslint.config.js` prüft derzeit auch `build/`, also erzeugten Code — über hundert
+Befunde in einer Datei, die niemand von Hand pflegt. Sie übertönen echte Funde. In die
+`ignores`-Liste aufnehmen:
+
+```js
+{ ignores: ["**/dist/**", "**/build/**", "**/migrations/**", "fixtures.local/**"] },
+```
+
+- [ ] **Step 6b: Build-Reihenfolge im Deploy-Workflow reparieren**
+
+`.github/workflows/deploy.yml` führt `pnpm test` und `pnpm bundle` aus, ohne vorher zu
+bauen. `@korrektur/shared` wird über sein `exports`-Feld nach `dist/` aufgelöst, und
+`dist/` ist gitignored — auf einem frischen Runner existiert es also nicht, und beide
+Schritte scheitern. Lokal fällt das nicht auf, weil `dist/` dort vom Entwickeln her
+liegt. Vor dem Prüfschritt ergänzen:
+
+```yaml
+      - name: Pakete bauen
+        run: pnpm -r build
+```
+
 - [ ] **Step 7: Vollständigen Durchlauf prüfen**
 
 Lokal:
@@ -5557,7 +6035,7 @@ curl -fsS https://korrekturen.msmr.co/healthz
 - [ ] **Step 8: Commit**
 
 ```bash
-git add packages/api/src/app.ts packages/api/src/app.test.ts packages/api/src/index.ts packages/api/src/routes/health.test.ts CLAUDE.md docs/kurzbefehl.md
+git add packages/api/src/app.ts packages/api/src/app.test.ts packages/api/src/web.ts packages/api/src/routes/health.test.ts CLAUDE.md docs/kurzbefehl.md
 git commit -m "App verdrahten, Bootstrap und Kurzbefehl-Dokumentation"
 ```
 
