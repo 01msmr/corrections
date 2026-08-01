@@ -5102,53 +5102,6 @@ git commit -m "Adminoberflaeche fuer Redaktionen mit Domains und Kontaktadressen
 
 Der Schlüssel wird beim Bearbeiten als reiner Text angezeigt, nicht als Eingabefeld — er steht in versendeten Mails und ist dort nicht mehr korrigierbar (§5.0).
 
-- [ ] **Step 0: Die beiden gemeinsamen Helfer anlegen**
-
-Zwei Dinge sind bei Redaktionen und Fehlerarten wirklich identisch. Alles andere —
-Felder, Validierung, Formularaufbau — ist verschieden und bleibt getrennt; ein
-generisches Admin-Gerüst bräuchte mehr Konfiguration, als es Zeilen spart.
-
-`packages/api/src/routes/admin/common.ts`:
-
-```ts
-import type { Context } from "hono";
-import type { RemovalOutcome } from "../../repo/removal.js";
-
-/**
- * Die Rückmeldung an den Betreiber zu `removeOrArchive` — einmal formuliert.
- * Sie ist die sichtbare Seite derselben Regel, die in removal.ts liegt; liefen
- * die Texte auseinander, läse der Betreiber für denselben Vorgang zwei
- * verschiedene Sätze. Das Substantiv ist der einzige Unterschied.
- */
-export function meldungZuEntfernung(outcome: RemovalOutcome, was: string): string {
-  switch (outcome) {
-    case "archived":
-      return `${was} archiviert, weil Meldungen darauf verweisen`;
-    case "deleted":
-      return `${was} gelöscht`;
-    case "missing":
-      return `${was} nicht gefunden`;
-  }
-}
-
-/**
- * Weiterleitung mit Hinweis. Existiert vor allem wegen der Kodierung: die stand
- * an fünf Aufrufstellen und fehlte an zweien davon.
- */
-export function redirectMitHinweis(c: Context, ziel: string, hinweis: string): Response {
-  return c.redirect(`${ziel}?hinweis=${encodeURIComponent(hinweis)}`, 302);
-}
-```
-
-- [ ] **Step 0b: Task 21 auf die Helfer umstellen**
-
-Sonst ist nichts geteilt, sondern nur an einer zweiten Stelle geschrieben. In
-`packages/api/src/routes/admin/outlets.tsx` die fünf `c.redirect(...)`-Aufrufe mit
-Hinweis durch `redirectMitHinweis(c, BASE, …)` ersetzen und die dreistufige
-Fallunterscheidung im Löschpfad durch `meldungZuEntfernung(outcome, "Redaktion")`.
-Der Rückweg-Fall (`zurueck ?? …`) bleibt, wie er ist — dort wird nicht auf die
-Liste umgeleitet. Die bestehenden Tests müssen unverändert grün bleiben.
-
 - [ ] **Step 1: Den fehlschlagenden Test schreiben**
 
 `packages/api/src/routes/admin/errorTypes.test.ts`:
@@ -5362,7 +5315,6 @@ import {
   removeErrorType,
   updateErrorType,
 } from "../../repo/errorTypes.js";
-import { meldungZuEntfernung, redirectMitHinweis } from "./common.js";
 import { ErrorTypeEdit, ErrorTypeList } from "../../views/errorTypes.js";
 
 const BASE = "/admin/fehlerarten";
@@ -5396,7 +5348,7 @@ export function errorTypeAdminRoutes(db: Db, now: () => number): Hono {
         400,
       );
     }
-    return redirectMitHinweis(c, BASE, "Angelegt");
+    return c.redirect(`${BASE}?hinweis=Angelegt`, 302);
   });
 
   app.post(`${BASE}/:id`, async (c) => {
@@ -5408,12 +5360,18 @@ export function errorTypeAdminRoutes(db: Db, now: () => number): Hono {
       );
     }
     updateErrorType(db, c.req.param("id"), parsed.data);
-    return redirectMitHinweis(c, BASE, "Gespeichert");
+    return c.redirect(`${BASE}?hinweis=Gespeichert`, 302);
   });
 
   app.post(`${BASE}/:id/loeschen`, (c) => {
     const outcome = removeErrorType(db, c.req.param("id"));
-    return redirectMitHinweis(c, BASE, meldungZuEntfernung(outcome, "Fehlerart"));
+    const hinweis =
+      outcome === "archived"
+        ? "Fehlerart archiviert, weil Meldungen darauf verweisen"
+        : outcome === "deleted"
+          ? "Fehlerart geloescht"
+          : "Fehlerart nicht gefunden";
+    return c.redirect(`${BASE}?hinweis=${encodeURIComponent(hinweis)}`, 302);
   });
 
   return app;
