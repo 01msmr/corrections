@@ -151,6 +151,14 @@ Projekt **keine einzige native Abhängigkeit**. Nichts wird kompiliert, es brauc
 weder Build-Tools noch passende Prebuilds — beides ist im chroot der Shell ohnehin
 nicht verfügbar. Kein libSQL, die Turso-Infrastruktur wird nicht genutzt.
 
+**Fallstrick des Treibers, zweimal aufgetreten:** `drizzle-orm@1.0.0-rc.4` verpackt
+Datenbankfehler in einen `DrizzleQueryError`, dessen `message` nur „Failed query: …"
+lautet. Die eigentliche SQLite-Meldung — `UNIQUE constraint failed: …` — steht in
+`error.cause`. Wer auf `error.message` prüft, schreibt toten Code: In Task 7 traf es
+eine Testassertion, in Task 18 die Wiederholungsschleife bei Token-Kollisionen. Prüfungen
+auf Constraint-Verletzungen müssen die `cause`-Kette entlanggehen und dabei eng genug
+bleiben, um Fremdschlüssel-Fehler nicht mitzufangen.
+
 **Deployment über GitHub Actions.** Der Workflow baut auf dem Runner — Installieren,
 Übersetzen, Tests, Bündeln — und lädt das fertige Ergebnis per rsync über SSH hoch.
 Auf dem Server läuft dadurch kein Buildschritt, kein npm, kein Compiler. Push auf
