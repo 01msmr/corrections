@@ -4,9 +4,11 @@
 
 **Goal:** Ein lauffähiges System, in dem eine Korrekturmeldung über ein Web-Formular erfasst, mit Kontext-Ankern angereichert, in der Datenbank abgelegt und per SMTP an die Redaktion versendet wird — inklusive pflegbarer Stammdaten für Redaktionen und Fehlerarten.
 
-**Architecture:** Ein Node-Prozess, eine SQLite-Datei. Hono bedient API und serverseitig gerendertes HTML (JSX), Drizzle spricht mit `better-sqlite3`. Reine Funktionen (URL-Kanonisierung, Textnormalisierung, Ankerbildung, Mailkomposition) liegen ohne IO in eigenen Modulen und sind einzeln getestet; IO ist auf `article/fetch.ts`, `dispatch/send.ts` und `db/client.ts` beschränkt.
+**Architecture:** Zwei Einstiegspunkte auf einem Codestand — `app.js` fuer Passenger, `worker.js` fuer den Cronjob —, eine SQLite-Datei. Hono bedient API und serverseitig gerendertes HTML (JSX), Drizzle spricht ueber `node:sqlite`, den in Node eingebauten Treiber. Keine native Abhaengigkeit. Reine Funktionen (URL-Kanonisierung, Textnormalisierung, Ankerbildung, Mailkomposition) liegen ohne IO in eigenen Modulen und sind einzeln getestet; IO ist auf `article/fetch.ts`, `dispatch/send.ts` und `db/client.ts` beschränkt.
 
-**Tech Stack:** TypeScript (strict), Node 22+, pnpm workspaces, Hono + `@hono/node-server`, Drizzle ORM + `better-sqlite3`, Zod, Nodemailer, `@mozilla/readability` + `linkedom`, Vitest.
+**Tech Stack:** TypeScript (strict), Node 26 auf dem Ziel, pnpm workspaces, Hono + `@hono/node-server`, Drizzle ORM + `node:sqlite`, Zod, Nodemailer, `@mozilla/readability` + `linkedom`, Vitest, esbuild, GitHub Actions.
+
+**Zielumgebung:** netcup Webhosting 4000, Plesk, Node 26.5, kein Docker, kein Root. Gebaut wird auf dem Runner, hochgeladen wird ein fertiges Buendel.
 
 **Referenz-Spec:** `docs/superpowers/specs/2026-08-01-korrektur-tracker-design.md`. Abschnittsverweise (§) beziehen sich darauf.
 
@@ -31,7 +33,7 @@ Diese gelten für **jede** Aufgabe, auch wenn sie dort nicht wiederholt werden.
 ### Abweichungen von der Spec, bewusst getroffen
 
 1. **§4 sieht `packages/web` (Vite + React) vor.** In P0–P2 entsteht dort noch nichts. Erfassungs- und Adminformulare werden mit Honos JSX **serverseitig gerendert** (`packages/api/src/views/`) — kein Client-Bundle, kein SPA-Routing, funktioniert auf jedem Gerät. `packages/web` wird erst in P6 für das öffentliche Dashboard mit Tabelle und Charts angelegt, wo es tatsächlich gebraucht wird.
-2. **§13 legt Basic-Auth in die Traefik-Middleware.** Zusätzlich wird sie auf Anwendungsebene implementiert, damit der Schutz auch lokal und außerhalb des Traefik-Stacks greift. Traefik bleibt die äußere Schicht.
+2. **Basic-Auth liegt auf Anwendungsebene**, nicht in einer Proxy-Middleware. Auf gemanagtem Hosting gibt es keinen eigenen Reverse Proxy zum Konfigurieren; TLS liefert Plesk.
 3. **Die Stammdatenformulare stehen in §14 unter P6.** Sie werden nach P2 vorgezogen: ohne pflegbare Kontaktadressen kann P2 nichts versenden.
 
 ---
@@ -45,8 +47,7 @@ korrektur-tracker/
 ├─ tsconfig.base.json                 # strict, Basis für alle Pakete
 ├─ vitest.workspace.ts
 ├─ eslint.config.js
-├─ Dockerfile
-├─ docker-compose.yml
+├─ .github/workflows/deploy.yml
 ├─ .env.example
 ├─ .claudeignore
 ├─ CLAUDE.md
@@ -70,7 +71,7 @@ korrektur-tracker/
 │     ├─ env.ts                       # Zod-geprüfte Umgebung
 │     ├─ auth.ts                      # Basic-Auth-Middleware
 │     ├─ db/
-│     │  ├─ client.ts                 # better-sqlite3 + Drizzle
+│     │  ├─ client.ts                 # node:sqlite + Drizzle
 │     │  ├─ schema.ts                 # Tabellen
 │     │  ├─ views.ts                  # View-SQL aus Konstanten erzeugen
 │     │  ├─ seed.ts                   # 12 Fehlerarten, 3 Outlets
@@ -331,17 +332,19 @@ git commit -m "Monorepo-Geruest mit shared-Paket und Kennzahlen-Konstanten"
 
 ---
 
-### Task 2: Hono-Server, `/healthz`, Docker
+### Task 2: Hono-Server, Passenger-Einstiegspunkt, Deploy-Workflow
 
 **Files:**
 - Create: `packages/api/package.json`, `packages/api/tsconfig.json`
-- Create: `packages/api/src/env.ts`, `packages/api/src/app.ts`, `packages/api/src/index.ts`, `packages/api/src/routes/health.ts`
-- Create: `Dockerfile`, `docker-compose.yml`, `.env.example`, `.claudeignore`
+- Create: `packages/api/src/env.ts`, `packages/api/src/app.ts`, `packages/api/src/web.ts`, `packages/api/src/worker.ts`, `packages/api/src/routes/health.ts`
+- Create: `.github/workflows/deploy.yml`, `.env.example`, `.claudeignore`
 - Test: `packages/api/src/routes/health.test.ts`
 
 **Interfaces:**
 - Consumes: `@korrektur/shared`
 - Produces: `createApp(): Hono` aus `packages/api/src/app.ts`; `loadEnv(source?: Record<string, string | undefined>): Env` aus `packages/api/src/env.ts` mit `Env = { PORT: number; DATABASE_PATH: string; ADMIN_USER: string; ADMIN_PASSWORD: string; PUBLIC_BASE_URL: string; SMTP_HOST: string; SMTP_PORT: number; SMTP_USER: string; SMTP_PASSWORD: string; MAIL_FROM: string }`
+
+**Zielumgebung:** netcup Webhosting mit Plesk, Node 26.5, kein Docker, kein Root. Gebaut wird auf dem GitHub-Runner, hochgeladen wird ein fertiges Bündel. Auf dem Server läuft weder npm noch ein Compiler.
 
 - [ ] **Step 1: api-Paket anlegen**
 
@@ -352,12 +355,10 @@ git commit -m "Monorepo-Geruest mit shared-Paket und Kennzahlen-Konstanten"
   "name": "@korrektur/api",
   "version": "0.0.0",
   "type": "module",
-  "main": "./dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "start": "node dist/index.js",
-    "dev": "node --watch --experimental-strip-types src/index.ts"
+    "dev": "node --watch --experimental-strip-types src/web.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",
@@ -383,6 +384,12 @@ git commit -m "Monorepo-Geruest mit shared-Paket und Kennzahlen-Konstanten"
   "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"],
   "references": [{ "path": "../shared" }]
 }
+```
+
+Bündler im Workspace-Root ergänzen:
+
+```bash
+pnpm add -Dw esbuild
 ```
 
 - [ ] **Step 2: Den fehlschlagenden Test schreiben**
@@ -464,7 +471,11 @@ export function createApp(): Hono {
 }
 ```
 
-`packages/api/src/index.ts`:
+- [ ] **Step 5: Die beiden Einstiegspunkte anlegen**
+
+Getrennt sein müssen sie, weil Passenger den Webprozess bei Inaktivität herunterfährt — ein In-Process-Timer würde still aufhören zu laufen (§3.4).
+
+`packages/api/src/web.ts`:
 
 ```ts
 import { serve } from "@hono/node-server";
@@ -472,12 +483,31 @@ import { createApp } from "./app.js";
 import { loadEnv } from "./env.js";
 
 const env = loadEnv();
+
+// Passenger reicht den Port über PORT herein und fängt listen() ab.
 serve({ fetch: createApp().fetch, port: env.PORT }, (info) => {
-  console.log(JSON.stringify({ level: "info", msg: "server gestartet", port: info.port }));
+  console.log(JSON.stringify({ level: "info", msg: "web gestartet", port: info.port }));
 });
 ```
 
-- [ ] **Step 5: Test laufen lassen, Erfolg bestätigen**
+`packages/api/src/worker.ts`:
+
+```ts
+import { loadEnv } from "./env.js";
+
+/**
+ * Wird vom Plesk-Cronjob aufgerufen, läuft kurz und endet.
+ * IMAP-Poll kommt in P3, Artikel-Checks in P5 hinzu.
+ */
+function main(): void {
+  loadEnv();
+  console.log(JSON.stringify({ level: "info", msg: "worker gelaufen", tasks: [] }));
+}
+
+main();
+```
+
+- [ ] **Step 6: Test laufen lassen, Erfolg bestätigen**
 
 ```bash
 pnpm install
@@ -486,55 +516,27 @@ pnpm vitest run packages/api/src/routes/health.test.ts
 
 Erwartet: PASS.
 
-- [ ] **Step 6: Docker und Umgebungsvorlage anlegen**
+- [ ] **Step 7: Bündel-Skript ergänzen**
 
-`Dockerfile`:
+Gebündelt wird nach **CommonJS**: Passengers Node-Unterstützung lädt die Startdatei über einen eigenen Shim, und das ist mit CJS verlässlich. Im Zielverzeichnis liegt bewusst keine `package.json` — ein gebündeltes CJS-Skript braucht keine.
 
-```dockerfile
-FROM node:22-bookworm-slim AS build
-WORKDIR /app
-RUN corepack enable
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json ./
-COPY packages/shared/package.json packages/shared/
-COPY packages/api/package.json packages/api/
-RUN pnpm install --frozen-lockfile
-COPY . .
-RUN pnpm -r build
+Root-`package.json` um ein Skript ergänzen:
 
-FROM node:22-bookworm-slim
-WORKDIR /app
-RUN corepack enable
-ENV NODE_ENV=production
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY packages/shared/package.json packages/shared/
-COPY packages/api/package.json packages/api/
-RUN pnpm install --frozen-lockfile --prod
-COPY --from=build /app/packages/shared/dist packages/shared/dist
-COPY --from=build /app/packages/api/dist packages/api/dist
-VOLUME /data
-EXPOSE 3000
-CMD ["node", "packages/api/dist/index.js"]
+```json
+"bundle": "esbuild packages/api/src/web.ts packages/api/src/worker.ts --bundle --platform=node --format=cjs --target=node22 --outdir=build --out-extension:.js=.js && node -e \"require('node:fs').mkdirSync('build/tmp',{recursive:true})\""
 ```
 
-`docker-compose.yml`:
+`esbuild` behandelt `node:`-Builtins automatisch als extern — `node:sqlite` aus Task 7 wird also nicht mitgebündelt, sondern zur Laufzeit von Node 26 bereitgestellt.
 
-```yaml
-services:
-  korrektur:
-    build: .
-    restart: unless-stopped
-    env_file: .env
-    environment:
-      DATABASE_PATH: /data/korrektur.db
-    volumes:
-      - ./data:/data
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.korrektur.rule=Host(`korrektur.example.tld`)"
-      - "traefik.http.routers.korrektur.entrypoints=websecure"
-      - "traefik.http.routers.korrektur.tls.certresolver=default"
-      - "traefik.http.services.korrektur.loadbalancer.server.port=3000"
+Ergebnis in `build/`:
+
 ```
+web.js        → wird beim Deploy zu app.js
+worker.js     → Ziel des Cronjobs
+tmp/          → für restart.txt
+```
+
+- [ ] **Step 8: Umgebungsvorlage anlegen**
 
 `.env.example`:
 
@@ -546,12 +548,14 @@ PUBLIC_BASE_URL=https://korrektur.example.tld
 ADMIN_USER=admin
 ADMIN_PASSWORD=bitte-aendern-mindestens-8-zeichen
 
-SMTP_HOST=smtp.example.tld
+SMTP_HOST=mail.example.tld
 SMTP_PORT=587
 SMTP_USER=korrektur@example.tld
-SMTP_PASSWORD=app-spezifisches-passwort
+SMTP_PASSWORD=passwort-aus-plesk
 MAIL_FROM=korrektur@example.tld
 ```
+
+Auf dem Server wird **keine** dieser Dateien abgelegt. Die Werte trägt man in Plesk unter *Node.js → Benutzerdefinierte Umgebungsvariablen* ein; Passenger reicht sie an den Prozess weiter. `DATABASE_PATH` zeigt dort auf einen Pfad **außerhalb** von `httpdocs`, sonst wäre die Datenbank über die Domain abrufbar (§13).
 
 `.claudeignore`:
 
@@ -559,24 +563,116 @@ MAIL_FROM=korrektur@example.tld
 .env
 fixtures.local/
 data/
+build/
 ```
 
-- [ ] **Step 7: Container prüfen**
+- [ ] **Step 9: Deploy-Workflow anlegen**
 
-```bash
-cp .env.example .env
-docker compose up -d --build
-curl -fsS http://localhost:3000/healthz
-docker compose down
+`.github/workflows/deploy.yml`:
+
+```yaml
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: pnpm bereitstellen
+        run: corepack enable && corepack prepare pnpm@9 --activate
+
+      - name: Abhängigkeiten installieren
+        run: pnpm install --frozen-lockfile
+
+      - name: Prüfen
+        run: |
+          pnpm typecheck
+          pnpm lint
+          pnpm test
+
+      - name: Bündeln
+        run: pnpm bundle
+
+      - name: Startdatei benennen
+        run: mv build/web.js build/app.js
+
+      - name: Migrationen mitliefern
+        run: cp -r packages/api/src/db/migrations build/migrations || true
+
+      - name: SSH vorbereiten
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.NETCUP_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.NETCUP_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Hochladen
+        run: |
+          rsync -az --delete \
+            --exclude 'tmp/' \
+            -e "ssh -i ~/.ssh/id_ed25519" \
+            build/ \
+            "${{ secrets.NETCUP_USER }}@${{ secrets.NETCUP_HOST }}:${{ secrets.NETCUP_APP_ROOT }}/"
+
+      - name: Anwendung neu starten
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+            "${{ secrets.NETCUP_USER }}@${{ secrets.NETCUP_HOST }}" \
+            "mkdir -p '${{ secrets.NETCUP_APP_ROOT }}/tmp' && touch '${{ secrets.NETCUP_APP_ROOT }}/tmp/restart.txt'"
 ```
 
-Erwartet: `{"status":"ok"}`. Falls Traefik den Port nicht durchreicht, für den Test `ports: ["3000:3000"]` ergänzen und danach wieder entfernen.
+`--exclude 'tmp/'` ist wichtig: `--delete` würde sonst bei jedem Lauf das Verzeichnis leeren, in dem Passenger seine Neustart-Datei erwartet. Die Datenbank liegt aus demselben Grund außerhalb des Zielverzeichnisses.
 
-- [ ] **Step 8: Commit**
+Vier Secrets werden gebraucht — GitHub → Settings → Secrets and variables → Actions:
+
+| Secret | Beispiel |
+|---|---|
+| `NETCUP_SSH_KEY` | Inhalt des privaten Deploy-Schlüssels |
+| `NETCUP_HOST` | `ae8d9.netcup.net` |
+| `NETCUP_USER` | `hosting189417` |
+| `NETCUP_APP_ROOT` | `/korrektur.msmr.co` |
+
+- [ ] **Step 10: Server einrichten (einmalig, von Hand)**
+
+1. **Subdomain anlegen**: Plesk → Websites & Domains → Subdomain hinzufügen.
+2. **Deploy-Schlüssel hinterlegen**: lokal `ssh-keygen -t ed25519 -f ~/.ssh/netcup_deploy -N ""`, dann `ssh-copy-id -i ~/.ssh/netcup_deploy.pub BENUTZER@HOST`. Der private Teil wird zum Secret `NETCUP_SSH_KEY`, er verlässt den eigenen Rechner sonst nicht.
+3. **Node.js aktivieren**: Plesk → die Subdomain → Node.js → *Node.js aktivieren*. Anwendungsstamm auf das Subdomain-Verzeichnis, **Anwendungsstartdatei `app.js`**, Anwendungsmodus `production`.
+4. **Umgebungsvariablen** aus `.env.example` dort eintragen, mit den echten Werten.
+5. **Cronjob** anlegen: Plesk → Geplante Aufgaben, stündlich, Befehl `/opt/plesk/node/26/bin/node /var/www/vhosts/…/korrektur.msmr.co/worker.js`. Den genauen Node-Pfad zeigt Plesk in der Node.js-Ansicht an.
+
+- [ ] **Step 11: Deployment prüfen**
 
 ```bash
-git add packages/api Dockerfile docker-compose.yml .env.example .claudeignore pnpm-lock.yaml
-git commit -m "Hono-Server mit Healthcheck, Dockerfile und Compose-Setup"
+git push
+```
+
+Workflow abwarten, dann:
+
+```bash
+curl -fsS https://korrektur.msmr.co/healthz
+```
+
+Erwartet: `{"status":"ok"}`. Bei einem 503 hilft das Passenger-Log unter `logs/` im Subdomain-Verzeichnis — meist eine fehlende Umgebungsvariable, die `loadEnv` mit klarer Meldung quittiert.
+
+- [ ] **Step 12: Commit**
+
+```bash
+git add packages/api .github/workflows/deploy.yml .env.example .claudeignore package.json pnpm-lock.yaml
+git commit -m "Hono-Server, Passenger-Einstiegspunkte und Deploy-Workflow"
 ```
 
 ---
@@ -1091,8 +1187,8 @@ git commit -m "Wilson-Intervall und Quotenschwelle"
 - [ ] **Step 1: Abhängigkeiten ergänzen**
 
 ```bash
-pnpm --filter @korrektur/api add drizzle-orm better-sqlite3 @paralleldrive/cuid2
-pnpm --filter @korrektur/api add -D drizzle-kit @types/better-sqlite3
+pnpm --filter @korrektur/api add drizzle-orm @paralleldrive/cuid2
+pnpm --filter @korrektur/api add -D drizzle-kit
 ```
 
 `packages/api/package.json` um Skripte ergänzen:
@@ -1362,17 +1458,18 @@ export default {
 ```ts
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
-import Database from "better-sqlite3";
-import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import { DatabaseSync } from "node:sqlite";
+import { drizzle, type NodeSQLiteDatabase } from "drizzle-orm/node-sqlite";
+import { migrate } from "drizzle-orm/node-sqlite/migrator";
 import * as schema from "./schema.js";
 
-export type Db = BetterSQLite3Database<typeof schema> & { $client: Database.Database };
+export type Db = NodeSQLiteDatabase<typeof schema> & { $client: DatabaseSync };
 
+/** node:sqlite ist in Node eingebaut — keine native Abhaengigkeit, nichts zu kompilieren (§3.4). */
 export function createDb(path: string): Db {
-  const sqlite = new Database(path);
-  sqlite.pragma("journal_mode = WAL");
-  sqlite.pragma("foreign_keys = ON");
+  const sqlite = new DatabaseSync(path);
+  sqlite.exec("PRAGMA journal_mode = WAL");
+  sqlite.exec("PRAGMA foreign_keys = ON");
   return drizzle(sqlite, { schema }) as Db;
 }
 
@@ -3884,8 +3981,8 @@ import type { MiddlewareHandler } from "hono";
 import type { Env } from "./env.js";
 
 /**
- * Schutz auf Anwendungsebene, zusätzlich zur Traefik-Middleware (§13).
- * Damit greift er auch lokal und außerhalb des Traefik-Stacks.
+ * Schutz auf Anwendungsebene (§13). Auf gemanagtem Hosting gibt es keinen
+ * eigenen Reverse Proxy zum Konfigurieren; TLS liefert Plesk.
  */
 export function adminAuth(env: Env): MiddlewareHandler {
   return basicAuth({ username: env.ADMIN_USER, password: env.ADMIN_PASSWORD });
@@ -5433,15 +5530,29 @@ Ablauf in Abschnitt 15 der Spec.
 
 - [ ] **Step 7: Vollständigen Durchlauf prüfen**
 
+Lokal:
+
 ```bash
-pnpm build
-docker compose up -d --build
+pnpm build && pnpm bundle
+DATABASE_PATH=./data/test.db PUBLIC_BASE_URL=http://localhost:3000 \
+  ADMIN_USER=admin ADMIN_PASSWORD=testtesttest \
+  SMTP_HOST=localhost SMTP_USER=x SMTP_PASSWORD=x MAIL_FROM=korrektur@example.tld \
+  node build/web.js &
 curl -fsS http://localhost:3000/healthz
-curl -fsS -u admin:$(grep ^ADMIN_PASSWORD .env | cut -d= -f2) http://localhost:3000/neu | head -5
-docker compose down
+curl -fsS -u admin:testtesttest http://localhost:3000/neu | head -5
+kill %1
 ```
 
-Erwartet: Healthcheck 200, Formular-HTML mit `name="quoteBefore"`.
+Erwartet: Healthcheck 200, Formular-HTML mit `name="quoteBefore"`. Dass der Lauf gegen
+das **Buendel** geht und nicht gegen `dist/`, ist Absicht: genau das laeuft spaeter auf
+dem Server, und Buendelfehler faende man sonst erst dort.
+
+Danach der Durchlauf ueber den Workflow:
+
+```bash
+git push
+curl -fsS https://korrektur.msmr.co/healthz
+```
 
 - [ ] **Step 8: Commit**
 
@@ -5456,7 +5567,7 @@ git commit -m "App verdrahten, Bootstrap und Kurzbefehl-Dokumentation"
 
 Nach Task 24 sind erfüllt:
 
-- **P0:** `pnpm build && pnpm test` grün, `docker compose up` liefert `/healthz` = 200.
+- **P0:** `pnpm build && pnpm test` gruen; Push auf `main` deployt, `/healthz` unter der Subdomain liefert 200.
 - **P1:** Migration idempotent, Seed läuft, Kennzahlen-Views liefern gegen Bounce,
   Autoreply, frische Meldung, nicht abrufbare Seite, `mailto:`-Datensatz und n = 1 die
   erwarteten Zahlen.
