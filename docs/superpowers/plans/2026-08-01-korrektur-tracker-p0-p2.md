@@ -1235,9 +1235,19 @@ git commit -m "Wilson-Intervall und Quotenschwelle"
 - [ ] **Step 1: Abhängigkeiten ergänzen**
 
 ```bash
-pnpm --filter @korrektur/api add drizzle-orm @paralleldrive/cuid2
-pnpm --filter @korrektur/api add -D drizzle-kit
+pnpm --filter @korrektur/api add --save-exact drizzle-orm@1.0.0-rc.4 @paralleldrive/cuid2
+pnpm --filter @korrektur/api add -D --save-exact drizzle-kit@1.0.0-rc.4
 ```
+
+**Warum eine Vorabversion, und warum exakt gepinnt.** Der Treiber
+`drizzle-orm/node-sqlite` existiert erst in der 1.0-Linie; die stabile 0.45.2 kennt
+ihn nicht. Die Alternative wäre `better-sqlite3` — ein natives Modul, das sich nicht
+bündeln lässt und damit das Deployment aus Task 2 aufhebt: statt drei Dateien müssten
+`node_modules` samt einer zu Node 26 und der glibc des Hosters passenden
+`.node`-Binärdatei mit hochgeladen werden. `1.0.0-rc.4` ist ein Release Candidate
+(Funktionsumfang eingefroren, seit Ende Juni veröffentlicht, aktiv gepatcht), der
+Treiber ist seit `beta.16` dabei. `--save-exact` verhindert, dass eine spätere
+Installation unbemerkt auf eine andere Vorabversion springt.
 
 `packages/api/package.json` um Skripte ergänzen:
 

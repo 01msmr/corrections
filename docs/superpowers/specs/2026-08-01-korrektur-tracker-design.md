@@ -143,7 +143,9 @@ wäre still tot, ohne Fehlermeldung. Der Worker läuft kurz, tut seine Arbeit un
 Da nie zwei Prozesse gleichzeitig schreiben (der Worker läuft im Minutentakt, nicht
 dauerhaft), bleibt SQLite im WAL-Modus unproblematisch.
 
-**Persistenz: `node:sqlite` über `drizzle-orm/node-sqlite`.** Der in Node eingebaute
+**Persistenz: `node:sqlite` über `drizzle-orm/node-sqlite`** (exakt gepinnt auf
+`1.0.0-rc.4`; der Treiber existiert erst in der 1.0-Linie, die stabile 0.45.2 kennt
+ihn nicht — Begründung in Task 7 des Plans)**.** Der in Node eingebaute
 Treiber, kein `better-sqlite3`. Entscheidend auf gemanagtem Hosting: Damit hat das
 Projekt **keine einzige native Abhängigkeit**. Nichts wird kompiliert, es braucht
 weder Build-Tools noch passende Prebuilds — beides ist im chroot der Shell ohnehin
