@@ -16,7 +16,8 @@ Die Frage, die das Projekt beantwortet, ist nicht „welches Medium macht die me
 Fehler". Das lässt sich aus dieser Datengrundlage nicht beantworten und wird auch
 nicht behauptet. Die Frage ist: **Was passiert, wenn man einen Fehler meldet?**
 
-Betrieb: öffentliches Repository, Selfhosting per Docker unter einer Subdomain.
+Betrieb: öffentliches Repository, Selfhosting unter einer Subdomain auf netcup
+Webhosting (Plesk, Node.js 26), Deployment per GitHub Actions.
 
 ---
 
@@ -123,15 +124,35 @@ Die spätere Korrektur-Erkennung sucht exakt diesen String im Artikel. Copy-Past
 Textauswahl liefern das; Abgetipptes nicht. Das Formular bekommt deshalb ein
 Einfügefeld mit entsprechender Beschriftung, kein Freitextfeld „sinngemäß".
 
-### 3.4 Ein Container, ein Prozess
+### 3.4 Betrieb: netcup Webhosting, zwei Einstiegspunkte
 
-Ein Node-Prozess bedient die Hono-API, liefert das gebaute Frontend statisch aus und
-fährt IMAP-Poll sowie Artikel-Checks als In-Process-Cron. Zwei schreibende Prozesse
-auf einer SQLite-Datei erzeugen Lock-Konflikte ohne Gegenwert — es gibt genau einen
-Nutzer. Ein Image, ein Container, ein Traefik-Label, ein Backup-Ziel.
+Zielumgebung ist **netcup Webhosting 4000** mit Plesk. Kein Docker, kein Root — aber
+alles Nötige ist vorhanden: Node.js **26.5**, 25 Cronjobs, SSH, Git,
+Let's-Encrypt-Zertifikate, und — für dieses Projekt besonders praktisch — IMAP mit
+Sieve sowie SMTP auf derselben Maschine.
 
-Persistenz: `better-sqlite3` mit Drizzle. Kein libSQL — die Turso-Infrastruktur wird
-nicht genutzt.
+**Ein Codestand, zwei Einstiegspunkte:**
+
+- `app.js` — die Webanwendung, von Phusion Passenger gestartet (Plesk-Node.js-Erweiterung)
+- `worker.js` — IMAP-Poll und Artikel-Checks, aufgerufen von einem Plesk-Cronjob
+
+Getrennt sein *müssen* sie: Passenger fährt den Webprozess bei Inaktivität herunter.
+Ein In-Process-Timer würde damit schlicht aufhören zu laufen — die Hintergrundarbeit
+wäre still tot, ohne Fehlermeldung. Der Worker läuft kurz, tut seine Arbeit und endet.
+
+Da nie zwei Prozesse gleichzeitig schreiben (der Worker läuft im Minutentakt, nicht
+dauerhaft), bleibt SQLite im WAL-Modus unproblematisch.
+
+**Persistenz: `node:sqlite` über `drizzle-orm/node-sqlite`.** Der in Node eingebaute
+Treiber, kein `better-sqlite3`. Entscheidend auf gemanagtem Hosting: Damit hat das
+Projekt **keine einzige native Abhängigkeit**. Nichts wird kompiliert, es braucht
+weder Build-Tools noch passende Prebuilds — beides ist im chroot der Shell ohnehin
+nicht verfügbar. Kein libSQL, die Turso-Infrastruktur wird nicht genutzt.
+
+**Deployment über GitHub Actions.** Der Workflow baut auf dem Runner — Installieren,
+Übersetzen, Tests, Bündeln — und lädt das fertige Ergebnis per rsync über SSH hoch.
+Auf dem Server läuft dadurch kein Buildschritt, kein npm, kein Compiler. Push auf
+`main` genügt.
 
 ---
 
@@ -140,8 +161,7 @@ nicht genutzt.
 ```
 korrektur-tracker/
 ├─ CLAUDE.md
-├─ Dockerfile
-├─ docker-compose.yml            # Traefik-Labels, /admin zusätzlich basicauth
+├─ .github/workflows/deploy.yml  # Build, Test, rsync auf den Webspace
 ├─ packages/
 │  ├─ shared/                    # Zod-Schemas, Typen, URL-Kanonisierung,
 │  │                             # Text-Normalisierung, Kennzahlen-Konstanten
@@ -378,8 +398,10 @@ Klassifikation:
 Voraussetzung für Zustellbarkeit: **SPF, DKIM und DMARC** für die Absenderdomain.
 Ohne das landen genau die Mails im Spam, die ankommen sollen.
 
-Optional serverseitig: eine Sieve-Regel auf das Adressmuster sortiert Antworten in
-einen eigenen Ordner, den der Worker gezielt liest.
+Das Sammelkonto liegt beim selben Hoster wie die Anwendung (IMAP/IMAPS und SMTP sind
+im Tarif enthalten). Dessen **Sieve-Unterstützung wird genutzt**: eine Regel auf das
+Betreffmuster `[K…]` sortiert Antworten serverseitig in einen eigenen Ordner, den der
+Worker gezielt liest — das spart ihm den Durchlauf der gesamten INBOX.
 
 ---
 
@@ -608,16 +630,29 @@ Inhalte.
 ## 13. Sicherheit
 
 - SMTP-Zugangsdaten mit reinem Submit-Recht, Rate-Limit auf dem Versandpfad,
-  Versand über das Relay des Providers statt eines eigenen MTA.
-- `/neu` und `/admin` hinter Basic-Auth (Traefik-Middleware). Kein Token auf
+  Versand über das Relay des Providers statt eines eigenen MTA. Zugangsdaten liegen
+  als Plesk-Umgebungsvariablen, nicht als Datei im Webspace.
+- **Versandgrenzen des Hosters**: 250 Mails pro 60 Minuten und 750 pro 24 Stunden je
+  Domain. Bei diesem Nutzungsprofil unkritisch, aber der Grund, warum ein
+  Massenversand nie stattfinden darf.
+- **Geteilte Absender-IP** mit anderen Kunden des Hosters. Deshalb sind SPF, DKIM
+  (in Plesk aktivieren) und DMARC nicht optional, sondern die Grundlage dafür, dass
+  Meldungen überhaupt ankommen.
+- TLS über die kostenlosen Let's-Encrypt-Zertifikate in Plesk.
+- `/neu` und `/admin` hinter Basic-Auth auf Anwendungsebene. Kein Token auf
   Endgeräten.
+- **Der Deploy-SSH-Schlüssel** ist ein eigenes Schlüsselpaar, nicht der persönliche;
+  privater Teil ausschließlich als GitHub-Secret, einzeln zurückziehbar.
+- Die SQLite-Datei liegt **außerhalb des Dokumentenstamms** — im Anwendungsstamm, nicht
+  in `httpdocs`. Sonst wäre sie über die Domain abrufbar.
 - `contact_emails` erscheinen in keiner öffentlichen Response und in keinem
   öffentlichen HTML — die Outlet-Tabelle wäre sonst ein Verzeichnis redaktioneller
   Mailadressen für Scraper.
 - `.env` in `.gitignore` und `.claudeignore`, `.env.example` mit Platzhaltern im Repo.
 - Nie echte Mailinhalte, Adressen oder Tokens committen.
-- Backup: `sqlite3 .backup` nächtlich per Cron. Die Datei nicht im laufenden Betrieb
-  kopieren.
+- Backup: `sqlite3 .backup` nächtlich per Plesk-Cronjob in den Backup-Pfad. Die Datei
+  nicht im laufenden Betrieb einfach kopieren. Ergänzend sichert netcup den Webspace
+  freiwillig; darauf allein sollte man sich nicht verlassen.
 
 ---
 
@@ -625,7 +660,7 @@ Inhalte.
 
 | | Phase | Abnahme |
 |---|---|---|
-| **P0** | Monorepo (`shared`/`api`/`web`), TS strict, Vitest, ESLint, ein Dockerfile, compose + Traefik, `.env.example` | `pnpm build && pnpm test` grün, `docker compose up` → `/healthz` = 200 |
+| **P0** | Monorepo (`shared`/`api`/`web`), TS strict, Vitest, ESLint, Passenger-Einstiegspunkt, Deploy-Workflow, `.env.example` | `pnpm build && pnpm test` grün; Push auf `main` deployt, `/healthz` unter der Subdomain = 200 |
 | **P1** | Drizzle-Schema, Migrationen, URL-Kanonisierung, Text-Normalisierung, Zod-Schemas, Kennzahlen-Konstanten, SQL-Views, Seed (12 Fehlerarten, 3 Outlets) | Migration idempotent; Views liefern gegen den Fixture-Datensatz aus 9.5 die erwarteten Zahlen |
 | **P2** | **Erfassung + Versand.** Formular `/neu` hinter Auth, Artikel-Fetch + Extraktion + Anker, Outlet-Auflösung, `ref`-Vergabe, Mail-Bau, SMTP-Relay, Meta-Block, Kurzbefehl-Launcher | Meldung vom iPhone erfasst → Mail an Testadresse angekommen, Betreff trägt `[K…]`, Record `sent` mit Ankern; zweimal derselbe Idempotency-Key ⇒ ein Record |
 | **P3** | IMAP-Antworten: `imapflow`, Cursor, Zuordnungskaskade, Autoreply-/Bounce-Klassifikation; Parser als reine Funktionen | Dry-Run read-only meldet n Meldungen / m Antworten; Schreiblauf ohne Duplikate; Autoreply erhöht die Antwortquote nicht |
@@ -714,12 +749,15 @@ Stufe 1 der Zuordnungskaskade für Fremdmeldungen greift.
    (`AEA1`, Profil 0 — signiert, unverschlüsselt); die Extraktion mit dem `aea`-CLI
    ist noch nicht gelungen. Einfacher: ein unsignierter Export des Kurzbefehls oder
    eine einzelne echte Beispielmail nach `fixtures.local/`.
-2. **Mailprovider und Zugangsdaten**: SMTP-Submit-Host, IMAP-Host, Ordnernamen,
-   App-Passwort. Bestimmt Auth-Verfahren und Ordnerbezeichnungen.
-3. **Absenderdomain mit SPF, DKIM und DMARC.** Voraussetzung dafür, dass Meldungen
-   überhaupt ankommen.
+2. **Mailkonto in Plesk anlegen** (z. B. `korrektur@…`) und die Zugangsdaten als
+   Umgebungsvariablen hinterlegen. Externer Anbieter entfällt — IMAP mit Sieve und
+   SMTP sind im Tarif enthalten.
+3. **DKIM in Plesk aktivieren**, SPF und DMARC im DNS setzen. Wegen der geteilten
+   Absender-IP die Voraussetzung dafür, dass Meldungen nicht im Spam landen.
+4. **Subdomain festlegen**, unter der die Anwendung läuft, und dort in Plesk die
+   Node.js-Erweiterung aktivieren.
 
-Plus-Adressierung beim Provider wird **nicht** benötigt (Abschnitt 7).
+Plus-Adressierung wird **nicht** benötigt (Abschnitt 7).
 
 ---
 
@@ -736,8 +774,10 @@ Plus-Adressierung beim Provider wird **nicht** benötigt (Abschnitt 7).
 | `outlets.domain` als einziges Feld | Tabelle `outlet_domains` | Automatische Anlage erzeugt zwangsläufig Dubletten; ersetzt eine Merge-Funktion |
 | Bearer-Token im Kurzbefehl | Browser-Session hinter Auth | Klartext-Geheimnis auf Endgeräten, Rotationsproblem |
 | Outlet-Wörterbuch im Kurzbefehl | Outlet-Tabelle in der Datenbank | Adressänderung erforderte neue Kurzbefehl-Version |
-| Drei Container (api/worker/web) | ein Container, ein Prozess | Zwei Schreiber auf einer SQLite-Datei; ein Nutzer |
-| libSQL | `better-sqlite3` | Turso-Infrastruktur ungenutzt |
+| Drei Container (api/worker/web) | Passenger-Webprozess + Cron-Worker | Zielumgebung ist gemanagtes Webhosting ohne Docker; Passenger fährt den Webprozess bei Inaktivität herunter |
+| Docker, Compose, Traefik-Labels | GitHub Actions baut, rsync deployt | Kein Root auf dem Ziel; der Build gehört ohnehin nicht auf den Produktivserver |
+| libSQL, dann `better-sqlite3` | `node:sqlite` via `drizzle-orm/node-sqlite` | Keine native Abhängigkeit — im chroot gibt es weder Compiler noch verlässliche Prebuilds |
+| Externer Mailprovider (mailbox.org, Fastmail) | Mailkonto beim selben Hoster | IMAP mit Sieve und SMTP sind im Tarif enthalten |
 | Ein Status-Enum | `dispatch_status` + `outcome` | Mischte zwei Achsen, verlor Information |
 | `error_still_present` als Boolean | `quote_state` mit fünf Werten | „Zitat weg" bedeutete fünf verschiedene Dinge |
 | `author` + `publish_author`-Flag | Feld entfernt | Was nicht gespeichert ist, kann nicht leaken |
