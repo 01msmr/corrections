@@ -693,6 +693,17 @@ git commit -m "Hono-Server, Passenger-Einstiegspunkte und Deploy-Workflow"
 - Consumes: nichts
 - Produces: `canonicalizeUrl(raw: string): { canonical: string; host: string } | null` aus `@korrektur/shared`
 
+- [ ] **Step 0: Bibliothek statt Eigenbau**
+
+```bash
+pnpm --filter @korrektur/shared add normalize-url
+```
+
+`normalize-url` erledigt www-Strippen, Query-Sortierung, Fragment-Entfernung und
+Tracking-Parameter-Filter und deckt dabei Faelle ab, die man von Hand vergisst:
+IDN, Standard-Ports, protokollrelative URLs. **Nicht** abgedeckt ist die Pruefung —
+`"kein-url"` wird bei ihr zu `http://kein-url`. Der eigene Guard bleibt deshalb davor.
+
 - [ ] **Step 1: Den fehlschlagenden Test schreiben**
 
 `packages/shared/src/url.test.ts`:
@@ -724,9 +735,9 @@ describe("canonicalizeUrl", () => {
     );
   });
 
-  it("entfernt einen abschließenden Schrägstrich, außer bei der Wurzel", () => {
+  it("entfernt einen abschließenden Schrägstrich", () => {
     expect(canonicalizeUrl("https://example.de/pfad/")?.canonical).toBe("https://example.de/pfad");
-    expect(canonicalizeUrl("https://example.de/")?.canonical).toBe("https://example.de/");
+    expect(canonicalizeUrl("https://example.de/")?.canonical).toBe("https://example.de");
   });
 
   it("behält Subdomains, die kein www sind", () => {
@@ -753,7 +764,16 @@ Erwartet: FAIL — `Failed to resolve import "./url.js"`.
 `packages/shared/src/url.ts`:
 
 ```ts
-const TRACKING_PARAMS = new Set([
+import normalizeUrl from "normalize-url";
+
+/**
+ * Parameter, die nur der Nachverfolgung dienen. Alles andere bleibt stehen —
+ * eine Artikel-ID in der Query gehoert zur Identitaet des Artikels.
+ */
+const TRACKING_PARAMS = [
+  /^utm_/i,
+  /^pk_/i,
+  /^at_/i,
   "fbclid",
   "gclid",
   "igshid",
@@ -765,41 +785,29 @@ const TRACKING_PARAMS = new Set([
   "wt_mc",
   "wt_zmc",
   "xtor",
-]);
-
-const TRACKING_PREFIXES = ["utm_", "pk_", "at_"];
-
-function isTracking(key: string): boolean {
-  const lower = key.toLowerCase();
-  return TRACKING_PARAMS.has(lower) || TRACKING_PREFIXES.some((p) => lower.startsWith(p));
-}
+];
 
 export function canonicalizeUrl(raw: string): { canonical: string; host: string } | null {
-  let url: URL;
+  // normalize-url validiert nicht: "kein-url" wuerde zu "http://kein-url" und
+  // ftp:// ginge unveraendert durch. Die Pruefung muss deshalb davor stehen und
+  // kann nicht an die Bibliothek delegiert werden.
+  let parsed: URL;
   try {
-    url = new URL(raw.trim());
+    parsed = new URL(raw.trim());
   } catch {
     return null;
   }
-  if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
 
-  const host = url.hostname.toLowerCase().replace(/^www\./, "");
-  url.hostname = host;
-  url.protocol = url.protocol.toLowerCase();
-  url.hash = "";
-  url.username = "";
-  url.password = "";
+  const canonical = normalizeUrl(parsed.toString(), {
+    stripWWW: true,
+    stripHash: true,
+    sortQueryParameters: true,
+    removeTrailingSlash: true,
+    removeQueryParameters: TRACKING_PARAMS,
+  });
 
-  const kept = [...url.searchParams.entries()].filter(([key]) => !isTracking(key));
-  kept.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-  url.search = "";
-  for (const [key, value] of kept) url.searchParams.append(key, value);
-
-  if (url.pathname.length > 1 && url.pathname.endsWith("/")) {
-    url.pathname = url.pathname.slice(0, -1);
-  }
-
-  return { canonical: url.toString(), host };
+  return { canonical, host: new URL(canonical).hostname };
 }
 ```
 
@@ -972,6 +980,16 @@ git commit -m "Textnormalisierung fuer Ankervergleiche"
 - Consumes: nichts
 - Produces: `generateRef(): string`, `isRef(value: string): boolean`, `REF_PATTERN: RegExp`, `extractRefFromSubject(subject: string): string | null` aus `@korrektur/shared`
 
+- [ ] **Step 0: Bibliothek statt Eigenbau**
+
+```bash
+pnpm --filter @korrektur/shared add nanoid
+```
+
+`customAlphabet` erzeugt unverzerrte Zufallsketten aus einem vorgegebenen Alphabet —
+genau das, wofuer sonst eine Schleife ueber `randomInt` noetig waere. Das Alphabet
+bleibt die einzige Quelle: Generator und Muster werden beide daraus abgeleitet.
+
 - [ ] **Step 1: Den fehlschlagenden Test schreiben**
 
 `packages/shared/src/ref.test.ts`:
@@ -1039,7 +1057,7 @@ Erwartet: FAIL — Modul nicht auflösbar.
 `packages/shared/src/ref.ts`:
 
 ```ts
-import { randomInt } from "node:crypto";
+import { customAlphabet } from "nanoid";
 
 /** Crockford-Base32 ohne I, L, O, U — nichts Verwechselbares (§5.2). */
 const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
@@ -1056,12 +1074,11 @@ const BODY_CLASS = `[${ALPHABET}]{${REF_BODY_LENGTH}}`;
 export const REF_PATTERN = new RegExp(`^K${BODY_CLASS}$`);
 const SUBJECT_PATTERN = new RegExp(`\\[(K${BODY_CLASS})\\]`);
 
+/** Aus demselben ALPHABET wie die Muster — keine zweite Quelle. */
+const nanoRef = customAlphabet(ALPHABET, REF_BODY_LENGTH);
+
 export function generateRef(): string {
-  let body = "";
-  for (let i = 0; i < REF_BODY_LENGTH; i++) {
-    body += ALPHABET[randomInt(ALPHABET.length)];
-  }
-  return `K${body}`;
+  return `K${nanoRef()}`;
 }
 
 export function isRef(value: string): boolean {
