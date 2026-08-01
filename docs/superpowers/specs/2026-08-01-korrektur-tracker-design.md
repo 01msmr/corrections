@@ -16,7 +16,7 @@ Die Frage, die das Projekt beantwortet, ist nicht „welches Medium macht die me
 Fehler". Das lässt sich aus dieser Datengrundlage nicht beantworten und wird auch
 nicht behauptet. Die Frage ist: **Was passiert, wenn man einen Fehler meldet?**
 
-Betrieb: öffentliches Repository, Selfhosting unter einer Subdomain auf netcup
+Betrieb: öffentliches Repository, Selfhosting unter **korrekturen.msmr.co** auf netcup
 Webhosting (Plesk, Node.js 26), Deployment per GitHub Actions.
 
 ---
@@ -754,7 +754,7 @@ Stufe 1 der Zuordnungskaskade für Fremdmeldungen greift.
    SMTP sind im Tarif enthalten.
 3. **DKIM in Plesk aktivieren**, SPF und DMARC im DNS setzen. Wegen der geteilten
    Absender-IP die Voraussetzung dafür, dass Meldungen nicht im Spam landen.
-4. **Subdomain festlegen**, unter der die Anwendung läuft, und dort in Plesk die
+4. **Subdomain `korrekturen.msmr.co`** in Plesk anlegen und dort die
    Node.js-Erweiterung aktivieren.
 
 Plus-Adressierung wird **nicht** benötigt (Abschnitt 7).

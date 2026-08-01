@@ -543,7 +543,7 @@ tmp/          → für restart.txt
 ```
 PORT=3000
 DATABASE_PATH=./data/korrektur.db
-PUBLIC_BASE_URL=https://korrektur.example.tld
+PUBLIC_BASE_URL=https://korrekturen.msmr.co
 
 ADMIN_USER=admin
 ADMIN_PASSWORD=bitte-aendern-mindestens-8-zeichen
@@ -644,7 +644,7 @@ Vier Secrets werden gebraucht — GitHub → Settings → Secrets and variables 
 | `NETCUP_SSH_KEY` | Inhalt des privaten Deploy-Schlüssels |
 | `NETCUP_HOST` | `ae8d9.netcup.net` |
 | `NETCUP_USER` | `hosting189417` |
-| `NETCUP_APP_ROOT` | `/korrektur.msmr.co` |
+| `NETCUP_APP_ROOT` | `/korrekturen.msmr.co` |
 
 - [ ] **Step 10: Server einrichten (einmalig, von Hand)**
 
@@ -652,7 +652,7 @@ Vier Secrets werden gebraucht — GitHub → Settings → Secrets and variables 
 2. **Deploy-Schlüssel hinterlegen**: lokal `ssh-keygen -t ed25519 -f ~/.ssh/netcup_deploy -N ""`, dann `ssh-copy-id -i ~/.ssh/netcup_deploy.pub BENUTZER@HOST`. Der private Teil wird zum Secret `NETCUP_SSH_KEY`, er verlässt den eigenen Rechner sonst nicht.
 3. **Node.js aktivieren**: Plesk → die Subdomain → Node.js → *Node.js aktivieren*. Anwendungsstamm auf das Subdomain-Verzeichnis, **Anwendungsstartdatei `app.js`**, Anwendungsmodus `production`.
 4. **Umgebungsvariablen** aus `.env.example` dort eintragen, mit den echten Werten.
-5. **Cronjob** anlegen: Plesk → Geplante Aufgaben, stündlich, Befehl `/opt/plesk/node/26/bin/node /var/www/vhosts/…/korrektur.msmr.co/worker.js`. Den genauen Node-Pfad zeigt Plesk in der Node.js-Ansicht an.
+5. **Cronjob** anlegen: Plesk → Geplante Aufgaben, stündlich, Befehl `/opt/plesk/node/26/bin/node /var/www/vhosts/…/korrekturen.msmr.co/worker.js`. Den genauen Node-Pfad zeigt Plesk in der Node.js-Ansicht an.
 
 - [ ] **Step 11: Deployment prüfen**
 
@@ -663,7 +663,7 @@ git push
 Workflow abwarten, dann:
 
 ```bash
-curl -fsS https://korrektur.msmr.co/healthz
+curl -fsS https://korrekturen.msmr.co/healthz
 ```
 
 Erwartet: `{"status":"ok"}`. Bei einem 503 hilft das Passenger-Log unter `logs/` im Subdomain-Verzeichnis — meist eine fehlende Umgebungsvariable, die `loadEnv` mit klarer Meldung quittiert.
@@ -2389,7 +2389,7 @@ Erwartet: FAIL — `./fetch.js` nicht auflösbar.
 const MAX_BYTES = 5_000_000;
 const DEFAULT_TIMEOUT_MS = 12_000;
 const USER_AGENT =
-  "KorrekturTracker/1.0 (+https://korrektur.example.tld/anleitung; Fehlermeldungen an Redaktionen)";
+  "KorrekturTracker/1.0 (+https://korrekturen.msmr.co/anleitung; Fehlermeldungen an Redaktionen)";
 
 export type FetchResult =
   | { ok: true; status: number; html: string }
@@ -5551,7 +5551,7 @@ Danach der Durchlauf ueber den Workflow:
 
 ```bash
 git push
-curl -fsS https://korrektur.msmr.co/healthz
+curl -fsS https://korrekturen.msmr.co/healthz
 ```
 
 - [ ] **Step 8: Commit**
