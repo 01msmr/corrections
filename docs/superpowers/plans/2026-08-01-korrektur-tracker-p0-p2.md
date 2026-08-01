@@ -1116,10 +1116,19 @@ import { describe, expect, it } from "vitest";
 import { rateOrNull, wilsonInterval } from "./stats.js";
 
 describe("wilsonInterval", () => {
-  it("liefert für 5 von 12 ein plausibles 95-%-Intervall", () => {
+  it("reproduziert einen aus der Literatur bekannten Kontrollfall", () => {
+    // Wilson-Score-Intervall fuer 40 von 100, 95 % — Standardwert aus der
+    // Literatur. Verankert den Test an einer externen Quelle statt an der
+    // eigenen Implementierung.
+    const { lower, upper } = wilsonInterval(40, 100);
+    expect(lower).toBeCloseTo(0.3094, 4);
+    expect(upper).toBeCloseTo(0.498, 3);
+  });
+
+  it("liefert für 5 von 12 ein enges 95-%-Intervall", () => {
     const { lower, upper } = wilsonInterval(5, 12);
-    expect(lower).toBeCloseTo(0.1979, 3);
-    expect(upper).toBeCloseTo(0.6816, 3);
+    expect(lower).toBeCloseTo(0.1933, 4);
+    expect(upper).toBeCloseTo(0.6805, 4);
   });
 
   it("gibt bei n=0 das volle Intervall zurück", () => {
