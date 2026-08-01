@@ -75,9 +75,9 @@ die des Providers).
 
 Folgen:
 
-- Die `Message-ID` ist bekannt, weil der Server sie vergibt. Kein Fuzzy-Match über
-  URL und Zeitfenster.
-- `Reply-To` kann einen VERP-Schlüssel tragen (Abschnitt 7).
+- **Die `Message-ID` ist bekannt, weil der Server sie vergibt.** Kein Fuzzy-Match über
+  URL und Zeitfenster. Das ist der Hauptgewinn — er kostet nichts und hängt an keinem
+  Provider-Feature.
 - Der Gesendet-Ordner muss im Dauerbetrieb nicht geparst werden. IMAP liest nur INBOX.
 - Retry und Fehlerbehandlung liegen serverseitig.
 
@@ -215,9 +215,6 @@ faktenfehler | falschzitat | uebersetzung | bild | ueberschrift_deckt_nicht | so
 `quote_state`: `unchanged | changed_as_suggested | changed_otherwise | passage_gone |
 unreachable`
 
-Der VERP-Schlüssel im `Reply-To` **ist** der `ref` — kein eigenes Feld. Ein
-eingehendes `korrektur+K7QW3M2P@<domain>` schlägt direkt auf `corrections(ref)` auf.
-
 **Indizes:** `corrections(ref)` UNIQUE, `corrections(idempotency_key)` UNIQUE,
 `corrections(outlet_id, sent_at)`,
 `corrections(dispatch_status)`, `corrections(article_url_canon)`,
@@ -248,9 +245,17 @@ Getrennt:
 
 - `idempotency_key` — clientseitiger Hash, schützt gegen Doppelabsenden bei
   Netzwackler.
-- `ref` — **serverseitig vergeben**, 5 Zufallsbytes in Base32, z. B. `K7QW3M2P`.
-  Kollisionsfrei per `UNIQUE`, kein Zeitbezug. Erscheint im Betreff, im Meta-Block und
-  in der Detail-URL.
+- `ref` — **serverseitig vergeben**: `K` + 5 Zeichen Crockford-Base32 (Alphabet ohne
+  `I`, `L`, `O`, `U`, damit nichts verwechselt wird), z. B. `K7QW3`. Ein String, der
+  überall identisch auftaucht: Betreff, Meta-Block, Detail-URL, Datenbank — keine
+  Zusammensetzlogik, die auseinanderlaufen könnte.
+
+  32⁵ = 33.554.432 Werte. Bei 1.000 Datensätzen kollidiert eine einzelne Vergabe mit
+  ~0,003 %, bei 10.000 mit ~0,03 %. Eine Kollision ist ohnehin kein Datenverlust,
+  sondern ein Retry: `UNIQUE`-Index, bei Verletzung neu würfeln, maximal fünf Versuche,
+  danach Fehler. Das `K`-Präfix hält den Betreff-Regex spezifisch — `[K7QW3]`
+  kollidiert nicht mit `[Ticket#12345]` und ähnlichem Beiwerk, und ein zufälliger
+  Falschtreffer läuft ins Leere, weil er in der Datenbank nicht existiert.
 
 Der Hash stand ursprünglich nur deshalb im Kurzbefehl, weil der Client die Mail baute
 und das Token vor dem Versand brauchte. Mit dem serverseitigen Versand entfällt der
@@ -269,7 +274,7 @@ Ablauf beim Absenden des Formulars:
 3. Artikel abrufen, mit `@mozilla/readability` + `linkedom` extrahieren, Text
    normalisieren (Abschnitt 8.2), `quote_before` darin lokalisieren und Anker ableiten.
    Schlägt das fehl, wird trotzdem gespeichert — mit `anchor_quality='none'`.
-4. `ref` vergeben, `reply_tag` ableiten.
+4. `ref` vergeben (bei `UNIQUE`-Verletzung neu würfeln, max. fünf Versuche).
 5. Mail bauen und per SMTP-Relay versenden.
 6. Bei Erfolg `dispatch_status='sent'`, `sent_at` setzen, `message_id` speichern.
    Bei Fehler `dispatch_status='failed'` und sichtbare Rückmeldung im Formular.
@@ -277,21 +282,23 @@ Ablauf beim Absenden des Formulars:
 Mailaufbau:
 
 ```
-From:     korrektur@<domain>
-Reply-To: korrektur+K7QW3M2P@<domain>
-Subject:  Korrekturhinweis: <Kurzbeschreibung> [K7QW3M2P]
+From:    korrektur@<domain>
+Subject: Korrekturhinweis: <Kurzbeschreibung> [K7QW3]
 
 <Anrede, Fundstelle mit Link, Zitat, Vorschlag, Kommentar>
 
 --
 Diese Meldung wurde über <host> erstellt.
 [korrektur-meta]
-v=2; ref=K7QW3M2P; url=<canon>; typ=<error_type>; sev=<1..3>
+v=2; ref=K7QW3; url=<canon>; typ=<error_type>; sev=<1..3>
 [/korrektur-meta]
 ```
 
-Der Token steht **am Ende des Betreffs**, damit `Re:`/`AW:`/`WG:`-Präfixe nicht stören.
-Der Meta-Block im Body ist Redundanz für Ticketsysteme, die den Betreff umschreiben.
+Kein `Reply-To` mit Tag — Begründung in Abschnitt 7.
+
+Der Token steht **am Ende des Betreffs**, damit `Re:`/`AW:`/`WG:`-Präfixe nicht stören;
+gesucht wird er später trotzdem im gesamten Betreff. Der Meta-Block im Body ist die
+dritte Zuordnungsstufe: Antworten, die das Original zitieren, tragen ihn zurück.
 
 ---
 
@@ -300,14 +307,27 @@ Der Meta-Block im Body ist Redundanz für Ticketsysteme, die den Betreff umschre
 IMAP-Poll alle 15 Minuten, nur INBOX. Zustandshaltung über `UIDVALIDITY` + höchste
 gesehene `UID` pro Ordner in `imap_cursor` — niemals über Datum oder Gelesen-Status.
 
-Zuordnungskaskade, alle drei Schlüssel serverseitig bekannt:
+Zuordnungskaskade — drei Stufen, die sich gegenseitig nicht ersetzen, weil sie in
+verschiedenen Situationen greifen:
 
-1. **VERP** — `korrektur+<ref>@<domain>` in `To`/`Delivered-To` → deterministisch.
-2. **`In-Reply-To` / `References`** gegen `corrections.message_id` → deterministisch.
-3. **Betreff-Token** `/\[K[0-9A-Z]{8}\]/` nach Strippen der Präfixe → Fallback für
-   Ticketsysteme, die weder Header noch Adresse durchreichen.
+1. **`In-Reply-To` / `References`** gegen `corrections.message_id` → deterministisch.
+   Greift bei jeder Antwort aus einem normalen Mail-Client.
+2. **Betreff-Token** `/\[(K[0-9A-HJKMNP-TV-Z]{5})\]/`, im **gesamten** Betreff gesucht,
+   nicht nur am Ende → fängt Ticketsysteme, die den Referenz-Header verlieren, ihren
+   eigenen Token aber nur *ergänzen* statt den Betreff zu ersetzen. Ohne diese Stufe
+   wäre jede Antwort aus einem Leserbrief-Ticketsystem dauerhaft Handarbeit.
+3. **`ref` im zitierten Original** — derselbe Regex über den Body. Antworten, die den
+   Ursprungstext zitieren, bringen den Meta-Block zurück. Kostet einen Zweig.
 
-Kein Treffer ⇒ Review-Queue, kein Raten.
+Kein Treffer ⇒ Review-Queue, kein Raten. Jeder Treffer wird gegen die Datenbank
+aufgelöst; ein zufälliger Regex-Falschtreffer findet nichts und wird verworfen.
+
+**Kein VERP, kein getaggtes `Reply-To`.** Es hätte nur den schmalen Fall abgedeckt, in
+dem der Betreff zerstört wurde *und* trotzdem an die getaggte Adresse geantwortet wird
+— und ausgerechnet Ticketsysteme führen den Anfragenden häufig über `From` statt
+`Reply-To`. Zuverlässig wäre der Tag erst im `From` gewesen, dann stünde aber
+`korrektur+K7QW3@…` als sichtbarer Absender in der Redaktion, was der Begründung aus
+3.1 widerspricht. Plus-Adressierung beim Provider ist damit keine Voraussetzung.
 
 Klassifikation:
 
@@ -564,7 +584,7 @@ Inhalte.
 |---|---|---|
 | **P0** | Monorepo (`shared`/`api`/`web`), TS strict, Vitest, ESLint, ein Dockerfile, compose + Traefik, `.env.example` | `pnpm build && pnpm test` grün, `docker compose up` → `/healthz` = 200 |
 | **P1** | Drizzle-Schema, Migrationen, URL-Kanonisierung, Text-Normalisierung, Zod-Schemas, Kennzahlen-Konstanten, SQL-Views, Seed mit 3 Outlets | Migration idempotent; Views liefern gegen den Fixture-Datensatz aus 9.5 die erwarteten Zahlen |
-| **P2** | **Erfassung + Versand.** Formular `/neu` hinter Auth, Artikel-Fetch + Extraktion + Anker, Outlet-Auflösung, `ref`-Vergabe, Mail-Bau, SMTP-Relay, VERP-`Reply-To`, Meta-Block, Kurzbefehl-Launcher | Meldung vom iPhone erfasst → Mail an Testadresse angekommen, `Reply-To` trägt Tag, Record `sent` mit Ankern; zweimal derselbe Idempotency-Key ⇒ ein Record |
+| **P2** | **Erfassung + Versand.** Formular `/neu` hinter Auth, Artikel-Fetch + Extraktion + Anker, Outlet-Auflösung, `ref`-Vergabe, Mail-Bau, SMTP-Relay, Meta-Block, Kurzbefehl-Launcher | Meldung vom iPhone erfasst → Mail an Testadresse angekommen, Betreff trägt `[K…]`, Record `sent` mit Ankern; zweimal derselbe Idempotency-Key ⇒ ein Record |
 | **P3** | IMAP-Antworten: `imapflow`, Cursor, Zuordnungskaskade, Autoreply-/Bounce-Klassifikation; Parser als reine Funktionen | Dry-Run read-only meldet n Meldungen / m Antworten; Schreiblauf ohne Duplikate; Autoreply erhöht die Antwortquote nicht |
 | **P4** | Altbestand: Korpus-Export, Vorlagen-Parser, Konfidenz-Scoring, Review-Queue, `References`-Matching der Altantworten | Bestand durchlaufen; Kennzahlen decken rückwirkend Jahre ab |
 | **P5** | Artikel-Checks per Cron: Tag 1/3/7/30/90, `robots.txt`, ein Request pro Domain und Minute, Anker-Kaskade | Lokal servierte HTML-Varianten → alle fünf `quote_state`-Werte korrekt erkannt |
@@ -591,10 +611,10 @@ im Schema liegen und die Phase ohne Migration dazukommt:
   echten Person in der Redaktion anders als eine Maschinenmail.
 - `bcc` auf ein Eingangspostfach belegt den Versand (best effort — nicht alle Clients
   übernehmen `bcc`). Der Betreff-Token ordnet die Kopie zu.
-- **`Reply-To` im `mailto:` trägt nicht**: RFC 6068 erlaubt es, die meisten Clients
-  ignorieren alles außer `to`, `cc`, `bcc`, `subject`, `body`. Der VERP-Schlüssel
-  funktioniert hier nicht — die Antwort geht ins Postfach des Nutzers und ist für das
-  System unsichtbar.
+- **Die Antwort ist strukturell unsichtbar.** Sie geht ins Postfach des Nutzers. Auch
+  ein `Reply-To` im `mailto:` hilft nicht: RFC 6068 erlaubt es, die meisten Clients
+  ignorieren alles außer `to`, `cc`, `bcc`, `subject`, `body`. Der Betreff-Token ist
+  hier der einzige verfügbare Schlüssel — er ordnet immerhin die BCC-Kopie zu.
 - **Kopier-Button** neben dem Link (Empfänger, Betreff, Body in die Zwischenablage)
   deckt Webmail-Nutzer ohne registrierten `mailto:`-Handler ab. Ohne ihn fehlt eine
   nennenswerte Gruppe.
@@ -617,9 +637,8 @@ im Schema liegen und die Phase ohne Migration dazukommt:
    App-Passwort. Bestimmt Auth-Verfahren und Ordnerbezeichnungen.
 3. **Absenderdomain mit SPF, DKIM und DMARC.** Voraussetzung dafür, dass Meldungen
    überhaupt ankommen.
-4. **Bestätigung, dass Plus-Adressierung** (`korrektur+tag@domain`) beim Provider
-   funktioniert — Grundlage der VERP-Zuordnung. Sonst greift die Kaskade eine Stufe
-   tiefer.
+
+Plus-Adressierung beim Provider wird **nicht** benötigt (Abschnitt 7).
 
 ---
 
@@ -630,7 +649,8 @@ im Schema liegen und die Phase ohne Migration dazukommt:
 | Client versendet die Mail, POST zusätzlich | Server versendet per SMTP | Zwei Schreibpfade ohne Transaktion; stille Divergenz |
 | Fuzzy-Match der `message_id` über URL + ±10 min | `message_id` ist bekannt | Entfällt mit serverseitigem Versand |
 | Dauerbetriebs-Parsing des Gesendet-Ordners | nur einmalig in P4 | dito |
-| `ref = sha256(url + ISO-Minute)` | Server vergibt Zufalls-`ref` | Kollision bei zwei Fehlern pro Minute; Drift beim Nachrechnen |
+| `ref = sha256(url + ISO-Minute)`, 8 Hex | Server vergibt `K` + 5 Zeichen Base32 | Kollision bei zwei Fehlern pro Minute; Drift beim Nachrechnen; 8 Zeichen unnötig lang |
+| VERP-Tag im `Reply-To` als Zuordnungsstufe | ersatzlos gestrichen | Greift ausgerechnet bei Ticketsystemen unzuverlässig; zuverlässig nur im `From`, das widerspricht 3.1 |
 | Bearer-Token im Kurzbefehl | Browser-Session hinter Auth | Klartext-Geheimnis auf Endgeräten, Rotationsproblem |
 | Outlet-Wörterbuch im Kurzbefehl | Outlet-Tabelle in der Datenbank | Adressänderung erforderte neue Kurzbefehl-Version |
 | Drei Container (api/worker/web) | ein Container, ein Prozess | Zwei Schreiber auf einer SQLite-Datei; ein Nutzer |
