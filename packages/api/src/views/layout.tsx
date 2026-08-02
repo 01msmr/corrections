@@ -19,13 +19,14 @@ const STYLES = `
     --rand: #6b7480;
     --linie: #dcddd8;
     --feld: #fffffe;
+    --knopf: #d9d5c8;
     --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
     --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --papier: #16181b; --tinte: #e8e6e1; --korrektur: #f2756b; --vorschlag: #7bc39a;
-      --rand: #949ba6; --linie: #2e3237; --feld: #1d2024;
+      --rand: #949ba6; --linie: #2e3237; --feld: #1d2024; --knopf: #33373c;
     }
   }
 
@@ -120,7 +121,7 @@ const STYLES = `
   input, textarea, select {
     width: 100%; padding: .55rem .65rem; font: inherit;
     background: var(--feld); color: inherit;
-    border: 1px solid var(--linie); border-radius: 2px;
+    border: 1px solid var(--linie); border-radius: 6px;
     /* Leichter Innenschatten: das Feld liegt tiefer als das Blatt und wirkt
        dadurch als Flaeche, die etwas aufnimmt. */
     box-shadow: inset 0 2px 5px rgba(0, 0, 0, .18), inset 0 0 0 1px rgba(0, 0, 0, .03);
@@ -163,14 +164,22 @@ const STYLES = `
   button {
     margin-top: .5rem; padding: .6rem 1.4rem; cursor: pointer;
     font: 600 1.125rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase;
-    background: var(--tinte); color: var(--papier);
-    border: 1px solid var(--tinte); border-radius: 2px;
+    background: var(--knopf); color: var(--tinte);
+    border: 1px solid var(--tinte); border-radius: 6px;
+    /* Harte Kante statt Weichzeichnung: ein weicher Schatten wirkt auf diesem
+       flachen, papiernen Bild immer schmutzig. Eine versetzte Volltonflaeche
+       liest sich dagegen wie eine Praegung und traegt den Kontrast. */
+    box-shadow: 0 4px 0 var(--tinte);
+    transform: translateY(-2px);
   }
-  button:hover { background: var(--korrektur); border-color: var(--korrektur); }
+  button:hover, button:focus-visible { background: var(--tinte); color: var(--papier);
+    border-color: var(--tinte); }
+  /* Beim Druecken sinkt der Knopf auf seine Kante. */
+  button:active { transform: translateY(2px); box-shadow: 0 0 0 var(--tinte); }
 
   .hinweis { padding: .85rem 1rem; margin: 0 0 1.5rem;
     background: var(--feld); border: 1px solid var(--linie);
-    border-left: 5px solid var(--rand); border-radius: 2px; }
+    border-left: 5px solid var(--rand); border-radius: 6px; }
   .hinweis p { margin: 0 0 .5rem; }
   .hinweis p:last-child { margin-bottom: 0; }
 
