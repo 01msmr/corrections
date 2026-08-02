@@ -156,10 +156,14 @@ export const CaptureForm: FC<{
         </div>
 
 
-        {/* Unten in der Nebenspalte und rechtsbuendig: der Knopf schliesst den
-            Vorgang ab und steht dort, wo der Blick nach dem Ausfuellen endet. */}
-        <div class="abschluss">
-          <button type="submit">Hinweis absenden</button>
+        {/* Unten in der Nebenspalte: der Knopf schliesst den Vorgang ab und
+            steht dort, wo der Blick nach dem Ausfuellen endet. Als .satz, damit
+            er auf derselben Kante beginnt wie die Felder darueber. */}
+        <div class="satz abschluss">
+          <Zeichen />
+          <div class="feld">
+            <button type="submit">Hinweis absenden</button>
+          </div>
         </div>
       </aside>
     </form>

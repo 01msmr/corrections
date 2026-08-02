@@ -108,6 +108,7 @@ const STYLES = `
   .satz > .breit { grid-column: 1 / -1; }
   .arbeitsflaeche { display: grid; }
   .abschluss { padding-top: 1.25rem; }
+  .abschluss .feld { margin-bottom: 0; }
   .abschluss button { width: 100%; margin-top: 0; min-height: 3.6rem; }
   .gegenueberstellung { display: grid; }
   @media (max-width: 34rem) {
