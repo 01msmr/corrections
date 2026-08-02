@@ -7,9 +7,11 @@
  * aus dem Betriebssystem kennen.
  *
  * Reihenfolge: deutschsprachig zuerst, dann das uebrige Europa, danach die
- * Weltregionen nach ihrer erwartbaren Haeufigkeit in deutschsprachiger
- * Berichterstattung. Innerhalb einer Gruppe wird nach dem angezeigten Namen
- * sortiert, nicht nach dem Kuerzel.
+ * Weltregionen. Sortiert wird durchgaengig nach erwartbarer Haeufigkeit --
+ * Einwohnerzahl und Gewicht des Sprachraums in deutschsprachiger
+ * Berichterstattung. Alphabetisch waere neutraler, wuerde aber Andorra und
+ * Grossbritannien gleich behandeln: gesucht wird fast immer eines der ersten
+ * fuenf Kuerzel, und die sollen oben stehen.
  */
 export interface RegionGroup {
   label: string;
@@ -21,28 +23,28 @@ export const REGION_GROUPS: readonly RegionGroup[] = [
   {
     label: "Europa",
     codes: [
-      "AL", "AD", "BE", "BA", "BG", "CY", "DK", "EE", "FI", "FR", "GB", "GR",
-      "HR", "HU", "IE", "IS", "IT", "LT", "LV", "MC", "MD", "ME", "MK", "MT",
-      "NL", "NO", "PL", "PT", "RO", "RS", "SE", "SI", "SK", "SM", "ES", "UA",
-      "VA",
+      "GB", "FR", "IT", "ES", "PL", "UA", "RO", "NL", "BE", "CZ", "GR", "PT",
+      "SE", "HU", "BG", "RS", "DK", "FI", "SK", "NO", "IE", "HR", "BA", "AL",
+      "LT", "SI", "LV", "EE", "MK", "MD", "CY", "ME", "MT", "IS", "AD", "MC",
+      "SM", "VA",
     ],
   },
   { label: "Nordamerika", codes: ["US", "CA", "MX"] },
   {
     label: "Asien",
-    codes: ["CN", "IN", "ID", "JP", "KR", "MY", "PH", "PK", "SG", "TH", "TW", "VN", "BD", "HK"],
+    codes: ["CN", "IN", "ID", "PK", "BD", "JP", "PH", "VN", "TH", "KR", "MY", "TW", "HK", "SG"],
   },
   {
     label: "Naher und Mittlerer Osten",
-    codes: ["TR", "IL", "IR", "SA", "AE", "EG", "IQ", "JO", "LB", "QA", "SY"],
+    codes: ["TR", "EG", "IR", "IQ", "SA", "SY", "IL", "JO", "AE", "LB", "QA"],
   },
   {
     label: "Afrika",
-    codes: ["ZA", "NG", "KE", "MA", "ET", "GH", "TN", "DZ", "SN", "TZ", "UG"],
+    codes: ["NG", "ET", "ZA", "TZ", "KE", "UG", "DZ", "MA", "GH", "SN", "TN"],
   },
   {
     label: "Südamerika",
-    codes: ["BR", "AR", "CL", "CO", "PE", "UY", "VE", "BO", "EC", "PY"],
+    codes: ["BR", "CO", "AR", "PE", "VE", "CL", "EC", "BO", "PY", "UY"],
   },
   { label: "Ozeanien", codes: ["AU", "NZ"] },
   { label: "Sonstige", codes: ["RU", "BY", "CU", "KZ", "NP", "LK", "MM", "AF"] },
@@ -69,9 +71,8 @@ export function regionOptionGroups(locale = "de", extra?: string | null): Region
 
   const groups = REGION_GROUPS.map((group) => ({
     label: group.label,
-    options: group.codes
-      .map((code) => ({ code, name: display.of(code) ?? code }))
-      .sort((a, b) => a.name.localeCompare(b.name, locale)),
+    // Bewusst ohne Sortierung: die Reihenfolge in REGION_GROUPS ist gepflegt.
+    options: group.codes.map((code) => ({ code, name: display.of(code) ?? code })),
   }));
 
   const upper = extra?.trim().toUpperCase();

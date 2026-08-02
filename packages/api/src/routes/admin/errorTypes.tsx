@@ -59,7 +59,7 @@ export function errorTypeAdminRoutes(db: Db, now: () => number): Hono {
     const outcome = removeErrorType(db, c.req.param("id"));
     const hinweis =
       outcome === "archived"
-        ? "Fehlerart archiviert, weil Meldungen darauf verweisen"
+        ? "Fehlerart archiviert, weil Hinweise darauf verweisen"
         : outcome === "deleted"
           ? "Fehlerart geloescht"
           : "Fehlerart nicht gefunden";

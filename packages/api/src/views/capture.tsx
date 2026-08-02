@@ -17,7 +17,7 @@ const FehlendeRedaktion: FC<{ host: string; zurueck: string }> = ({ host, zuruec
   <div class="hinweis">
     <p>
       Für <strong>{host}</strong> ist keine Kontaktadresse hinterlegt — ohne die kann
-      die Meldung nicht versendet werden.
+      der Hinweis nicht versendet werden.
     </p>
     <p>
       <a href={`https://${host}/impressum`} target="_blank" rel="noopener noreferrer">
@@ -29,9 +29,24 @@ const FehlendeRedaktion: FC<{ host: string; zurueck: string }> = ({ host, zuruec
       <a href={`/admin/redaktionen?domain=${encodeURIComponent(host)}&zurueck=${encodeURIComponent(zurueck)}`}>
         Redaktion jetzt anlegen
       </a>{" "}
-      — Domain ist vorausgefüllt, danach geht es zurück zu dieser Meldung.
+      — Domain ist vorausgefüllt, danach geht es zurück zu diesem Hinweis.
     </p>
   </div>
+);
+
+/**
+ * Randspalte der Manuskriptseite. Ein Zeichen steht nur dort, wo tatsaechlich
+ * korrigiert wird — Tilgen, Einfuegen, Randbemerkung. Die uebrigen Felder
+ * lassen den Rand leer, damit die drei Zeichen etwas bedeuten und nicht zur
+ * Verzierung jeder Zeile werden.
+ *
+ * aria-hidden, weil die Beschriftung daneben dieselbe Aussage in Worten trifft:
+ * vorgelesen waere das Zeichen eine Dopplung ohne Mehrwert.
+ */
+const Zeichen: FC<{ mark?: string | undefined; titel?: string | undefined }> = ({ mark, titel }) => (
+  <span class="zeichen" aria-hidden="true" title={titel}>
+    {mark ?? ""}
+  </span>
 );
 
 export const CaptureForm: FC<{
@@ -42,51 +57,83 @@ export const CaptureForm: FC<{
   fehler?: string | undefined;
   fehlendeRedaktion?: { host: string; zurueck: string } | undefined;
 }> = ({ errorTypes, idempotencyKey, url, quote, fehler, fehlendeRedaktion }) => (
-  <Layout title="Neue Korrekturmeldung">
+  <Layout title="Neuer Hinweis">
     {fehlendeRedaktion ? (
       <FehlendeRedaktion host={fehlendeRedaktion.host} zurueck={fehlendeRedaktion.zurueck} />
     ) : fehler ? (
       <p class="hinweis">{fehler}</p>
     ) : null}
-    <form method="post" action="/neu">
+    <form class="satz" method="post" action="/neu">
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
 
-      <label for="articleUrl">Artikel-URL</label>
-      <input id="articleUrl" name="articleUrl" type="url" required value={url} />
+      <Zeichen />
+      <div class="feld">
+        <label for="articleUrl">Artikel-URL</label>
+        <input id="articleUrl" name="articleUrl" type="url" required value={url} />
+      </div>
 
-      <label for="headline">Überschrift (optional, wird sonst aus dem Artikel gelesen)</label>
-      <input id="headline" name="headline" type="text" />
+      <Zeichen />
+      <div class="feld">
+        <label for="headline">
+          Überschrift
+          <span class="zaehler">optional — wird sonst aus dem Artikel gelesen</span>
+        </label>
+        <input id="headline" name="headline" type="text" />
+      </div>
 
-      <label for="errorTypeKey">Art des Fehlers</label>
-      <select id="errorTypeKey" name="errorTypeKey" required>
-        {errorTypes.map((type) => (
-          <option value={type.key}>{type.label}</option>
-        ))}
-      </select>
+      <Zeichen />
+      <div class="feld">
+        <label for="errorTypeKey">Art des Fehlers</label>
+        <select id="errorTypeKey" name="errorTypeKey" required>
+          {errorTypes.map((type) => (
+            <option value={type.key}>{type.label}</option>
+          ))}
+        </select>
+      </div>
 
-      <label for="severity">Schwere</label>
-      <select id="severity" name="severity">
-        <option value="1">1 – Kleinigkeit</option>
-        <option value="2" selected>
-          2 – deutlich
-        </option>
-        <option value="3">3 – gravierend</option>
-      </select>
+      <Zeichen />
+      <div class="feld">
+        <label for="severity">Schwere</label>
+        <select id="severity" name="severity">
+          <option value="1">1 – Kleinigkeit</option>
+          <option value="2" selected>
+            2 – deutlich
+          </option>
+          <option value="3">3 – gravierend</option>
+        </select>
+      </div>
 
-      <label for="quoteBefore">
-        Fundstelle im Wortlaut <span class="zaehler">einfügen, nicht abtippen — max. {QUOTE_MAX_LENGTH} Zeichen</span>
-      </label>
-      <textarea id="quoteBefore" name="quoteBefore" required maxlength={QUOTE_MAX_LENGTH}>
-        {quote}
-      </textarea>
+      <Zeichen mark="⌦" titel="Tilgen: so steht es im Artikel" />
+      <div class="feld">
+        <label for="quoteBefore">
+          Falsch ist
+          <span class="zaehler">
+            einfügen, nicht abtippen — max. {QUOTE_MAX_LENGTH} Zeichen
+          </span>
+        </label>
+        <textarea id="quoteBefore" name="quoteBefore" required maxlength={QUOTE_MAX_LENGTH}>
+          {quote}
+        </textarea>
+      </div>
 
-      <label for="suggestionAfter">So wäre es richtig</label>
-      <textarea id="suggestionAfter" name="suggestionAfter" required></textarea>
+      <Zeichen mark="⌃" titel="Einfügen: so wäre es richtig" />
+      <div class="feld">
+        <label for="suggestionAfter">Richtig wäre</label>
+        <textarea id="suggestionAfter" name="suggestionAfter" required></textarea>
+      </div>
 
-      <label for="comment">Anmerkung (optional)</label>
-      <textarea id="comment" name="comment"></textarea>
+      <Zeichen mark="✎" titel="Randbemerkung" />
+      <div class="feld">
+        <label for="comment">
+          Anmerkung <span class="zaehler">optional</span>
+        </label>
+        <textarea id="comment" name="comment"></textarea>
+      </div>
 
-      <button type="submit">Meldung senden</button>
+      <Zeichen />
+      <div class="feld">
+        <button type="submit">Textkorrektur senden</button>
+      </div>
     </form>
   </Layout>
 );
@@ -96,15 +143,17 @@ export const CaptureResult: FC<{ ref: string; anchored: boolean; sent: boolean }
   anchored,
   sent,
 }) => (
-  <Layout title="Meldung erfasst">
+  <Layout title="Hinweis erfasst">
     <p class="hinweis">
       {sent ? (
         <>
-          Die Meldung mit der Kennung <strong>{ref}</strong> wurde erfolgreich versendet.
+          Der Hinweis mit der Kennung <span class="kennung">{ref}</span> wurde erfolgreich
+          versendet.
         </>
       ) : (
         <>
-          Die Meldung mit der Kennung <strong>{ref}</strong> konnte nicht versendet werden — der
+          Der Hinweis mit der Kennung <span class="kennung">{ref}</span> konnte nicht versendet
+          werden — der
           Datensatz liegt zur Prüfung bereit.
         </>
       )}

@@ -123,7 +123,7 @@ export const OutletList: FC<{
     <h2>Neue Redaktion</h2>
     {vorgabeDomain ? (
       <p class="hinweis">
-        Domain <strong>{vorgabeDomain}</strong> kommt aus einer Meldung, für die noch
+        Domain <strong>{vorgabeDomain}</strong> kommt aus einem Hinweis, für den noch
         keine Kontaktadresse hinterlegt war. Nach dem Anlegen geht es dorthin zurück.
       </p>
     ) : null}

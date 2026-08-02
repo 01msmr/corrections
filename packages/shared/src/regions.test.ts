@@ -20,9 +20,16 @@ describe("regionOptionGroups", () => {
     expect(deutschsprachig.find((o) => o.code === "DE")?.name).toBe("Deutschland");
   });
 
-  it("sortiert innerhalb einer Gruppe nach Namen, nicht nach Kürzel", () => {
-    const namen = (regionOptionGroups()[0]?.options ?? []).map((o) => o.name);
-    expect(namen).toEqual([...namen].sort((a, b) => a.localeCompare(b, "de")));
+  it("behält die gepflegte Reihenfolge, sortiert nicht alphabetisch", () => {
+    // Deutschland vor Liechtenstein: alphabetisch waere es umgekehrt.
+    const codes = (regionOptionGroups()[0]?.options ?? []).map((o) => o.code);
+    expect(codes).toEqual(["DE", "AT", "CH", "LI", "LU"]);
+  });
+
+  it("stellt in Europa die grossen Sprachraeume voran", () => {
+    const codes = (regionOptionGroups()[1]?.options ?? []).map((o) => o.code);
+    expect(codes.slice(0, 4)).toEqual(["GB", "FR", "IT", "ES"]);
+    expect(codes.indexOf("GB")).toBeLessThan(codes.indexOf("AD"));
   });
 
   it("vergibt jedes Kürzel nur einmal", () => {
