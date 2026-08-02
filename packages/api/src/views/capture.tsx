@@ -63,77 +63,105 @@ export const CaptureForm: FC<{
     ) : fehler ? (
       <p class="hinweis">{fehler}</p>
     ) : null}
-    <form class="satz" method="post" action="/neu">
+    <form class="arbeitsflaeche" method="post" action="/neu">
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
 
-      <Zeichen />
-      <div class="feld">
-        <label for="articleUrl">Artikel-URL</label>
-        <input id="articleUrl" name="articleUrl" type="url" required value={url} />
+      {/* Hauptspalte: der Artikel und die eigentliche Korrektur. */}
+      <div class="hauptspalte">
+        <div class="satz">
+          <Zeichen />
+          <div class="feld">
+            <label for="articleUrl">Artikel-URL</label>
+            <input id="articleUrl" name="articleUrl" type="url" required value={url} />
+          </div>
+        </div>
+
+        <div class="satz">
+          <Zeichen />
+          <div class="feld">
+            <label for="headline">
+              Überschrift
+              <span class="zaehler">optional — wird sonst aus dem Artikel gelesen</span>
+            </label>
+            <input id="headline" name="headline" type="text" />
+          </div>
+        </div>
+
+        {/* Untereinander, nicht nebeneinander: so lassen sich die beiden
+            Fassungen zeilenweise vergleichen, wie auf einer Korrekturfahne. */}
+        <div class="gegenueberstellung">
+          <div class="satz">
+            <Zeichen mark="⌦" titel="Tilgen: so steht es im Artikel" />
+            <div class="feld">
+              <label for="quoteBefore">
+                Falsch ist
+                <span class="zaehler">max. {QUOTE_MAX_LENGTH} Zeichen</span>
+              </label>
+              <textarea id="quoteBefore" name="quoteBefore" required maxlength={QUOTE_MAX_LENGTH}>
+                {quote}
+              </textarea>
+            </div>
+          </div>
+
+          <div class="satz">
+            <Zeichen mark="⌃" titel="Einfügen: so wäre es richtig" />
+            <div class="feld">
+              <label for="suggestionAfter">
+                Richtig wäre
+                <span class="zaehler">die berichtigte Fassung</span>
+              </label>
+              <textarea id="suggestionAfter" name="suggestionAfter" required></textarea>
+            </div>
+          </div>
+        </div>
+
       </div>
 
-      <Zeichen />
-      <div class="feld">
-        <label for="headline">
-          Überschrift
-          <span class="zaehler">optional — wird sonst aus dem Artikel gelesen</span>
-        </label>
-        <input id="headline" name="headline" type="text" />
-      </div>
+      {/* Nebenspalte: Einordnung und Randbemerkung — nötig, aber nicht die Arbeit. */}
+      <aside class="nebenspalte">
+        <div class="satz">
+          <Zeichen />
+          <div class="feld">
+            <label for="errorTypeKey">Art des Fehlers</label>
+            <select id="errorTypeKey" name="errorTypeKey" required>
+              {errorTypes.map((type) => (
+                <option value={type.key}>{type.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-      <Zeichen />
-      <div class="feld">
-        <label for="errorTypeKey">Art des Fehlers</label>
-        <select id="errorTypeKey" name="errorTypeKey" required>
-          {errorTypes.map((type) => (
-            <option value={type.key}>{type.label}</option>
-          ))}
-        </select>
-      </div>
+        <div class="satz">
+          <Zeichen />
+          <div class="feld">
+            <label for="severity">Schwere</label>
+            <select id="severity" name="severity">
+              <option value="1">1 – Kleinigkeit</option>
+              <option value="2" selected>
+                2 – deutlich
+              </option>
+              <option value="3">3 – gravierend</option>
+            </select>
+          </div>
+        </div>
 
-      <Zeichen />
-      <div class="feld">
-        <label for="severity">Schwere</label>
-        <select id="severity" name="severity">
-          <option value="1">1 – Kleinigkeit</option>
-          <option value="2" selected>
-            2 – deutlich
-          </option>
-          <option value="3">3 – gravierend</option>
-        </select>
-      </div>
+        <div class="satz">
+          <Zeichen mark="✎" titel="Randbemerkung" />
+          <div class="feld">
+            <label for="comment">
+              Anmerkung <span class="zaehler">optional</span>
+            </label>
+            <textarea id="comment" name="comment"></textarea>
+          </div>
+        </div>
 
-      <Zeichen mark="⌦" titel="Tilgen: so steht es im Artikel" />
-      <div class="feld">
-        <label for="quoteBefore">
-          Falsch ist
-          <span class="zaehler">
-            einfügen, nicht abtippen — max. {QUOTE_MAX_LENGTH} Zeichen
-          </span>
-        </label>
-        <textarea id="quoteBefore" name="quoteBefore" required maxlength={QUOTE_MAX_LENGTH}>
-          {quote}
-        </textarea>
-      </div>
 
-      <Zeichen mark="⌃" titel="Einfügen: so wäre es richtig" />
-      <div class="feld">
-        <label for="suggestionAfter">Richtig wäre</label>
-        <textarea id="suggestionAfter" name="suggestionAfter" required></textarea>
-      </div>
-
-      <Zeichen mark="✎" titel="Randbemerkung" />
-      <div class="feld">
-        <label for="comment">
-          Anmerkung <span class="zaehler">optional</span>
-        </label>
-        <textarea id="comment" name="comment"></textarea>
-      </div>
-
-      <Zeichen />
-      <div class="feld">
-        <button type="submit">Textkorrektur senden</button>
-      </div>
+        {/* Unten in der Nebenspalte und rechtsbuendig: der Knopf schliesst den
+            Vorgang ab und steht dort, wo der Blick nach dem Ausfuellen endet. */}
+        <div class="abschluss">
+          <button type="submit">Hinweis absenden</button>
+        </div>
+      </aside>
     </form>
   </Layout>
 );
