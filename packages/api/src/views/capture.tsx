@@ -119,7 +119,7 @@ export const CaptureForm: FC<{
       {/* Nebenspalte: Einordnung und Randbemerkung — nötig, aber nicht die Arbeit. */}
       <aside class="nebenspalte">
         <div class="feld">
-          <label for="errorTypeKey">Art des Fehlers</label>
+          <label for="errorTypeKey">Fehlerart</label>
           <select id="errorTypeKey" name="errorTypeKey" required>
             {errorTypes.map((type) => (
               <option value={type.key}>{type.label}</option>
@@ -130,11 +130,11 @@ export const CaptureForm: FC<{
         <div class="feld">
           <label for="severity">Schwere</label>
           <select id="severity" name="severity">
-            <option value="1">1 – Kleinigkeit</option>
+            <option value="1">gering</option>
             <option value="2" selected>
-              2 – deutlich
+              mittel
             </option>
-            <option value="3">3 – gravierend</option>
+            <option value="3">hoch</option>
           </select>
         </div>
 
