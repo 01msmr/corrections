@@ -19,7 +19,7 @@ const STYLES = `
     --rand: #6b7480;
     --linie: #dcddd8;
     --feld: #fffffe;
-    --knopf: #e3dfd4;
+    --knopf: #ebe8df;
     --knopfrand: #9aa1aa;
     --knopfrand-hover: #c3c8ce;
     --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
