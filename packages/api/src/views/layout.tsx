@@ -49,7 +49,7 @@ const STYLES = `
      nicht kennt, bleibt die Kopfzeile klebend und einfach ohne Schatten. */
   header {
     position: sticky; top: 0; z-index: 5;
-    padding: 1.5rem 0 .75rem; margin-bottom: 2.25rem;
+    padding: 1.5rem 0 .75rem; margin-bottom: 1.5rem;
     background: var(--papier);
     border-bottom: 1px solid var(--linie);
     animation: kopfschatten linear both;
@@ -89,7 +89,7 @@ const STYLES = `
   /* Die aktuelle Seite traegt keine zusaetzliche Linie: Groesse und Tinte
      zeichnen sie bereits aus, eine Unterlaengung waere ein zweites Mittel
      fuer dieselbe Aussage. */
-  nav a[aria-current="page"] { color: var(--tinte); font-size: 1.25em; }
+  nav a[aria-current="page"] { color: var(--tinte); font-size: 1.3em; }
 
   h1 { font: 600 1.75rem/1.25 var(--sans); margin: 0 0 2rem; letter-spacing: -.01em; }
   h2 { font: .85rem/1.3 var(--mono); letter-spacing: .02em;
@@ -240,6 +240,18 @@ const STYLES = `
 
 export type Bereich = "neu" | "redaktionen" | "fehlerarten";
 
+/**
+ * Beschriftung der Navigationspunkte. Traegt die Seite denselben Titel wie ihr
+ * aktiver Punkt, entfaellt die Ueberschrift: sie stuende sonst zweimal
+ * untereinander. Bei abweichendem Titel — "Hinweis erfasst", "Redaktion: X" —
+ * bleibt sie stehen, weil sie dort etwas Eigenes sagt.
+ */
+const BEREICH_TITEL: Record<Bereich, string> = {
+  neu: "Neuer Hinweis",
+  redaktionen: "Redaktionen",
+  fehlerarten: "Fehlerarten",
+};
+
 export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | undefined }>> = ({
   title,
   aktiv,
@@ -273,7 +285,7 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
         </div>
       </header>
       <div class="blatt">
-        <h1>{title}</h1>
+        {aktiv && BEREICH_TITEL[aktiv] === title ? null : <h1>{title}</h1>}
         {children}
       </div>
     </body>
