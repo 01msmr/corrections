@@ -103,7 +103,9 @@ const STYLES = `
      Schriftwahl. Auf Apple-Systemen ist das rote Kreuz kraeftig, der Haken
      dunkel und handgezeichnet, der Bleistift gelb. */
   .zeichen { font-size: 1.15em; line-height: 0; margin-right: .35em;
-    vertical-align: .04em; }
+    vertical-align: 0; }
+  .zeichen-url::before { content: "🔗"; }
+  .zeichen-titel::before { content: "📰"; }
   .zeichen-falsch::before { content: "❌"; }
   .zeichen-richtig::before { content: "✔️"; }
   .zeichen-notiz::before { content: "✏️"; }

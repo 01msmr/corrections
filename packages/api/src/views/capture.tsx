@@ -42,7 +42,10 @@ const FehlendeRedaktion: FC<{ host: string; zurueck: string }> = ({ host, zuruec
  * aria-hidden, weil die Beschriftung daneben dieselbe Aussage in Worten trifft:
  * vorgelesen waere das Zeichen eine Dopplung ohne Mehrwert.
  */
-const Zeichen: FC<{ art: "falsch" | "richtig" | "notiz"; titel: string }> = ({ art, titel }) => (
+const Zeichen: FC<{ art: "url" | "titel" | "falsch" | "richtig" | "notiz"; titel: string }> = ({
+  art,
+  titel,
+}) => (
   <span class={`zeichen zeichen-${art}`} aria-hidden="true" title={titel} />
 );
 
@@ -66,13 +69,21 @@ export const CaptureForm: FC<{
       {/* Hauptspalte: der Artikel und die eigentliche Korrektur. */}
       <div class="hauptspalte">
         <div class="feld">
-          <label for="articleUrl">Artikel-URL</label>
+          <label for="articleUrl">
+            <span>
+              <Zeichen art="url" titel="Adresse des Artikels" />
+              Artikel-URL
+            </span>
+          </label>
           <input id="articleUrl" name="articleUrl" type="url" required value={url} />
         </div>
 
         <div class="feld">
           <label for="headline">
-            <span>Überschrift</span>
+            <span>
+              <Zeichen art="titel" titel="Überschrift des Artikels" />
+              Überschrift
+            </span>
             <span class="zaehler">optional — wird sonst aus dem Artikel gelesen</span>
           </label>
           <input id="headline" name="headline" type="text" />
@@ -86,7 +97,7 @@ export const CaptureForm: FC<{
               <Zeichen art="falsch" titel="So steht es im Artikel" />
               Falsch ist
             </span>
-            <span class="zaehler">max. {QUOTE_MAX_LENGTH} Zeichen</span>
+            <span class="zaehler">bis zu {QUOTE_MAX_LENGTH} Zeichen</span>
           </label>
           <textarea id="quoteBefore" name="quoteBefore" required maxlength={QUOTE_MAX_LENGTH}>
             {quote}
