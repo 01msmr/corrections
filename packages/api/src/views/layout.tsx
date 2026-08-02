@@ -169,7 +169,9 @@ const STYLES = `
     margin-top: .5rem; padding: .8rem .7rem .7rem 1.2rem; cursor: pointer;
     font: 600 1.125rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase;
     background: var(--knopf); color: var(--tinte);
-    border: 2px solid var(--knopfrand); border-radius: 6px;
+    /* 8px statt 6px: der 2px-Rahmen liegt aussen, dadurch wirkt der Bogen bei
+       gleichem Wert enger als bei den Feldern mit ihrem 1px-Rahmen. */
+    border: 2px solid var(--knopfrand); border-radius: 8px;
   }
   button:hover, button:focus-visible { background: var(--feld); }
   /* Das Zeilenschaltungszeichen sagt, dass der Knopf auch mit der Eingabetaste
