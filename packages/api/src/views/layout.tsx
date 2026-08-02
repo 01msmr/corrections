@@ -86,14 +86,10 @@ const STYLES = `
     color: var(--rand); text-decoration: none; padding-bottom: .15rem;
     border-bottom: 1px solid transparent; }
   nav a:hover, nav a:focus-visible { color: var(--tinte); border-bottom-color: var(--korrektur); }
-  /* Die aktuelle Seite wird nicht durchgestrichen -- das hiesse "streichen".
-     Im Korrektorat bedeutet die punktierte Unterlaengung "stet": bleibt stehen.
-     Genau das trifft zu, und es bleibt leise. */
-  nav a[aria-current="page"] {
-    color: var(--tinte); font-size: 1.4em;
-    border-bottom-style: dotted; border-bottom-width: 2px;
-    border-bottom-color: var(--korrektur);
-  }
+  /* Die aktuelle Seite traegt keine zusaetzliche Linie: Groesse und Tinte
+     zeichnen sie bereits aus, eine Unterlaengung waere ein zweites Mittel
+     fuer dieselbe Aussage. */
+  nav a[aria-current="page"] { color: var(--tinte); font-size: 1.25em; }
 
   h1 { font: 600 1.75rem/1.25 var(--sans); margin: 0 0 2rem; letter-spacing: -.01em; }
   h2 { font: .85rem/1.3 var(--mono); letter-spacing: .02em;
