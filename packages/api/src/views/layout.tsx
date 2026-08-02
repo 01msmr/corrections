@@ -83,6 +83,14 @@ const STYLES = `
     color: var(--rand); text-decoration: none; padding-bottom: .15rem;
     border-bottom: 1px solid transparent; }
   nav a:hover, nav a:focus-visible { color: var(--tinte); border-bottom-color: var(--korrektur); }
+  /* Die aktuelle Seite wird nicht durchgestrichen -- das hiesse "streichen".
+     Im Korrektorat bedeutet die punktierte Unterlaengung "stet": bleibt stehen.
+     Genau das trifft zu, und es bleibt leise. */
+  nav a[aria-current="page"] {
+    color: var(--tinte);
+    border-bottom-style: dotted; border-bottom-width: 2px;
+    border-bottom-color: var(--korrektur);
+  }
 
   h1 { font: 600 1.75rem/1.25 var(--sans); margin: 0 0 2rem; letter-spacing: -.01em; }
   h2 { font: 600 .75rem/1 var(--mono); letter-spacing: .16em; text-transform: uppercase;
@@ -99,8 +107,11 @@ const STYLES = `
   .satz > .feld { grid-column: 2; }
   .satz > .breit { grid-column: 1 / -1; }
   .arbeitsflaeche { display: grid; }
-  .abschluss { padding-top: 1.25rem; border-top: 1px solid var(--linie); }
-  .abschluss button { width: 100%; margin-top: 0; }
+  .abschluss { padding-top: 1.25rem; }
+  /* Dreifache Hoehe: der Knopf ist das Ziel der ganzen Seite und darf das
+     zeigen. Volle Feldhoehe waere zu viel -- ein schwarzer Block dieser
+     Groesse zoege den Blick von der Fundstelle ab, um die es geht. */
+  .abschluss button { width: 100%; margin-top: 0; min-height: 3.6rem; }
   .gegenueberstellung { display: grid; }
   @media (max-width: 34rem) {
     .satz { grid-template-columns: 1fr; }
@@ -145,7 +156,10 @@ const STYLES = `
   optgroup option { font: 400 1rem var(--sans); letter-spacing: 0; color: var(--tinte); }
   :focus-visible { outline: 2px solid var(--korrektur); outline-offset: 1px; }
 
-  .gegenueberstellung label { border-bottom: none; padding-bottom: 0; }
+  /* In der Hauptspalte traegt die Randspalte bzw. die farbige Kante die
+     Auszeichnung; eine Linie unter der Beschriftung waere ein zweites Mittel
+     fuer dieselbe Aussage. Die Nebenspalte hat keine Kante, dort bleibt sie. */
+  .hauptspalte label { border-bottom: none; padding-bottom: 0; }
 
   .zaehler { font: 400 .72rem/1.4 var(--sans); letter-spacing: 0;
     text-transform: none; color: var(--rand); }
@@ -195,12 +209,23 @@ const STYLES = `
        geschoben und schliesst damit buendig mit dem letzten Textfeld links ab. */
     .nebenspalte { display: flex; flex-direction: column; }
     .nebenspalte .abschluss { margin-top: auto; }
+    /* Ohne das bestimmt der Abstand unter dem letzten Feld die Zeilenhoehe mit,
+       und der Knopf am unteren Rand der Nebenspalte saesse genau um diesen
+       Abstand tiefer als das Textfeld links. */
+    .hauptspalte > .satz:last-child .feld,
+    .hauptspalte > .gegenueberstellung > .satz:last-child .feld { margin-bottom: 0; }
   }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 `;
 
-export const Layout: FC<PropsWithChildren<{ title: string }>> = ({ title, children }) => (
+export type Bereich = "neu" | "redaktionen" | "fehlerarten";
+
+export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | undefined }>> = ({
+  title,
+  aktiv,
+  children,
+}) => (
   <html lang="de">
     <head>
       <meta charset="utf-8" />
@@ -216,9 +241,15 @@ export const Layout: FC<PropsWithChildren<{ title: string }>> = ({ title, childr
             Korrektu<span class="tilgung">h</span>ren
           </a>
           <nav>
-            <a href="/neu">Neuer Hinweis</a>
-            <a href="/admin/redaktionen">Redaktionen</a>
-            <a href="/admin/fehlerarten">Fehlerarten</a>
+            <a href="/neu" aria-current={aktiv === "neu" ? "page" : undefined}>
+              Neuer Hinweis
+            </a>
+            <a href="/admin/redaktionen" aria-current={aktiv === "redaktionen" ? "page" : undefined}>
+              Redaktionen
+            </a>
+            <a href="/admin/fehlerarten" aria-current={aktiv === "fehlerarten" ? "page" : undefined}>
+              Fehlerarten
+            </a>
           </nav>
         </div>
       </header>

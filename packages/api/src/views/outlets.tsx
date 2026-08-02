@@ -89,7 +89,7 @@ export const OutletList: FC<{
   /** Nach fehlgeschlagener Validierung: die getippten Werte, nicht verworfen. */
   eingabe?: OutletFormValues | undefined;
 }> = ({ outlets, hinweis, fehler, vorgabeDomain, zurueck, eingabe }) => (
-  <Layout title="Redaktionen">
+  <Layout title="Redaktionen" aktiv="redaktionen">
     {hinweis ? <p class="hinweis">{hinweis}</p> : null}
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
@@ -136,7 +136,7 @@ export const OutletList: FC<{
 );
 
 export const OutletEdit: FC<{ outlet: OutletRecord }> = ({ outlet }) => (
-  <Layout title={`Redaktion: ${outlet.name}`}>
+  <Layout title={`Redaktion: ${outlet.name}`} aktiv="redaktionen">
     <form method="post" action={`/admin/redaktionen/${outlet.id}`}>
       <Felder outlet={outlet} />
       <button type="submit">Speichern</button>

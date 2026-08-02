@@ -7,7 +7,7 @@ export const ErrorTypeList: FC<{
   hinweis?: string | undefined;
   fehler?: string | undefined;
 }> = ({ types, hinweis, fehler }) => (
-  <Layout title="Fehlerarten">
+  <Layout title="Fehlerarten" aktiv="fehlerarten">
     {hinweis ? <p class="hinweis">{hinweis}</p> : null}
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
@@ -62,7 +62,7 @@ export const ErrorTypeList: FC<{
 );
 
 export const ErrorTypeEdit: FC<{ type: ErrorTypeRecord }> = ({ type }) => (
-  <Layout title={`Fehlerart: ${type.label}`}>
+  <Layout title={`Fehlerart: ${type.label}`} aktiv="fehlerarten">
     <p class="hinweis">
       Schlüssel <code>{type.key}</code> — nicht änderbar, weil er im Meta-Block bereits
       versendeter Mails steht.
