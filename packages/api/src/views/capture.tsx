@@ -35,17 +35,16 @@ const FehlendeRedaktion: FC<{ host: string; zurueck: string }> = ({ host, zuruec
 );
 
 /**
- * Randspalte der Manuskriptseite. Ein Zeichen steht nur dort, wo tatsaechlich
- * korrigiert wird — Tilgen, Einfuegen, Randbemerkung. Die uebrigen Felder
- * lassen den Rand leer, damit die drei Zeichen etwas bedeuten und nicht zur
- * Verzierung jeder Zeile werden.
+ * Korrekturzeichen unmittelbar vor der Beschriftung. Es steht nur dort, wo
+ * tatsaechlich korrigiert wird — Tilgen, Einfuegen, Randbemerkung —, damit die
+ * drei Zeichen etwas bedeuten und nicht jede Zeile zieren.
  *
  * aria-hidden, weil die Beschriftung daneben dieselbe Aussage in Worten trifft:
  * vorgelesen waere das Zeichen eine Dopplung ohne Mehrwert.
  */
-const Zeichen: FC<{ mark?: string | undefined; titel?: string | undefined }> = ({ mark, titel }) => (
+const Zeichen: FC<{ mark: string; titel: string }> = ({ mark, titel }) => (
   <span class="zeichen" aria-hidden="true" title={titel}>
-    {mark ?? ""}
+    {mark}
   </span>
 );
 
@@ -68,102 +67,83 @@ export const CaptureForm: FC<{
 
       {/* Hauptspalte: der Artikel und die eigentliche Korrektur. */}
       <div class="hauptspalte">
-        <div class="satz">
-          <Zeichen />
-          <div class="feld">
-            <label for="articleUrl">Artikel-URL</label>
-            <input id="articleUrl" name="articleUrl" type="url" required value={url} />
-          </div>
+        <div class="feld">
+          <label for="articleUrl">Artikel-URL</label>
+          <input id="articleUrl" name="articleUrl" type="url" required value={url} />
         </div>
 
-        <div class="satz">
-          <Zeichen />
-          <div class="feld">
-            <label for="headline">
-              Überschrift
-              <span class="zaehler">optional — wird sonst aus dem Artikel gelesen</span>
-            </label>
-            <input id="headline" name="headline" type="text" />
-          </div>
+        <div class="feld">
+          <label for="headline">
+            <span>Überschrift</span>
+            <span class="zaehler">optional — wird sonst aus dem Artikel gelesen</span>
+          </label>
+          <input id="headline" name="headline" type="text" />
         </div>
 
         {/* Untereinander, nicht nebeneinander: so lassen sich die beiden
             Fassungen zeilenweise vergleichen, wie auf einer Korrekturfahne. */}
-        <div class="gegenueberstellung">
-          <div class="satz">
-            <Zeichen mark="⌦" titel="Tilgen: so steht es im Artikel" />
-            <div class="feld">
-              <label for="quoteBefore">
-                Falsch ist
-                <span class="zaehler">max. {QUOTE_MAX_LENGTH} Zeichen</span>
-              </label>
-              <textarea id="quoteBefore" name="quoteBefore" required maxlength={QUOTE_MAX_LENGTH}>
-                {quote}
-              </textarea>
-            </div>
-          </div>
-
-          <div class="satz">
-            <Zeichen mark="⌃" titel="Einfügen: so wäre es richtig" />
-            <div class="feld">
-              <label for="suggestionAfter">
-                Richtig wäre
-                <span class="zaehler">die berichtigte Fassung</span>
-              </label>
-              <textarea id="suggestionAfter" name="suggestionAfter" required></textarea>
-            </div>
-          </div>
+        <div class="feld">
+          <label for="quoteBefore">
+            <span>
+              <Zeichen mark="⌦" titel="Tilgen: so steht es im Artikel" />
+              Falsch ist
+            </span>
+            <span class="zaehler">max. {QUOTE_MAX_LENGTH} Zeichen</span>
+          </label>
+          <textarea id="quoteBefore" name="quoteBefore" required maxlength={QUOTE_MAX_LENGTH}>
+            {quote}
+          </textarea>
         </div>
 
+        <div class="feld">
+          <label for="suggestionAfter">
+            <span>
+              <Zeichen mark="⌃" titel="Einfügen: so wäre es richtig" />
+              Richtig wäre
+            </span>
+            <span class="zaehler">die berichtigte Fassung</span>
+          </label>
+          <textarea id="suggestionAfter" name="suggestionAfter" required></textarea>
+        </div>
       </div>
 
       {/* Nebenspalte: Einordnung und Randbemerkung — nötig, aber nicht die Arbeit. */}
       <aside class="nebenspalte">
-        <div class="satz">
-          <Zeichen />
-          <div class="feld">
-            <label for="errorTypeKey">Art des Fehlers</label>
-            <select id="errorTypeKey" name="errorTypeKey" required>
-              {errorTypes.map((type) => (
-                <option value={type.key}>{type.label}</option>
-              ))}
-            </select>
-          </div>
+        <div class="feld">
+          <label for="errorTypeKey">Art des Fehlers</label>
+          <select id="errorTypeKey" name="errorTypeKey" required>
+            {errorTypes.map((type) => (
+              <option value={type.key}>{type.label}</option>
+            ))}
+          </select>
         </div>
 
-        <div class="satz">
-          <Zeichen />
-          <div class="feld">
-            <label for="severity">Schwere</label>
-            <select id="severity" name="severity">
-              <option value="1">1 – Kleinigkeit</option>
-              <option value="2" selected>
-                2 – deutlich
-              </option>
-              <option value="3">3 – gravierend</option>
-            </select>
-          </div>
+        <div class="feld">
+          <label for="severity">Schwere</label>
+          <select id="severity" name="severity">
+            <option value="1">1 – Kleinigkeit</option>
+            <option value="2" selected>
+              2 – deutlich
+            </option>
+            <option value="3">3 – gravierend</option>
+          </select>
         </div>
 
-        <div class="satz">
-          <Zeichen mark="✎" titel="Randbemerkung" />
-          <div class="feld">
-            <label for="comment">
-              Anmerkung <span class="zaehler">optional</span>
-            </label>
-            <textarea id="comment" name="comment"></textarea>
-          </div>
+        <div class="feld">
+          <label for="comment">
+            <span>
+              <Zeichen mark="✎" titel="Randbemerkung" />
+              Anmerkung
+            </span>
+            <span class="zaehler">optional</span>
+          </label>
+          <textarea id="comment" name="comment"></textarea>
         </div>
-
 
         {/* Unten in der Nebenspalte: der Knopf schliesst den Vorgang ab und
-            steht dort, wo der Blick nach dem Ausfuellen endet. Als .satz, damit
-            er auf derselben Kante beginnt wie die Felder darueber. */}
-        <div class="satz abschluss">
-          <Zeichen />
-          <div class="feld">
-            <button type="submit">Hinweis absenden</button>
-          </div>
+            steht dort, wo der Blick nach dem Ausfuellen endet. */}
+        <div class="abschluss">
+          <button type="submit">Hinweis absenden</button>
         </div>
       </aside>
     </form>

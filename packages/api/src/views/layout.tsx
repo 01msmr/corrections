@@ -97,28 +97,11 @@ const STYLES = `
     color: var(--rand); margin: 2.5rem 0 .75rem; }
   a { color: inherit; text-underline-offset: .2em; }
 
-  /* Randspalte: das Korrekturzeichen steht links neben seinem Feld und benennt,
-     was dort zu tun ist. Auf schmalen Bildschirmen klappt es darueber. */
-  .satz { display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 0 .75rem; }
-  .satz > .zeichen {
-    grid-column: 1; font: 2.1rem/1.15 var(--mono); color: var(--korrektur);
-    text-align: center; user-select: none;
-  }
-  .satz > .feld { grid-column: 2; }
-  .satz > .breit { grid-column: 1 / -1; }
-  .arbeitsflaeche { display: grid; }
-  .abschluss { padding-top: 1.25rem; }
-  .abschluss .feld { margin-bottom: 0; }
-  .abschluss button { width: 100%; margin-top: 0; min-height: 3.6rem; }
-  .gegenueberstellung { display: grid; }
-  @media (max-width: 34rem) {
-    .satz { grid-template-columns: 1fr; }
-    .satz > .zeichen { grid-column: 1; text-align: left; line-height: 1.4; }
-    .satz > .feld { grid-column: 1; }
-  }
+  /* Das Korrekturzeichen sitzt unmittelbar vor der Beschriftung, nicht in einer
+     eigenen Randspalte: es gehoert zu dem, was darunter zu tun ist. */
+  .zeichen { color: var(--korrektur); font-size: 1.9em; line-height: 0;
+    margin-right: .25em; vertical-align: -.15em; }
 
-  /* Die Beschriftung liegt als eigene Ebene ueber dem Feld -- die Linie darunter
-     macht das sichtbar, statt es nur ueber den Schriftgrad anzudeuten. */
   label { display: flex; flex-wrap: wrap; align-items: baseline;
     justify-content: space-between; gap: .2rem 1rem; margin: 0 0 .4rem;
     font: 600 .72rem/1.3 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
@@ -128,6 +111,11 @@ const STYLES = `
     background: var(--feld); color: inherit;
     border: 1px solid var(--linie); border-radius: 2px;
   }
+
+  .arbeitsflaeche { display: grid; }
+  .abschluss { padding-top: 1.25rem; }
+  .abschluss .feld { margin-bottom: 0; }
+  .abschluss button { width: 100%; margin-top: 0; min-height: 3.6rem; }
   /* Zitat und Vorschlag im festen Raster: ein Leerzeichen zu viel oder ein
      Buchstabendreher ist nur so zu sehen. */
   #quoteBefore, #suggestionAfter { font: .95rem/1.6 var(--mono); min-height: 5.5rem; }
@@ -158,7 +146,7 @@ const STYLES = `
 
   button {
     margin-top: .5rem; padding: .6rem 1.4rem; cursor: pointer;
-    font: 600 .75rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase;
+    font: 600 1.125rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase;
     background: var(--tinte); color: var(--papier);
     border: 1px solid var(--tinte); border-radius: 2px;
   }
@@ -193,12 +181,10 @@ const STYLES = `
     .blatt, .kopfinhalt { max-width: 72rem; }
     /* Hauptspalte traegt Artikel und Korrektur, Nebenspalte die Einordnung.
        Die Aufteilung folgt der Arbeit, nicht dem verfuegbaren Platz. */
-    .arbeitsflaeche { grid-template-columns: minmax(0, 2.3fr) minmax(0, 1fr); gap: 0 3rem; }
+    .arbeitsflaeche { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 0 2.25rem; }
     /* Gleiche Feldhoehen in beiden Spalten: Beschriftungen und Abstaende sind
        ohnehin identisch, damit liegen die Zeilen exakt uebereinander. */
     #quoteBefore, #suggestionAfter, #comment { min-height: 9rem; }
-    .nebenspalte .satz { grid-template-columns: 1.6rem minmax(0, 1fr); gap: 0 .5rem; }
-    .nebenspalte .zeichen { font-size: 1.4rem; }
     /* Die Nebenspalte fuellt die Zeilenhoehe; der Knopf wird ans untere Ende
        geschoben und schliesst damit buendig mit dem letzten Textfeld links ab. */
     .nebenspalte { display: flex; flex-direction: column; }
@@ -206,12 +192,8 @@ const STYLES = `
        buendig ab -- damit liegt auch die letzte Zeile in beiden Spalten
        exakt uebereinander. */
     .nebenspalte .abschluss { margin-top: auto; }
+    .hauptspalte > .feld:last-child { margin-bottom: 0; }
     .nebenspalte .abschluss button { min-height: 9rem; }
-    /* Ohne das bestimmt der Abstand unter dem letzten Feld die Zeilenhoehe mit,
-       und der Knopf am unteren Rand der Nebenspalte saesse genau um diesen
-       Abstand tiefer als das Textfeld links. */
-    .hauptspalte > .satz:last-child .feld,
-    .hauptspalte > .gegenueberstellung > .satz:last-child .feld { margin-bottom: 0; }
   }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
