@@ -143,8 +143,8 @@ const STYLES = `
   /* Zitat und Vorschlag im festen Raster: ein Leerzeichen zu viel oder ein
      Buchstabendreher ist nur so zu sehen. */
   #quoteBefore, #suggestionAfter { font: .95rem/1.6 var(--mono); min-height: 5.5rem; }
-  #quoteBefore { border-left: 5px solid var(--korrektur); }
-  #suggestionAfter { border-left: 5px solid var(--vorschlag); }
+  #quoteBefore { border-left: 6px solid var(--korrektur); }
+  #suggestionAfter { border-left: 6px solid var(--vorschlag); }
   textarea { min-height: 4.5rem; resize: vertical; }
 
   /* Der Systempfeil ist auf jeder Plattform eine andere Form und passt zu keiner.
