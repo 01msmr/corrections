@@ -11,7 +11,8 @@ import { errorTypes, outletDomains, outlets } from "./schema.js";
  * Neun davon gehen in den vorhandenen auf: Zeichen und Buchstabendreher in
  * `rechtschreibung`, Komma in `zeichensetzung`, fehlendes/ueberzaehliges Wort
  * und Satzbau in `grammatik`, Inhaltsfehler in `faktenfehler`. Nur "falsche
- * Wortwahl" hatte keine Entsprechung und ist deshalb als einzige neu.
+ * Wortwahl" hatte keine Entsprechung; sie steckt jetzt in `stil`, das als
+ * Kategorie weiter traegt und auch unangemessenen Ton abdeckt.
  *
  * Weitere werden ueber das Adminformular gepflegt.
  */
@@ -28,7 +29,7 @@ export const DEFAULT_ERROR_TYPES = [
   { key: "bild", label: "Bild", description: "Falsche Bildunterschrift oder unpassendes Bild." },
   { key: "ueberschrift_deckt_nicht", label: "Überschrift deckt nicht", description: "Überschrift wird vom Text nicht getragen." },
   { key: "sonstiges", label: "Sonstiges", description: "Passt in keine der übrigen Kategorien." },
-  { key: "wortwahl", label: "Wortwahl", description: "Das gewählte Wort trifft die gemeinte Bedeutung nicht." },
+  { key: "stil", label: "Stil", description: "Unpassende Wortwahl oder unangemessener Ton." },
 ] as const;
 
 const DEFAULT_OUTLETS = [
