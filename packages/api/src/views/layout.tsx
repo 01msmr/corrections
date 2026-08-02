@@ -20,14 +20,14 @@ const STYLES = `
     --linie: #dcddd8;
     --feld: #fffffe;
     --knopf: #d9d5c8;
-    --knopfrand: #4a4f55;
+    --knopfrand: #9aa1aa;
     --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
     --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --papier: #16181b; --tinte: #e8e6e1; --korrektur: #f2756b; --vorschlag: #7bc39a;
-      --rand: #949ba6; --linie: #2e3237; --feld: #1d2024; --knopf: #33373c; --knopfrand: #8b929b;
+      --rand: #949ba6; --linie: #2e3237; --feld: #1d2024; --knopf: #33373c; --knopfrand: #6b727b;
     }
   }
 
@@ -170,11 +170,6 @@ const STYLES = `
     font: 600 1.125rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase;
     background: var(--knopf); color: var(--tinte);
     border: 2px solid var(--knopfrand); border-radius: 6px;
-    /* Harte Kante statt Weichzeichnung: ein weicher Schatten wirkt auf diesem
-       flachen, papiernen Bild immer schmutzig. Eine versetzte Volltonflaeche
-       liest sich dagegen wie eine Praegung und traegt den Kontrast. */
-    box-shadow: 0 2px 0 var(--knopfrand);
-    transform: translateY(-1px);
   }
   button:hover, button:focus-visible { background: var(--feld); }
   /* Das Zeilenschaltungszeichen sagt, dass der Knopf auch mit der Eingabetaste
@@ -182,9 +177,7 @@ const STYLES = `
   /* Text und Zeichen teilen sich eine Zeilenbox, damit das ⏎ auf der Grundlinie
      der Beschriftung sitzt und nicht darunter haengt. */
   .knopftext { display: inline; }
-  .taste { margin-left: .18em; font-size: 1.2em; opacity: .7; }
-  /* Beim Druecken sinkt der Knopf auf seine Kante. */
-  button:active { transform: translateY(1px); box-shadow: 0 0 0 var(--knopfrand); }
+  .taste { margin-left: .32em; font-size: 1.2em; opacity: .7; }
 
   .hinweis { padding: .85rem 1rem; margin: 0 0 1.5rem;
     background: var(--feld); border: 1px solid var(--linie);
