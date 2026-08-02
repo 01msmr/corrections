@@ -1,3 +1,4 @@
+import { regionOptionGroups } from "@korrektur/shared";
 import type { FC } from "hono/jsx";
 import type { OutletRecord } from "../repo/outlets.js";
 import { Layout } from "./layout.js";
@@ -15,6 +16,26 @@ export interface OutletFormValues {
   contactEmails?: string | undefined;
   notes?: string | undefined;
 }
+
+/**
+ * Die Kuerzel stehen in `shared`, die Namen kommen von Intl.DisplayNames --
+ * deshalb hier nur die Ausgabe. Der gewaehlte Wert wird an regionOptionGroups
+ * durchgereicht, damit ein Altwert ausserhalb der Liste erhalten bleibt.
+ */
+const SprachraumAuswahl: FC<{ gewaehlt: string }> = ({ gewaehlt }) => (
+  <select id="country" name="country">
+    <option value="">— keiner —</option>
+    {regionOptionGroups("de", gewaehlt).map((gruppe) => (
+      <optgroup label={gruppe.label}>
+        {gruppe.options.map((option) => (
+          <option value={option.code} selected={option.code === gewaehlt.toUpperCase()}>
+            {option.name} ({option.code})
+          </option>
+        ))}
+      </optgroup>
+    ))}
+  </select>
+);
 
 const Felder: FC<{
   outlet?: OutletRecord | undefined;
@@ -41,13 +62,8 @@ const Felder: FC<{
     <label for="publisher">Verlag</label>
     <input id="publisher" name="publisher" value={eingabe?.publisher ?? outlet?.publisher ?? ""} />
 
-    <label for="country">Land (zwei Buchstaben)</label>
-    <input
-      id="country"
-      name="country"
-      maxlength={2}
-      value={eingabe?.country ?? outlet?.country ?? ""}
-    />
+    <label for="country">Sprachraum</label>
+    <SprachraumAuswahl gewaehlt={eingabe?.country ?? outlet?.country ?? ""} />
 
     <label for="contactEmails">
       Kontaktadressen <span class="zaehler">kommagetrennt, erste ist Standardempfänger</span>

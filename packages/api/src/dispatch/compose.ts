@@ -119,7 +119,7 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
 
   lines.push(
     "Eine Rückmeldung wäre wunderbar.",
-    "Lassen Sie das Kennzeichen am Ende des Betreffs bitte stehen, damit Ihre",
+    "Lassen Sie die Kennung am Ende des Betreffs bitte stehen, damit Ihre",
     "Antwort zugeordnet werden kann.",
     "",
     "Mit freundlichen Grüßen",
@@ -154,7 +154,7 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
     `<p style="margin-left:24px">„${renderSegments(diff.after, COLOR_AFTER)}“</p>`,
     '<hr style="border:none;border-top:1px solid #ccc;margin:20px 0">',
     commentHtml,
-    "<p>Eine Rückmeldung wäre wunderbar.<br>Lassen Sie das Kennzeichen am Ende des Betreffs bitte stehen, damit Ihre Antwort zugeordnet werden kann.</p>",
+    "<p>Eine Rückmeldung wäre wunderbar.<br>Lassen Sie die Kennung am Ende des Betreffs bitte stehen, damit Ihre Antwort zugeordnet werden kann.</p>",
     "<p>Mit freundlichen Grüßen</p>",
     '<p style="color:#666;font-size:13px">--<br>',
     `Diese Textkorrektur wurde über die Web-Anwendung <a href="${escapeHtml(input.baseUrl)}">${escapeHtml(input.baseUrl)}</a> erstellt und ist ohne Unterschrift gültig.</p>`,
