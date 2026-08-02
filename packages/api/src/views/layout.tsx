@@ -108,9 +108,6 @@ const STYLES = `
   .satz > .breit { grid-column: 1 / -1; }
   .arbeitsflaeche { display: grid; }
   .abschluss { padding-top: 1.25rem; }
-  /* Dreifache Hoehe: der Knopf ist das Ziel der ganzen Seite und darf das
-     zeigen. Volle Feldhoehe waere zu viel -- ein schwarzer Block dieser
-     Groesse zoege den Blick von der Fundstelle ab, um die es geht. */
   .abschluss button { width: 100%; margin-top: 0; min-height: 3.6rem; }
   .gegenueberstellung { display: grid; }
   @media (max-width: 34rem) {
@@ -122,9 +119,7 @@ const STYLES = `
   /* Die Beschriftung liegt als eigene Ebene ueber dem Feld -- die Linie darunter
      macht das sichtbar, statt es nur ueber den Schriftgrad anzudeuten. */
   label { display: flex; flex-wrap: wrap; align-items: baseline;
-    justify-content: space-between; gap: .2rem 1rem;
-    margin: 0 0 .45rem; padding-bottom: .3rem;
-    border-bottom: 1px solid var(--linie);
+    justify-content: space-between; gap: .2rem 1rem; margin: 0 0 .4rem;
     font: 600 .72rem/1.3 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
   .feld { margin-bottom: 1.5rem; }
   input, textarea, select {
@@ -156,10 +151,6 @@ const STYLES = `
   optgroup option { font: 400 1rem var(--sans); letter-spacing: 0; color: var(--tinte); }
   :focus-visible { outline: 2px solid var(--korrektur); outline-offset: 1px; }
 
-  /* In der Hauptspalte traegt die Randspalte bzw. die farbige Kante die
-     Auszeichnung; eine Linie unter der Beschriftung waere ein zweites Mittel
-     fuer dieselbe Aussage. Die Nebenspalte hat keine Kante, dort bleibt sie. */
-  .hauptspalte label { border-bottom: none; padding-bottom: 0; }
 
   .zaehler { font: 400 .72rem/1.4 var(--sans); letter-spacing: 0;
     text-transform: none; color: var(--rand); }
@@ -202,13 +193,19 @@ const STYLES = `
     /* Hauptspalte traegt Artikel und Korrektur, Nebenspalte die Einordnung.
        Die Aufteilung folgt der Arbeit, nicht dem verfuegbaren Platz. */
     .arbeitsflaeche { grid-template-columns: minmax(0, 2.3fr) minmax(0, 1fr); gap: 0 3rem; }
-    #quoteBefore, #suggestionAfter { min-height: 9rem; }
+    /* Gleiche Feldhoehen in beiden Spalten: Beschriftungen und Abstaende sind
+       ohnehin identisch, damit liegen die Zeilen exakt uebereinander. */
+    #quoteBefore, #suggestionAfter, #comment { min-height: 9rem; }
     .nebenspalte .satz { grid-template-columns: 1.6rem minmax(0, 1fr); gap: 0 .5rem; }
     .nebenspalte .zeichen { font-size: 1.4rem; }
     /* Die Nebenspalte fuellt die Zeilenhoehe; der Knopf wird ans untere Ende
        geschoben und schliesst damit buendig mit dem letzten Textfeld links ab. */
     .nebenspalte { display: flex; flex-direction: column; }
+    /* Der Knopf ist so hoch wie das Feld links daneben und schliesst unten
+       buendig ab -- damit liegt auch die letzte Zeile in beiden Spalten
+       exakt uebereinander. */
     .nebenspalte .abschluss { margin-top: auto; }
+    .nebenspalte .abschluss button { min-height: 9rem; }
     /* Ohne das bestimmt der Abstand unter dem letzten Feld die Zeilenhoehe mit,
        und der Knopf am unteren Rand der Nebenspalte saesse genau um diesen
        Abstand tiefer als das Textfeld links. */
