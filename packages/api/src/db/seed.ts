@@ -14,22 +14,27 @@ import { errorTypes, outletDomains, outlets } from "./schema.js";
  * Wortwahl" hatte keine Entsprechung; sie steckt jetzt in `stil`, das als
  * Kategorie weiter traegt und auch unangemessenen Ton abdeckt.
  *
+ * Bezeichnung und Beschreibung bilden dabei die Hierarchie ab, die das
+ * Datenmodell nicht kennt: die Bezeichnung nennt die Kategorie, die
+ * Beschreibung zaehlt die konkreten Faelle darunter auf. Deshalb stehen die
+ * Formulierungen des Kurzbefehls dort woertlich.
+ *
  * Weitere werden ueber das Adminformular gepflegt.
  */
 export const DEFAULT_ERROR_TYPES = [
-  { key: "rechtschreibung", label: "Rechtschreibung", description: "Falsch geschriebenes Wort." },
-  { key: "grammatik", label: "Grammatik", description: "Fehlerhafter Satzbau oder Beugung." },
-  { key: "zeichensetzung", label: "Zeichensetzung", description: "Komma, Punkt, Anführungszeichen." },
+  { key: "rechtschreibung", label: "Rechtschreibung", description: "Falsch geschriebenes Wort; ein Zeichen fehlt oder steht zu viel; Buchstabendreher." },
+  { key: "grammatik", label: "Grammatik", description: "Fehlerhafter Satzbau oder Beugung; ein Wort fehlt oder steht zu viel; insgesamt unverständlich." },
+  { key: "zeichensetzung", label: "Zeichensetzung", description: "Komma, Punkt, Anführungszeichen; ein Komma fehlt oder steht zu viel." },
   { key: "zahl", label: "Zahl", description: "Falsche Zahl, Einheit oder Größenordnung." },
   { key: "datum", label: "Datum", description: "Falsches Datum, Jahr oder Zeitangabe." },
   { key: "name", label: "Name", description: "Falsch geschriebener oder verwechselter Name." },
-  { key: "faktenfehler", label: "Faktenfehler", description: "Sachlich unzutreffende Aussage." },
+  { key: "faktenfehler", label: "Faktenfehler", description: "Sachlich unzutreffende Aussage; Inhaltsfehler." },
   { key: "falschzitat", label: "Falschzitat", description: "Zitat unzutreffend oder sinnentstellend." },
   { key: "uebersetzung", label: "Übersetzung", description: "Fehlerhafte Übertragung aus einer Fremdsprache." },
   { key: "bild", label: "Bild", description: "Falsche Bildunterschrift oder unpassendes Bild." },
   { key: "ueberschrift_deckt_nicht", label: "Überschrift deckt nicht", description: "Überschrift wird vom Text nicht getragen." },
   { key: "sonstiges", label: "Sonstiges", description: "Passt in keine der übrigen Kategorien." },
-  { key: "stil", label: "Stil", description: "Unpassende Wortwahl oder unangemessener Ton." },
+  { key: "stil", label: "Stil", description: "Falsche Wortwahl; unangemessener Ton." },
 ] as const;
 
 const DEFAULT_OUTLETS = [
