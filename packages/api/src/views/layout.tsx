@@ -152,7 +152,9 @@ const STYLES = `
   :focus-visible { outline: 2px solid var(--korrektur); outline-offset: 1px; }
 
 
-  .zaehler { font: 400 .72rem/1.4 var(--sans); letter-spacing: 0;
+  /* Kursiv, weil die Zusaetze erlaeutern und nicht benennen: sie gehoeren zu
+     einer anderen Sprechebene als die Beschriftung links daneben. */
+  .zaehler { font: italic 400 .72rem/1.4 var(--sans); letter-spacing: 0;
     text-transform: none; color: var(--rand); }
 
   button {
