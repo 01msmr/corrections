@@ -72,7 +72,7 @@ export const CaptureForm: FC<{
           <label for="articleUrl">
             <span>
               <Zeichen art="url" titel="Adresse des Artikels" />
-              Artikel-URL
+              Artikel-URL:
             </span>
           </label>
           <input id="articleUrl" name="articleUrl" type="url" required value={url} />
@@ -82,7 +82,7 @@ export const CaptureForm: FC<{
           <label for="headline">
             <span>
               <Zeichen art="titel" titel="Überschrift des Artikels" />
-              Überschrift
+              Überschrift:
             </span>
             <span class="zaehler">optional — wird sonst aus dem Artikel gelesen</span>
           </label>
@@ -95,7 +95,7 @@ export const CaptureForm: FC<{
           <label for="quoteBefore">
             <span>
               <Zeichen art="falsch" titel="So steht es im Artikel" />
-              Falsch ist
+              Falsch ist:
             </span>
             <span class="zaehler">bis zu {QUOTE_MAX_LENGTH} Zeichen</span>
           </label>
@@ -108,7 +108,7 @@ export const CaptureForm: FC<{
           <label for="suggestionAfter">
             <span>
               <Zeichen art="richtig" titel="So wäre es richtig" />
-              Richtig wäre
+              Richtig wäre:
             </span>
             <span class="zaehler">die berichtigte Fassung</span>
           </label>
@@ -119,7 +119,7 @@ export const CaptureForm: FC<{
       {/* Nebenspalte: Einordnung und Randbemerkung — nötig, aber nicht die Arbeit. */}
       <aside class="nebenspalte">
         <div class="feld">
-          <label for="errorTypeKey">Fehlerart</label>
+          <label for="errorTypeKey">Fehlerart:</label>
           <select id="errorTypeKey" name="errorTypeKey" required>
             {errorTypes.map((type) => (
               <option value={type.key}>{type.label}</option>
@@ -128,7 +128,7 @@ export const CaptureForm: FC<{
         </div>
 
         <div class="feld">
-          <label for="severity">Schwere</label>
+          <label for="severity">Schwere:</label>
           <select id="severity" name="severity">
             <option value="1">gering</option>
             <option value="2" selected>
@@ -142,7 +142,7 @@ export const CaptureForm: FC<{
           <label for="comment">
             <span>
               <Zeichen art="notiz" titel="Randbemerkung" />
-              Anmerkung
+              Anmerkung:
             </span>
             <span class="zaehler">optional</span>
           </label>

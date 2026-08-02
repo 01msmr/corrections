@@ -43,17 +43,17 @@ export const ErrorTypeList: FC<{
     <h2>Neue Fehlerart</h2>
     <form method="post" action="/admin/fehlerarten">
       <label for="key">
-        Schlüssel <span class="zaehler">nur a–z, 0–9 und _, danach unveränderlich</span>
+        <span>Schlüssel:</span> <span class="zaehler">nur a–z, 0–9 und _, danach unveränderlich</span>
       </label>
       <input id="key" name="key" required pattern="[a-z0-9_]+" />
 
-      <label for="label">Bezeichnung</label>
+      <label for="label">Bezeichnung:</label>
       <input id="label" name="label" required />
 
-      <label for="description">Beschreibung</label>
+      <label for="description">Beschreibung:</label>
       <textarea id="description" name="description"></textarea>
 
-      <label for="sortOrder">Reihenfolge</label>
+      <label for="sortOrder">Reihenfolge:</label>
       <input id="sortOrder" name="sortOrder" type="number" value="130" required />
 
       <button type="submit">Anlegen</button>
@@ -68,13 +68,13 @@ export const ErrorTypeEdit: FC<{ type: ErrorTypeRecord }> = ({ type }) => (
       versendeter Mails steht.
     </p>
     <form method="post" action={`/admin/fehlerarten/${type.id}`}>
-      <label for="label">Bezeichnung</label>
+      <label for="label">Bezeichnung:</label>
       <input id="label" name="label" required value={type.label} />
 
-      <label for="description">Beschreibung</label>
+      <label for="description">Beschreibung:</label>
       <textarea id="description" name="description">{type.description ?? ""}</textarea>
 
-      <label for="sortOrder">Reihenfolge</label>
+      <label for="sortOrder">Reihenfolge:</label>
       <input id="sortOrder" name="sortOrder" type="number" required value={String(type.sortOrder)} />
 
       <button type="submit">Speichern</button>

@@ -43,7 +43,7 @@ const Felder: FC<{
   eingabe?: OutletFormValues | undefined;
 }> = ({ outlet, vorgabeDomain, eingabe }) => (
   <>
-    <label for="name">Name</label>
+    <label for="name">Name:</label>
     <input
       id="name"
       name="name"
@@ -51,7 +51,7 @@ const Felder: FC<{
       value={eingabe?.name ?? outlet?.name ?? vorgabeDomain ?? ""}
     />
 
-    <label for="primaryDomain">Hauptdomain</label>
+    <label for="primaryDomain">Hauptdomain:</label>
     <input
       id="primaryDomain"
       name="primaryDomain"
@@ -59,14 +59,14 @@ const Felder: FC<{
       value={eingabe?.primaryDomain ?? outlet?.primaryDomain ?? vorgabeDomain ?? ""}
     />
 
-    <label for="publisher">Verlag</label>
+    <label for="publisher">Verlag:</label>
     <input id="publisher" name="publisher" value={eingabe?.publisher ?? outlet?.publisher ?? ""} />
 
-    <label for="country">Sprachraum</label>
+    <label for="country">Sprachraum:</label>
     <SprachraumAuswahl gewaehlt={eingabe?.country ?? outlet?.country ?? ""} />
 
     <label for="contactEmails">
-      Kontaktadressen <span class="zaehler">kommagetrennt, erste ist Standardempfänger</span>
+      <span>Kontaktadressen:</span> <span class="zaehler">kommagetrennt, erste ist Standardempfänger</span>
     </label>
     <input
       id="contactEmails"
@@ -74,7 +74,7 @@ const Felder: FC<{
       value={eingabe?.contactEmails ?? (outlet?.contactEmails ?? []).join(", ")}
     />
 
-    <label for="notes">Notizen</label>
+    <label for="notes">Notizen:</label>
     <textarea id="notes" name="notes">{eingabe?.notes ?? outlet?.notes ?? ""}</textarea>
   </>
 );
@@ -145,7 +145,7 @@ export const OutletEdit: FC<{ outlet: OutletRecord }> = ({ outlet }) => (
     <h2>Domains</h2>
     <p>{outlet.domains.join(", ")}</p>
     <form method="post" action={`/admin/redaktionen/${outlet.id}/domains`}>
-      <label for="domain">Weitere Domain</label>
+      <label for="domain">Weitere Domain:</label>
       <input id="domain" name="domain" required />
       <button type="submit">Hinzufügen</button>
     </form>
