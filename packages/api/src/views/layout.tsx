@@ -123,7 +123,7 @@ const STYLES = `
     border: 1px solid var(--linie); border-radius: 2px;
     /* Leichter Innenschatten: das Feld liegt tiefer als das Blatt und wirkt
        dadurch als Flaeche, die etwas aufnimmt. */
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, .07);
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, .18), inset 0 0 0 1px rgba(0, 0, 0, .03);
   }
 
   .arbeitsflaeche { display: grid; }
@@ -212,7 +212,7 @@ const STYLES = `
   }
 
   @media (prefers-color-scheme: dark) {
-    input, textarea, select { box-shadow: inset 0 1px 3px rgba(0, 0, 0, .4); }
+    input, textarea, select { box-shadow: inset 0 2px 6px rgba(0, 0, 0, .55); }
   }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
