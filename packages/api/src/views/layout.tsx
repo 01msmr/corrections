@@ -81,7 +81,7 @@ const STYLES = `
     left: -.4em; right: -.4em; top: -.15em; bottom: -.15em;
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='26' viewBox='0 0 46 26' preserveAspectRatio='none'%3E%3Cpath d='M2.4 20.6C13.2 16.4 26.4 10.2 41.8 3.2c1.1-.5 1.9.6 1 1.3-2 1.5-4.6 3-8 4.8C25.6 14.4 13.4 20.4 4.4 24c-1.3.5-2.6-1.6-2-3.4z' fill='%23d0342c'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
   }
-  nav { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+  nav { display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: baseline; }
   nav a { font: .85rem/1 var(--mono); letter-spacing: .02em;
     color: var(--rand); text-decoration: none; padding-bottom: .15rem;
     border-bottom: 1px solid transparent; }
@@ -90,7 +90,7 @@ const STYLES = `
      Im Korrektorat bedeutet die punktierte Unterlaengung "stet": bleibt stehen.
      Genau das trifft zu, und es bleibt leise. */
   nav a[aria-current="page"] {
-    color: var(--tinte);
+    color: var(--tinte); font-size: 1.4em;
     border-bottom-style: dotted; border-bottom-width: 2px;
     border-bottom-color: var(--korrektur);
   }
