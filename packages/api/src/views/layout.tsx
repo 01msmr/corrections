@@ -175,7 +175,7 @@ const STYLES = `
     border: 2px solid var(--knopfrand); border-radius: 8px;
   }
   button:hover, button:focus-visible { background: var(--feld);
-    border-color: var(--knopfrand-hover); }
+    border-color: var(--knopfrand-hover); color: var(--rand); }
   /* Beim Druecken nimmt der Knopf die Darstellung eines Formularfelds an --
      gleiche Farbe, gleicher Rahmen, gleicher Innenschatten, gleicher Radius.
      Er sinkt damit auf die Ebene der Felder statt darueber zu liegen. */
