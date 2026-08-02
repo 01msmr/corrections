@@ -49,7 +49,7 @@ const STYLES = `
      nicht kennt, bleibt die Kopfzeile klebend und einfach ohne Schatten. */
   header {
     position: sticky; top: 0; z-index: 5;
-    padding: 1.5rem 0 .75rem; margin-bottom: 1.5rem;
+    padding: 1.5rem 0 .75rem; margin-bottom: 2.5rem;
     background: var(--papier);
     border-bottom: 1px solid var(--linie);
     animation: kopfschatten linear both;
@@ -91,7 +91,7 @@ const STYLES = `
      fuer dieselbe Aussage. */
   nav a[aria-current="page"] { color: var(--tinte); font-size: 1.3em; }
 
-  h1 { font: 600 1.75rem/1.25 var(--sans); margin: 0 0 2rem; letter-spacing: -.01em; }
+  h1 { font: 600 1.75rem/1.25 var(--sans); margin: 0 0 1.25rem; letter-spacing: -.01em; }
   h2 { font: .85rem/1.3 var(--mono); letter-spacing: .02em;
     color: var(--rand); margin: 2.5rem 0 .75rem; }
   a { color: inherit; text-underline-offset: .2em; }
