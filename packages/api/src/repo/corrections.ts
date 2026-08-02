@@ -220,6 +220,7 @@ export async function createCorrection(
 
   const mail = composeMail({
     ref,
+    outletName: outlet.name,
     articleUrl: input.articleUrl,
     articleUrlCanon: canon.canonical,
     headline,
@@ -232,7 +233,12 @@ export async function createCorrection(
     baseUrl: deps.baseUrl,
   });
 
-  const sent = await deps.mailer.send({ to: recipient, subject: mail.subject, text: mail.text });
+  const sent = await deps.mailer.send({
+    to: recipient,
+    subject: mail.subject,
+    text: mail.text,
+    html: mail.html,
+  });
 
   if (sent.ok) {
     // Eigener Weg: das Relay hat quittiert, der Versand ist belegt (§15.2).

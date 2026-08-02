@@ -7,6 +7,8 @@ export interface OutgoingMail {
   to: string;
   subject: string;
   text: string;
+  /** Wird als alternativer Teil mitgeschickt; der Textteil bleibt der Rueckfall. */
+  html?: string;
 }
 
 export type SendResult = { ok: true; messageId: string } | { ok: false; error: string };
@@ -34,6 +36,7 @@ function wrap(transport: Transporter<TransportInfo>, from: string, onMessage?: (
           to: message.to,
           subject: message.subject,
           text: message.text,
+          ...(message.html === undefined ? {} : { html: message.html }),
         });
         if (onMessage && info.message) {
           onMessage(info.message);

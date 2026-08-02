@@ -98,8 +98,16 @@ export const CaptureResult: FC<{ ref: string; anchored: boolean; sent: boolean }
 }) => (
   <Layout title="Meldung erfasst">
     <p class="hinweis">
-      Kennzeichen <strong>{ref}</strong>.{" "}
-      {sent ? "Die Mail ist versendet." : "Der Versand ist fehlgeschlagen — der Datensatz liegt zur Prüfung bereit."}
+      {sent ? (
+        <>
+          Die Meldung mit der Kennung <strong>{ref}</strong> wurde erfolgreich versendet.
+        </>
+      ) : (
+        <>
+          Die Meldung mit der Kennung <strong>{ref}</strong> konnte nicht versendet werden — der
+          Datensatz liegt zur Prüfung bereit.
+        </>
+      )}
     </p>
     {anchored ? null : (
       <p class="hinweis">
@@ -108,7 +116,7 @@ export const CaptureResult: FC<{ ref: string; anchored: boolean; sent: boolean }
       </p>
     )}
     <p>
-      <a href="/neu">Nächste Meldung erfassen</a>
+      <a href="/neu">Weitere Textkorrektur erfassen?</a>
     </p>
   </Layout>
 );

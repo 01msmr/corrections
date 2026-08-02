@@ -4,6 +4,7 @@ import { composeMail } from "./compose.js";
 
 const INPUT = {
   ref: "K7QW3M",
+  outletName: "SPIEGEL",
   articleUrl: "https://beispiel-zeitung.de/politik/artikel-123",
   articleUrlCanon: "https://beispiel-zeitung.de/politik/artikel-123",
   headline: "Fahrgastzahlen steigen deutlich",
@@ -19,8 +20,14 @@ const INPUT = {
 describe("composeMail", () => {
   it("setzt den Referenz-Token ans Ende des Betreffs", () => {
     const { subject } = composeMail(INPUT);
-    expect(subject.endsWith("[K7QW3M]")).toBe(true);
+    expect(subject).toBe("Textfehler im Artikel: Fahrgastzahlen steigen deutlich [K7QW3M]");
     expect(extractRefFromSubject(subject)).toBe("K7QW3M");
+  });
+
+  it("redet die Redaktion mit ihrem Namen an", () => {
+    const { text, html } = composeMail(INPUT);
+    expect(text).toContain("Liebe SPIEGEL-Redaktion,");
+    expect(html).toContain("Liebe SPIEGEL-Redaktion,");
   });
 
   it("nennt Fundstelle, Zitat und Vorschlag im Text", () => {
@@ -31,12 +38,36 @@ describe("composeMail", () => {
     expect(text).toContain("Der Jahresbericht nennt 2,4 Millionen.");
   });
 
+  it("hebt im HTML nur das abweichende Wort hervor, nicht den ganzen Satz", () => {
+    const { html } = composeMail(INPUT);
+    expect(html).toContain('<span style="color:#c0392b;font-weight:700">4,2</span>');
+    expect(html).toContain('<span style="color:#2e7d32;font-weight:700">2,4</span>');
+    // Der Rest des Satzes steht unmarkiert daneben, damit der Zusammenhang lesbar bleibt.
+    expect(html).not.toContain(">Millionen</span>");
+    expect(html).toContain("Millionen Menschen");
+  });
+
+  it("maskiert HTML-Sonderzeichen aus dem Nutzertext", () => {
+    const { html } = composeMail({
+      ...INPUT,
+      quoteBefore: '<script>alert("x")</script>',
+      suggestionAfter: "harmlos",
+    });
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
+  });
+
   it("hängt einen maschinenlesbaren Meta-Block an", () => {
     const { text } = composeMail(INPUT);
     const block = /\[korrektur-meta\]([\s\S]*?)\[\/korrektur-meta\]/.exec(text);
     expect(block?.[1]?.trim()).toBe(
       "v=2; ref=K7QW3M; typ=zahl; sev=2; url=https%3A%2F%2Fbeispiel-zeitung.de%2Fpolitik%2Fartikel-123",
     );
+  });
+
+  it("führt den Meta-Block auch im HTML-Teil, mit identischem Inhalt", () => {
+    const { html } = composeMail(INPUT);
+    expect(html).toContain("v=2; ref=K7QW3M; typ=zahl; sev=2;");
   });
 
   it("kodiert Sonderzeichen der URL, damit die Feldtrennung hält", () => {
@@ -58,6 +89,7 @@ describe("composeMail", () => {
 
   it("kommt ohne Überschrift und ohne Kommentar aus", () => {
     const { subject, text } = composeMail({ ...INPUT, headline: null, comment: null });
+    expect(subject).toBe("Textfehler im Artikel [K7QW3M]");
     expect(extractRefFromSubject(subject)).toBe("K7QW3M");
     expect(text).not.toContain("Anmerkung:");
   });
@@ -66,17 +98,18 @@ describe("composeMail", () => {
     const { subject } = composeMail({ ...INPUT, headline: "A".repeat(200) });
     expect(subject.length).toBeLessThan(140);
     expect(subject.endsWith("[K7QW3M]")).toBe(true);
+    expect(extractRefFromSubject(subject)).toBe("K7QW3M");
   });
 
   it("hält den Betreff auch bei maximal langer Fehlerart-Bezeichnung im Rahmen", () => {
-    // errorTypeInputSchema erlaubt bis zu 120 Zeichen, ueber das Adminformular frei setzbar.
+    // errorTypeInputSchema erlaubt bis zu 120 Zeichen, ueber das Adminformular frei
+    // setzbar. Seit der Betreff sie nicht mehr nennt, darf sie ihn nicht beeinflussen.
     const { subject } = composeMail({
       ...INPUT,
       errorTypeLabel: "B".repeat(120),
       headline: "C".repeat(200),
     });
     expect(subject.length).toBeLessThan(140);
-    expect(subject.endsWith("[K7QW3M]")).toBe(true);
     expect(extractRefFromSubject(subject)).toBe("K7QW3M");
   });
 });
