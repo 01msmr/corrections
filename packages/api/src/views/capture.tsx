@@ -153,8 +153,9 @@ export const CaptureForm: FC<{
             steht dort, wo der Blick nach dem Ausfuellen endet. */}
         <div class="abschluss">
           <button type="submit">
-              Hinweis zusenden
-              <span class="taste" aria-hidden="true">⏎</span>
+              <span class="knopftext">
+                Hinweis zusenden <span class="taste" aria-hidden="true">⏎</span>
+              </span>
             </button>
         </div>
       </aside>

@@ -179,7 +179,10 @@ const STYLES = `
   button:hover, button:focus-visible { background: var(--feld); }
   /* Das Zeilenschaltungszeichen sagt, dass der Knopf auch mit der Eingabetaste
      ausgeloest wird. aria-hidden, weil das fuer Vorlesesoftware ohnehin gilt. */
-  .taste { margin-left: .6em; font-size: 1.25em; line-height: 0; opacity: .75; }
+  /* Text und Zeichen teilen sich eine Zeilenbox, damit das ⏎ auf der Grundlinie
+     der Beschriftung sitzt und nicht darunter haengt. */
+  .knopftext { display: inline; }
+  .taste { margin-left: .55em; font-size: 1.2em; opacity: .7; }
   /* Beim Druecken sinkt der Knopf auf seine Kante. */
   button:active { transform: translateY(1px); box-shadow: 0 0 0 var(--knopfrand); }
 
