@@ -174,6 +174,14 @@ const STYLES = `
     border: 2px solid var(--knopfrand); border-radius: 8px;
   }
   button:hover, button:focus-visible { background: var(--feld); }
+  /* Beim Druecken nimmt der Knopf die Darstellung eines Formularfelds an --
+     gleiche Farbe, gleicher Rahmen, gleicher Innenschatten, gleicher Radius.
+     Er sinkt damit auf die Ebene der Felder statt darueber zu liegen. */
+  button:active {
+    background: var(--feld);
+    border: 1px solid var(--linie); border-radius: 6px;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, .18), inset 0 0 0 1px rgba(0, 0, 0, .03);
+  }
   /* Das Zeilenschaltungszeichen sagt, dass der Knopf auch mit der Eingabetaste
      ausgeloest wird. aria-hidden, weil das fuer Vorlesesoftware ohnehin gilt. */
   /* Text und Zeichen teilen sich eine Zeilenbox, damit das ⏎ auf der Grundlinie
@@ -225,7 +233,8 @@ const STYLES = `
   }
 
   @media (prefers-color-scheme: dark) {
-    input, textarea, select { box-shadow: inset 0 2px 6px rgba(0, 0, 0, .55); }
+    input, textarea, select,
+    button:active { box-shadow: inset 0 2px 6px rgba(0, 0, 0, .55); }
   }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
