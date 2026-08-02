@@ -21,13 +21,14 @@ const STYLES = `
     --feld: #fffffe;
     --knopf: #d9d5c8;
     --knopfrand: #9aa1aa;
+    --knopfrand-hover: #c3c8ce;
     --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
     --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --papier: #16181b; --tinte: #e8e6e1; --korrektur: #f2756b; --vorschlag: #7bc39a;
-      --rand: #949ba6; --linie: #2e3237; --feld: #1d2024; --knopf: #33373c; --knopfrand: #6b727b;
+      --rand: #949ba6; --linie: #2e3237; --feld: #1d2024; --knopf: #33373c; --knopfrand: #6b727b; --knopfrand-hover: #454b53;
     }
   }
 
@@ -173,7 +174,8 @@ const STYLES = `
        gleichem Wert enger als bei den Feldern mit ihrem 1px-Rahmen. */
     border: 2px solid var(--knopfrand); border-radius: 8px;
   }
-  button:hover, button:focus-visible { background: var(--feld); }
+  button:hover, button:focus-visible { background: var(--feld);
+    border-color: var(--knopfrand-hover); }
   /* Beim Druecken nimmt der Knopf die Darstellung eines Formularfelds an --
      gleiche Farbe, gleicher Rahmen, gleicher Innenschatten, gleicher Radius.
      Er sinkt damit auf die Ebene der Felder statt darueber zu liegen. */
