@@ -42,10 +42,8 @@ const FehlendeRedaktion: FC<{ host: string; zurueck: string }> = ({ host, zuruec
  * aria-hidden, weil die Beschriftung daneben dieselbe Aussage in Worten trifft:
  * vorgelesen waere das Zeichen eine Dopplung ohne Mehrwert.
  */
-const Zeichen: FC<{ mark: string; titel: string }> = ({ mark, titel }) => (
-  <span class="zeichen" aria-hidden="true" title={titel}>
-    {mark}
-  </span>
+const Zeichen: FC<{ art: "falsch" | "richtig" | "notiz"; titel: string }> = ({ art, titel }) => (
+  <span class={`zeichen zeichen-${art}`} aria-hidden="true" title={titel} />
 );
 
 export const CaptureForm: FC<{
@@ -85,7 +83,7 @@ export const CaptureForm: FC<{
         <div class="feld">
           <label for="quoteBefore">
             <span>
-              <Zeichen mark="⌦" titel="Tilgen: so steht es im Artikel" />
+              <Zeichen art="falsch" titel="So steht es im Artikel" />
               Falsch ist
             </span>
             <span class="zaehler">max. {QUOTE_MAX_LENGTH} Zeichen</span>
@@ -98,7 +96,7 @@ export const CaptureForm: FC<{
         <div class="feld">
           <label for="suggestionAfter">
             <span>
-              <Zeichen mark="⌃" titel="Einfügen: so wäre es richtig" />
+              <Zeichen art="richtig" titel="So wäre es richtig" />
               Richtig wäre
             </span>
             <span class="zaehler">die berichtigte Fassung</span>
@@ -132,7 +130,7 @@ export const CaptureForm: FC<{
         <div class="feld">
           <label for="comment">
             <span>
-              <Zeichen mark="✎" titel="Randbemerkung" />
+              <Zeichen art="notiz" titel="Randbemerkung" />
               Anmerkung
             </span>
             <span class="zaehler">optional</span>

@@ -99,8 +99,18 @@ const STYLES = `
 
   /* Das Korrekturzeichen sitzt unmittelbar vor der Beschriftung, nicht in einer
      eigenen Randspalte: es gehoert zu dem, was darunter zu tun ist. */
-  .zeichen { color: var(--korrektur); font-size: 1.9em; line-height: 0;
-    margin-right: .25em; vertical-align: -.15em; }
+  /* Kein Emoji: das waere glaenzend, plattformabhaengig und nicht einfaerbbar.
+     Stattdessen dieselbe auslaufende Strichform wie in der Wortmarke, zweimal
+     gedreht als Kreuz und als Haken -- in Tinte, weil die farbige Kante am Feld
+     die Zuordnung bereits traegt. */
+  .zeichen { display: inline-block; width: 1.5em; height: 1.5em;
+    margin-right: .3em; vertical-align: -.42em;
+    background: center / contain no-repeat; }
+  .zeichen-falsch { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='%231b1f23'%3E%3Cg transform='translate(20,20) rotate(41) scale(1.0,1) translate(-20,-4.6)'%3E%3Cpath d='M1 5.4C8 4.4 20 3.1 38 2.3c1.3-.06 1.3 1.6 0 1.7C20 4.9 8 6.1 1.7 6.9c-1.2.15-1.4-1.4-.7-1.5z'/%3E%3C/g%3E%3Cg transform='translate(20,20) rotate(-41) scale(1.0,1) translate(-20,-4.6)'%3E%3Cpath d='M1 5.4C8 4.4 20 3.1 38 2.3c1.3-.06 1.3 1.6 0 1.7C20 4.9 8 6.1 1.7 6.9c-1.2.15-1.4-1.4-.7-1.5z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+  .zeichen-richtig { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='%231b1f23'%3E%3Cg transform='translate(13,26) rotate(52) scale(0.42,1) translate(-20,-4.6)'%3E%3Cpath d='M1 5.4C8 4.4 20 3.1 38 2.3c1.3-.06 1.3 1.6 0 1.7C20 4.9 8 6.1 1.7 6.9c-1.2.15-1.4-1.4-.7-1.5z'/%3E%3C/g%3E%3Cg transform='translate(24,20) rotate(-49) scale(0.78,1) translate(-20,-4.6)'%3E%3Cpath d='M1 5.4C8 4.4 20 3.1 38 2.3c1.3-.06 1.3 1.6 0 1.7C20 4.9 8 6.1 1.7 6.9c-1.2.15-1.4-1.4-.7-1.5z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+  .zeichen-notiz { width: auto; height: auto; vertical-align: -.15em;
+    color: var(--tinte); font-size: 1.5em; line-height: 0; }
+  .zeichen-notiz::before { content: "✎"; }
 
   /* Beschriftungen im selben Stil wie die Navigation: dicktengleich, ohne
      Versalien, im Randton. Beides ist Auszeichnungsebene, nicht Inhalt --
@@ -196,6 +206,11 @@ const STYLES = `
     .nebenspalte .abschluss { margin-top: auto; }
     .hauptspalte > .feld:last-child { margin-bottom: 0; }
     .nebenspalte .abschluss button { min-height: 9rem; }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .zeichen-falsch { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='%23e8e6e1'%3E%3Cg transform='translate(20,20) rotate(41) scale(1.0,1) translate(-20,-4.6)'%3E%3Cpath d='M1 5.4C8 4.4 20 3.1 38 2.3c1.3-.06 1.3 1.6 0 1.7C20 4.9 8 6.1 1.7 6.9c-1.2.15-1.4-1.4-.7-1.5z'/%3E%3C/g%3E%3Cg transform='translate(20,20) rotate(-41) scale(1.0,1) translate(-20,-4.6)'%3E%3Cpath d='M1 5.4C8 4.4 20 3.1 38 2.3c1.3-.06 1.3 1.6 0 1.7C20 4.9 8 6.1 1.7 6.9c-1.2.15-1.4-1.4-.7-1.5z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+    .zeichen-richtig { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='%23e8e6e1'%3E%3Cg transform='translate(13,26) rotate(52) scale(0.42,1) translate(-20,-4.6)'%3E%3Cpath d='M1 5.4C8 4.4 20 3.1 38 2.3c1.3-.06 1.3 1.6 0 1.7C20 4.9 8 6.1 1.7 6.9c-1.2.15-1.4-1.4-.7-1.5z'/%3E%3C/g%3E%3Cg transform='translate(24,20) rotate(-49) scale(0.78,1) translate(-20,-4.6)'%3E%3Cpath d='M1 5.4C8 4.4 20 3.1 38 2.3c1.3-.06 1.3 1.6 0 1.7C20 4.9 8 6.1 1.7 6.9c-1.2.15-1.4-1.4-.7-1.5z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
   }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
