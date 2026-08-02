@@ -10,13 +10,17 @@ function freshDb() {
 }
 
 describe("seed", () => {
-  it("legt die zwölf Fehlerarten aus der Spec an", () => {
+  it("legt alle voreingestellten Fehlerarten an", () => {
     const db = freshDb();
     seed(db);
     const rows = db.select().from(errorTypes).all();
-    expect(rows).toHaveLength(12);
+    // Gegen die Konstante statt gegen eine feste Zahl: die Liste waechst,
+    // der Test soll dann die Vollstaendigkeit pruefen, nicht die Anzahl.
+    expect(rows).toHaveLength(DEFAULT_ERROR_TYPES.length);
+    expect(rows.map((r) => r.key)).toEqual(
+      expect.arrayContaining(DEFAULT_ERROR_TYPES.map((e) => e.key)),
+    );
     expect(rows.map((r) => r.key)).toContain("ueberschrift_deckt_nicht");
-    expect(DEFAULT_ERROR_TYPES).toHaveLength(12);
   });
 
   it("legt drei Redaktionen mit je einer Domain an", () => {
@@ -30,7 +34,7 @@ describe("seed", () => {
     const db = freshDb();
     seed(db);
     seed(db);
-    expect(db.select().from(errorTypes).all()).toHaveLength(12);
+    expect(db.select().from(errorTypes).all()).toHaveLength(DEFAULT_ERROR_TYPES.length);
     expect(db.select().from(outlets).all()).toHaveLength(3);
   });
 
@@ -38,6 +42,6 @@ describe("seed", () => {
     const db = freshDb();
     seed(db);
     const orders = db.select().from(errorTypes).all().map((r) => r.sortOrder);
-    expect(new Set(orders).size).toBe(12);
+    expect(new Set(orders).size).toBe(DEFAULT_ERROR_TYPES.length);
   });
 });

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createDb, runMigrations, type Db } from "../../db/client.js";
-import { seed } from "../../db/seed.js";
+import { DEFAULT_ERROR_TYPES, seed } from "../../db/seed.js";
 import { getErrorTypeByKey, listErrorTypes } from "../../repo/errorTypes.js";
 import { errorTypeAdminRoutes } from "./errorTypes.js";
 
@@ -47,7 +47,7 @@ describe("Adminoberfläche Fehlerarten", () => {
       sortOrder: "130",
     });
     expect(res.status).toBe(400);
-    expect(listErrorTypes(db)).toHaveLength(12);
+    expect(listErrorTypes(db)).toHaveLength(DEFAULT_ERROR_TYPES.length);
   });
 
   it("meldet einen bereits vergebenen Schlüssel", async () => {
@@ -58,7 +58,7 @@ describe("Adminoberfläche Fehlerarten", () => {
       sortOrder: "200",
     });
     expect(res.status).toBe(400);
-    expect(listErrorTypes(db)).toHaveLength(12);
+    expect(listErrorTypes(db)).toHaveLength(DEFAULT_ERROR_TYPES.length);
   });
 
   it("bietet den Schlüssel beim Bearbeiten nicht als Eingabefeld an", async () => {
@@ -85,7 +85,7 @@ describe("Adminoberfläche Fehlerarten", () => {
     const res = await post(`/admin/fehlerarten/${id}/loeschen`, {});
     expect(res.status).toBe(302);
     expect(decodeURIComponent(res.headers.get("location") ?? "")).toContain("geloescht");
-    expect(listErrorTypes(db)).toHaveLength(11);
-    expect(listErrorTypes(db, { includeArchived: true })).toHaveLength(11);
+    expect(listErrorTypes(db)).toHaveLength(DEFAULT_ERROR_TYPES.length - 1);
+    expect(listErrorTypes(db, { includeArchived: true })).toHaveLength(DEFAULT_ERROR_TYPES.length - 1);
   });
 });
