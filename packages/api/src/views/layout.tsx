@@ -163,19 +163,25 @@ const STYLES = `
     text-transform: none; color: var(--rand); }
 
   button {
-    margin-top: .5rem; padding: .6rem 1.4rem; cursor: pointer;
+    /* Beschriftung unten rechts: dort endet der Blick nach dem Ausfuellen, und
+       im hohen Knopf saehe zentrierter Text verloren aus. */
+    display: flex; align-items: flex-end; justify-content: flex-end;
+    margin-top: .5rem; padding: .8rem 1.2rem; cursor: pointer;
     font: 600 1.125rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase;
     background: var(--knopf); color: var(--tinte);
     border: 2px solid var(--knopfrand); border-radius: 6px;
     /* Harte Kante statt Weichzeichnung: ein weicher Schatten wirkt auf diesem
        flachen, papiernen Bild immer schmutzig. Eine versetzte Volltonflaeche
        liest sich dagegen wie eine Praegung und traegt den Kontrast. */
-    box-shadow: 0 4px 0 var(--knopfrand);
-    transform: translateY(-2px);
+    box-shadow: 0 2px 0 var(--knopfrand);
+    transform: translateY(-1px);
   }
-  button:hover, button:focus-visible { background: var(--knopfrand); color: var(--papier); }
+  button:hover, button:focus-visible { background: var(--feld); }
+  /* Das Zeilenschaltungszeichen sagt, dass der Knopf auch mit der Eingabetaste
+     ausgeloest wird. aria-hidden, weil das fuer Vorlesesoftware ohnehin gilt. */
+  .taste { margin-left: .6em; font-size: 1.25em; line-height: 0; opacity: .75; }
   /* Beim Druecken sinkt der Knopf auf seine Kante. */
-  button:active { transform: translateY(2px); box-shadow: 0 0 0 var(--knopfrand); }
+  button:active { transform: translateY(1px); box-shadow: 0 0 0 var(--knopfrand); }
 
   .hinweis { padding: .85rem 1rem; margin: 0 0 1.5rem;
     background: var(--feld); border: 1px solid var(--linie);
