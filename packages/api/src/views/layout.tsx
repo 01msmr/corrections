@@ -166,7 +166,7 @@ const STYLES = `
     /* Beschriftung unten rechts: dort endet der Blick nach dem Ausfuellen, und
        im hohen Knopf saehe zentrierter Text verloren aus. */
     display: flex; align-items: flex-end; justify-content: flex-end;
-    margin-top: .5rem; padding: .8rem 1.2rem; cursor: pointer;
+    margin-top: .5rem; padding: .8rem .7rem .7rem 1.2rem; cursor: pointer;
     font: 600 1.125rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase;
     background: var(--knopf); color: var(--tinte);
     border: 2px solid var(--knopfrand); border-radius: 6px;
@@ -182,7 +182,7 @@ const STYLES = `
   /* Text und Zeichen teilen sich eine Zeilenbox, damit das ⏎ auf der Grundlinie
      der Beschriftung sitzt und nicht darunter haengt. */
   .knopftext { display: inline; }
-  .taste { margin-left: .55em; font-size: 1.2em; opacity: .7; }
+  .taste { margin-left: .18em; font-size: 1.2em; opacity: .7; }
   /* Beim Druecken sinkt der Knopf auf seine Kante. */
   button:active { transform: translateY(1px); box-shadow: 0 0 0 var(--knopfrand); }
 
