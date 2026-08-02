@@ -95,7 +95,7 @@ const STYLES = `
   nav { display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: baseline; }
   nav a { font: .85rem/1 var(--mono); letter-spacing: .02em;
     color: var(--rand); text-decoration: none; padding-bottom: .15rem;
-    border-bottom: 1px solid transparent; }
+    border-bottom: 2px solid transparent; }
   nav a:hover, nav a:focus-visible { color: var(--tinte); border-bottom-color: var(--korrektur); }
   /* Die aktuelle Seite traegt keine zusaetzliche Linie: Groesse und Tinte
      zeichnen sie bereits aus, eine Unterlaengung waere ein zweites Mittel
