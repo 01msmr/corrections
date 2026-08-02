@@ -42,6 +42,10 @@ const STYLES = `
      nach links und rechts wirft; ausgerichtet wird der Inhalt darin auf
      dieselbe Spalte wie der Rest der Seite. */
   .blatt, .kopfinhalt { max-width: 44rem; margin: 0 auto; padding: 0 1.25rem; }
+  /* Faellt die Ueberschrift weg, weil sie den Navigationspunkt wiederholt, muss
+     ihr Raum ersetzt werden -- sonst beginnt das Formular direkt unter dem
+     Balken. Seiten mit Ueberschrift bringen ihn selbst mit. */
+  .blatt.ohne-titel { padding-top: 2.25rem; }
 
   /* Die Kopfzeile bleibt stehen, damit die Navigation auf langen Seiten
      erreichbar bleibt. Der Schatten kommt erst, wenn wirklich etwas darunter
@@ -259,7 +263,9 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
   title,
   aktiv,
   children,
-}) => (
+}) => {
+  const ohneTitel = aktiv !== undefined && BEREICH_TITEL[aktiv] === title;
+  return (
   <html lang="de">
     <head>
       <meta charset="utf-8" />
@@ -287,10 +293,11 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
           </nav>
         </div>
       </header>
-      <div class="blatt">
-        {aktiv && BEREICH_TITEL[aktiv] === title ? null : <h1>{title}</h1>}
+      <div class={ohneTitel ? "blatt ohne-titel" : "blatt"}>
+        {ohneTitel ? null : <h1>{title}</h1>}
         {children}
       </div>
     </body>
   </html>
-);
+  );
+};
