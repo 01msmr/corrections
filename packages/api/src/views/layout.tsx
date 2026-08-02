@@ -70,16 +70,20 @@ const STYLES = `
   }
   .marke { font: 700 1.35rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase;
     color: inherit; text-decoration: none; }
-  /* Kein Farbwechsel: Rot ist im Bild die Korrekturfarbe und haette hier keine
-     Bedeutung. Beim Ueberfahren nur die Unterstreichung, wie bei einem Link. */
+  /* Die Schrift bleibt in Tinte; ausgezeichnet wird ueber eine Unterstreichung
+     im selben Rot wie der Tilgungsstrich und in derselben Staerke. */
   .marke:hover, .marke:focus-visible { text-decoration: underline;
-    text-decoration-thickness: 1px; text-underline-offset: .28em; }
+    text-decoration-color: var(--korrektur); text-decoration-thickness: 2px;
+    text-underline-offset: .28em; }
   /* Der Wortmarke ist ein Fehler eingebaut, der zugleich getilgt wird: man liest
      „Korrekturen“ und sieht dabei, was die Anwendung tut. Fuer Vorlesesoftware
      traegt das aria-label am Link den richtigen Namen. */
   /* Der Buchstabe bleibt Text in Tinte -- rot ist nur der Strich, so wie auf
      Papier: der Fehler ist gesetzt, die Korrektur kommt von Hand dazu. */
-  .marke .tilgung { position: relative; display: inline-block; color: var(--tinte); }
+  /* display: inline, nicht inline-block: ein Inline-Block bildet einen eigenen
+     Dekorationsbereich, wodurch die Unterstreichung beim Ueberfahren am "h"
+     abgerissen waere. */
+  .marke .tilgung { position: relative; color: var(--tinte); }
   /* Kein text-decoration und kein gerader Balken: ein Filzstiftstrich ist leicht
      gebogen, laeuft ueber den Buchstaben hinaus und wird zum Ende hin flacher.
      Deshalb eine gezeichnete Kurve als Data-URI statt einer gedrehten Linie. */
