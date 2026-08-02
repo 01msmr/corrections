@@ -93,7 +93,7 @@ const STYLES = `
   }
 
   h1 { font: 600 1.75rem/1.25 var(--sans); margin: 0 0 2rem; letter-spacing: -.01em; }
-  h2 { font: 600 .75rem/1 var(--mono); letter-spacing: .16em; text-transform: uppercase;
+  h2 { font: .85rem/1.3 var(--mono); letter-spacing: .02em;
     color: var(--rand); margin: 2.5rem 0 .75rem; }
   a { color: inherit; text-underline-offset: .2em; }
 
@@ -102,9 +102,12 @@ const STYLES = `
   .zeichen { color: var(--korrektur); font-size: 1.9em; line-height: 0;
     margin-right: .25em; vertical-align: -.15em; }
 
+  /* Beschriftungen im selben Stil wie die Navigation: dicktengleich, ohne
+     Versalien, im Randton. Beides ist Auszeichnungsebene, nicht Inhalt --
+     dass sie gleich aussieht, macht das sichtbar. */
   label { display: flex; flex-wrap: wrap; align-items: baseline;
     justify-content: space-between; gap: .2rem 1rem; margin: 0 0 .4rem;
-    font: 600 .72rem/1.3 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+    font: .85rem/1.3 var(--mono); letter-spacing: .02em; color: var(--rand); }
   .feld { margin-bottom: 1.5rem; }
   input, textarea, select {
     width: 100%; padding: .55rem .65rem; font: inherit;
@@ -162,8 +165,7 @@ const STYLES = `
   .kennung { font: 600 1.05em var(--mono); letter-spacing: .06em; }
 
   table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-  th { font: 600 .7rem/1.3 var(--mono); letter-spacing: .1em; text-transform: uppercase;
-    color: var(--rand); }
+  th { font: .85rem/1.3 var(--mono); letter-spacing: .02em; color: var(--rand); }
   th, td { text-align: left; padding: .55rem .5rem; border-bottom: 1px solid var(--linie);
     vertical-align: top; }
   form.inline { display: inline; }
