@@ -121,6 +121,9 @@ const STYLES = `
     width: 100%; padding: .55rem .65rem; font: inherit;
     background: var(--feld); color: inherit;
     border: 1px solid var(--linie); border-radius: 2px;
+    /* Leichter Innenschatten: das Feld liegt tiefer als das Blatt und wirkt
+       dadurch als Flaeche, die etwas aufnimmt. */
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, .07);
   }
 
   .arbeitsflaeche { display: grid; }
@@ -206,6 +209,10 @@ const STYLES = `
     .nebenspalte .abschluss { margin-top: auto; }
     .hauptspalte > .feld:last-child { margin-bottom: 0; }
     .nebenspalte .abschluss button { min-height: 9rem; }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    input, textarea, select { box-shadow: inset 0 1px 3px rgba(0, 0, 0, .4); }
   }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
