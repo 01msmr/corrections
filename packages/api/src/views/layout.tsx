@@ -20,13 +20,14 @@ const STYLES = `
     --linie: #dcddd8;
     --feld: #fffffe;
     --knopf: #d9d5c8;
+    --knopfrand: #4a4f55;
     --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
     --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --papier: #16181b; --tinte: #e8e6e1; --korrektur: #f2756b; --vorschlag: #7bc39a;
-      --rand: #949ba6; --linie: #2e3237; --feld: #1d2024; --knopf: #33373c;
+      --rand: #949ba6; --linie: #2e3237; --feld: #1d2024; --knopf: #33373c; --knopfrand: #8b929b;
     }
   }
 
@@ -165,17 +166,16 @@ const STYLES = `
     margin-top: .5rem; padding: .6rem 1.4rem; cursor: pointer;
     font: 600 1.125rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase;
     background: var(--knopf); color: var(--tinte);
-    border: 1px solid var(--tinte); border-radius: 6px;
+    border: 2px solid var(--knopfrand); border-radius: 6px;
     /* Harte Kante statt Weichzeichnung: ein weicher Schatten wirkt auf diesem
        flachen, papiernen Bild immer schmutzig. Eine versetzte Volltonflaeche
        liest sich dagegen wie eine Praegung und traegt den Kontrast. */
-    box-shadow: 0 4px 0 var(--tinte);
+    box-shadow: 0 4px 0 var(--knopfrand);
     transform: translateY(-2px);
   }
-  button:hover, button:focus-visible { background: var(--tinte); color: var(--papier);
-    border-color: var(--tinte); }
+  button:hover, button:focus-visible { background: var(--knopfrand); color: var(--papier); }
   /* Beim Druecken sinkt der Knopf auf seine Kante. */
-  button:active { transform: translateY(2px); box-shadow: 0 0 0 var(--tinte); }
+  button:active { transform: translateY(2px); box-shadow: 0 0 0 var(--knopfrand); }
 
   .hinweis { padding: .85rem 1rem; margin: 0 0 1.5rem;
     background: var(--feld); border: 1px solid var(--linie);
