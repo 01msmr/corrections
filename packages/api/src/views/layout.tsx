@@ -101,12 +101,12 @@ const STYLES = `
      eigenen Randspalte: es gehoert zu dem, was darunter zu tun ist. */
   /* Emoji: sie bringen ihre Farbe selbst mit, deshalb hier weder color noch
      Schriftwahl. Auf Apple-Systemen ist das rote Kreuz kraeftig, der Haken
-     dunkel und handgezeichnet, der Kugelschreiber blau. */
+     dunkel und handgezeichnet, der Bleistift gelb. */
   .zeichen { font-size: 1.15em; line-height: 0; margin-right: .35em;
     vertical-align: -.12em; }
   .zeichen-falsch::before { content: "❌"; }
   .zeichen-richtig::before { content: "✔️"; }
-  .zeichen-notiz::before { content: "🖊️"; }
+  .zeichen-notiz::before { content: "✏️"; }
 
   /* Beschriftungen im selben Stil wie die Navigation: dicktengleich, ohne
      Versalien, im Randton. Beides ist Auszeichnungsebene, nicht Inhalt --
