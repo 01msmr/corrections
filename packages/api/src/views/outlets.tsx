@@ -42,41 +42,60 @@ const Felder: FC<{
   vorgabeDomain?: string | undefined;
   eingabe?: OutletFormValues | undefined;
 }> = ({ outlet, vorgabeDomain, eingabe }) => (
-  <>
-    <label for="name">Name:</label>
-    <input
-      id="name"
-      name="name"
-      required
-      value={eingabe?.name ?? outlet?.name ?? vorgabeDomain ?? ""}
-    />
+  <div class="arbeitsflaeche">
+    {/* Hauptspalte: wer die Redaktion ist. */}
+    <div class="hauptspalte">
+      <div class="feld">
+        <label for="name">Name:</label>
+        <input
+          id="name"
+          name="name"
+          required
+          value={eingabe?.name ?? outlet?.name ?? vorgabeDomain ?? ""}
+        />
+      </div>
 
-    <label for="primaryDomain">Hauptdomain:</label>
-    <input
-      id="primaryDomain"
-      name="primaryDomain"
-      required
-      value={eingabe?.primaryDomain ?? outlet?.primaryDomain ?? vorgabeDomain ?? ""}
-    />
+      <div class="feld">
+        <label for="primaryDomain">Hauptdomain:</label>
+        <input
+          id="primaryDomain"
+          name="primaryDomain"
+          required
+          value={eingabe?.primaryDomain ?? outlet?.primaryDomain ?? vorgabeDomain ?? ""}
+        />
+      </div>
 
-    <label for="publisher">Verlag:</label>
-    <input id="publisher" name="publisher" value={eingabe?.publisher ?? outlet?.publisher ?? ""} />
+      <div class="feld">
+        <label for="publisher">Verlag:</label>
+        <input id="publisher" name="publisher" value={eingabe?.publisher ?? outlet?.publisher ?? ""} />
+      </div>
+    </div>
 
-    <label for="country">Sprachraum:</label>
-    <SprachraumAuswahl gewaehlt={eingabe?.country ?? outlet?.country ?? ""} />
+    {/* Nebenspalte: wie sie erreicht und eingeordnet wird. */}
+    <div class="nebenspalte">
+      <div class="feld">
+        <label for="contactEmails">
+          <span>Kontaktadressen:</span>{" "}
+          <span class="zaehler">kommagetrennt, erste ist Standardempfänger</span>
+        </label>
+        <input
+          id="contactEmails"
+          name="contactEmails"
+          value={eingabe?.contactEmails ?? (outlet?.contactEmails ?? []).join(", ")}
+        />
+      </div>
 
-    <label for="contactEmails">
-      <span>Kontaktadressen:</span> <span class="zaehler">kommagetrennt, erste ist Standardempfänger</span>
-    </label>
-    <input
-      id="contactEmails"
-      name="contactEmails"
-      value={eingabe?.contactEmails ?? (outlet?.contactEmails ?? []).join(", ")}
-    />
+      <div class="feld">
+        <label for="country">Sprachraum:</label>
+        <SprachraumAuswahl gewaehlt={eingabe?.country ?? outlet?.country ?? ""} />
+      </div>
 
-    <label for="notes">Notizen:</label>
-    <textarea id="notes" name="notes">{eingabe?.notes ?? outlet?.notes ?? ""}</textarea>
-  </>
+      <div class="feld">
+        <label for="notes">Notizen:</label>
+        <textarea id="notes" name="notes">{eingabe?.notes ?? outlet?.notes ?? ""}</textarea>
+      </div>
+    </div>
+  </div>
 );
 
 export const OutletList: FC<{
