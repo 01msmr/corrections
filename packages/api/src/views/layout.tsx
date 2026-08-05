@@ -133,8 +133,9 @@ const STYLES = `
     color: var(--tinte); margin: 2.5rem 0 .75rem; }
   /* Rubrik-Trenner wie im Blatt: der Name mittig, Linien zu beiden Seiten. */
   h2.rubrik { display: flex; align-items: center; gap: .9rem;
-    font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
-    color: var(--korrektur); font-size: .95rem; margin-top: 3rem; }
+    font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--korrektur); font-size: 1.25rem; margin-top: 3rem; }
+  h2.rubrik:first-child { margin-top: 0; }
   h2.rubrik::before, h2.rubrik::after { content: ""; flex: 1;
     border-top: 1px solid var(--linie); }
   a { color: inherit; text-underline-offset: .2em; }
@@ -255,9 +256,21 @@ const STYLES = `
   th, td { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid var(--linie);
     vertical-align: middle; }
   form.inline { display: inline; }
+  /* Die Mailvorschau zeigt das fertige HTML der Mail in einem Rahmen; darueber
+     stehen Empfaenger und Betreff wie im Kopf eines Mailprogramms. */
+  .mailkopf { font: .9rem/1.6 var(--mono); color: var(--tinte);
+    border: 1px solid var(--linie); border-bottom: none; padding: .6rem .9rem;
+    background: var(--feld); }
+  .mailkopf .zaehler { display: inline; margin-right: .5rem; }
+  .mailvorschau { border: 1px solid var(--linie); margin: 0 0 1.5rem; overflow-x: auto; }
   /* Die ganze Zeile ist das Klickziel -- beim Zeigen fuellt sie sich einen Hauch
      dunkler, nicht invers. Formulare und Griff sind davon ausgenommen. */
   tr[data-href] { cursor: pointer; }
+  /* Objektnamen in den Zeilen: Schreibmaschine fett statt Unterstreichung --
+     die ganze Zeile ist ohnehin das Klickziel, der Link braucht keine eigene
+     Auszeichnung mehr. */
+  td a { font: 700 .95rem/1.4 var(--mono); letter-spacing: .01em;
+    color: var(--tinte); text-decoration: none; }
   tr[data-href]:hover td { background: color-mix(in oklab, var(--tinte) 6%, var(--papier)); }
   /* Knoepfe in Tabellenzeilen sind Werkzeug, nicht Ziel der Seite: nuechtern,
      rechteckig, ueber die volle Zeilenhoehe -- der Rotstift kommt beim Zeigen.

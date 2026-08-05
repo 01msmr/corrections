@@ -1,9 +1,11 @@
 import { canonicalizeUrl, detectErrorTypeKey, newCorrectionSchema } from "@korrektur/shared";
 import { createId } from "@paralleldrive/cuid2";
 import { Hono } from "hono";
-import { listErrorTypes } from "../repo/errorTypes.js";
+import { getErrorTypeByKey, listErrorTypes } from "../repo/errorTypes.js";
 import { createCorrection, type CreateDeps } from "../repo/corrections.js";
-import { CaptureForm, CaptureResult } from "../views/capture.js";
+import { resolveOutletByHost } from "../repo/outlets.js";
+import { composeMail } from "../dispatch/compose.js";
+import { CaptureForm, CapturePreview, CaptureResult } from "../views/capture.js";
 
 export function captureRoutes(deps: CreateDeps): Hono {
   const app = new Hono();
@@ -31,6 +33,79 @@ export function captureRoutes(deps: CreateDeps): Hono {
     const erkannt = detectErrorTypeKey(falsch, richtig);
     const vorhanden = erkannt !== null && listErrorTypes(deps.db).some((t) => t.key === erkannt);
     return c.json({ kategorie: vorhanden ? erkannt : null });
+  });
+
+  /**
+   * Vorschau vor dem Versand: dieselbe Pruefung wie beim Senden, aber ohne
+   * Nebenwirkung -- kein Datensatz, kein Titel wird angelegt, keine Kennung
+   * verbraucht. Die Mail steht mit dem Platzhalter VORSCHAU da.
+   */
+  app.post("/neu/vorschau", async (c) => {
+    const body = await c.req.parseBody();
+    const parsed = newCorrectionSchema.safeParse(body);
+    if (!parsed.success) {
+      const message = parsed.error.issues
+        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+        .join(" | ");
+      return c.html(
+        <CaptureForm
+          errorTypes={listErrorTypes(deps.db)}
+          idempotencyKey={createId()}
+          url={typeof body["articleUrl"] === "string" ? body["articleUrl"] : ""}
+          quote={typeof body["quoteBefore"] === "string" ? body["quoteBefore"] : ""}
+          fehler={message}
+        />,
+        400,
+      );
+    }
+
+    const canon = canonicalizeUrl(parsed.data.articleUrl);
+    const errorType = canon ? getErrorTypeByKey(deps.db, parsed.data.errorTypeKey) : null;
+    const outlet = canon ? resolveOutletByHost(deps.db, canon.host) : null;
+    const empfaenger = parsed.data.recipientEmail ?? outlet?.contactEmails[0];
+    if (!canon || !errorType || !empfaenger) {
+      const zurueck = `/neu?url=${encodeURIComponent(parsed.data.articleUrl)}&text=${encodeURIComponent(parsed.data.quoteBefore)}`;
+      return c.html(
+        <CaptureForm
+          errorTypes={listErrorTypes(deps.db)}
+          idempotencyKey={createId()}
+          url={parsed.data.articleUrl}
+          quote={parsed.data.quoteBefore}
+          fehler={
+            !canon
+              ? "Die Artikel-URL ist nicht verwertbar."
+              : !errorType
+                ? `Unbekannte Kategorie: ${parsed.data.errorTypeKey}`
+                : undefined
+          }
+          fehlendeRedaktion={canon && errorType ? { host: canon.host, zurueck } : undefined}
+        />,
+        400,
+      );
+    }
+
+    const mail = composeMail({
+      ref: "VORSCHAU",
+      outletName: outlet?.name ?? canon.host,
+      articleUrl: parsed.data.articleUrl,
+      articleUrlCanon: canon.canonical,
+      headline: parsed.data.headline ?? null,
+      errorTypeKey: errorType.key,
+      errorTypeLabel: errorType.label,
+      severity: parsed.data.severity,
+      quoteBefore: parsed.data.quoteBefore,
+      suggestionAfter: parsed.data.suggestionAfter,
+      comment: parsed.data.comment,
+      baseUrl: deps.baseUrl,
+    });
+
+    const werte: Record<string, string> = {};
+    for (const [name, wert] of Object.entries(body)) {
+      if (typeof wert === "string") werte[name] = wert;
+    }
+    return c.html(
+      <CapturePreview an={empfaenger} subject={mail.subject} mailHtml={mail.html} werte={werte} />,
+    );
   });
 
   app.post("/neu", async (c) => {

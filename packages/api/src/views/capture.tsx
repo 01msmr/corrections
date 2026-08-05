@@ -98,7 +98,7 @@ export const CaptureForm: FC<{
     ) : fehler ? (
       <p class="hinweis">{fehler}</p>
     ) : null}
-    <form class="arbeitsflaeche" method="post" action="/neu">
+    <form class="arbeitsflaeche" method="post" action="/neu/vorschau">
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
 
       {/* Hauptspalte: der Artikel und die eigentliche Korrektur. */}
@@ -192,13 +192,44 @@ export const CaptureForm: FC<{
         <div class="abschluss">
           <button type="submit">
               <span class="knopftext">
-                Korrektur senden<span class="taste" aria-hidden="true">⏎</span>
+                Korrektur-Vorschau<span class="taste" aria-hidden="true">⏎</span>
               </span>
             </button>
         </div>
       </aside>
     </form>
     <script dangerouslySetInnerHTML={{ __html: ERKENNUNG_SCRIPT }} />
+  </Layout>
+);
+
+export const CapturePreview: FC<{
+  an: string;
+  subject: string;
+  mailHtml: string;
+  /** Alle Formularwerte, unveraendert als versteckte Felder weitergereicht. */
+  werte: Record<string, string>;
+}> = ({ an, subject, mailHtml, werte }) => (
+  <Layout title="Vorschau" aktiv="neu">
+    <div class="mailkopf">
+      <div>
+        <span class="zaehler">An:</span> {an}
+      </div>
+      <div>
+        <span class="zaehler">Betreff:</span> {subject}
+      </div>
+    </div>
+    {/* Inhalt stammt aus composeMail; alle Nutzereingaben sind dort maskiert. */}
+    <div class="mailvorschau" dangerouslySetInnerHTML={{ __html: mailHtml }} />
+    <form method="post" action="/neu">
+      {Object.entries(werte).map(([name, wert]) => (
+        <input type="hidden" name={name} value={wert} />
+      ))}
+      <button type="submit">✉️ Korrektur senden</button>
+    </form>
+    <p>
+      <a href="javascript:history.back()">Zurück zum Formular</a>
+      <span class="zaehler"> — die Eingaben bleiben erhalten.</span>
+    </p>
   </Layout>
 );
 

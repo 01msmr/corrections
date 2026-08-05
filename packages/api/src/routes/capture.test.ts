@@ -98,6 +98,21 @@ describe("POST /neu/kategorie", () => {
   });
 });
 
+describe("POST /neu/vorschau", () => {
+  it("zeigt die Mail als Vorschau, ohne einen Datensatz anzulegen", async () => {
+    const res = await captureRoutes(deps).request("/neu/vorschau", { method: "POST", body: form() });
+    const html = await res.text();
+    expect(res.status).toBe(200);
+    expect(html).toContain("ref=VORSCHAU");
+    expect(html).toContain("Liebe Beispiel-Zeitung-Redaktion,");
+    expect(html).toContain("leserbriefe@beispiel-zeitung.de");
+    // Die Werte reisen als versteckte Felder weiter zum echten Versand.
+    expect(html).toContain('name="idempotencyKey" value="abcdef0123456789"');
+    expect(html).toContain('action="/neu"');
+    expect(db.select().from(corrections).all()).toHaveLength(0);
+  });
+});
+
 describe("POST /neu", () => {
   it("legt die Meldung an und bestätigt mit dem Referenz-Token", async () => {
     const res = await captureRoutes(deps).request("/neu", { method: "POST", body: form() });
