@@ -11,24 +11,28 @@ export const UeberSeite: FC = () => (
     <div class="prosa">
       <h2 class="rubrik">In eigener Sache</h2>
       <p class="einstieg">
-        Korrekturen sammelt Hinweise auf Textfehler in Online-Artikeln, schickt sie an die
-        zuständige Redaktion und hält fest, was daraus wird.
+        Korrekturen sammelt, was beim Lesen leise hängen bleibt: kleine Textfehler in
+        Online-Artikeln. Es reicht sie freundlich an die zuständige Redaktion weiter — und
+        hält geduldig fest, was daraus wird.
       </p>
 
       <h2>Der Weg eines Hinweises</h2>
       <p>
-        Die Fundstelle wird im Wortlaut aus dem Artikel übernommen, die berichtigte Fassung
-        dazugestellt, beides geht per E‑Mail an die Redaktion. Jede Mail trägt am Ende des
-        Betreffs eine Kennung — bleibt sie in der Antwort stehen, lässt sich die Rückmeldung
-        dem Hinweis zuordnen.
+        Die Fundstelle wandert wortgetreu aus dem Artikel herüber, die berichtigte Fassung
+        stellt sich daneben, und gemeinsam gehen beide als höfliche E‑Mail auf die Reise zur
+        Redaktion. Jede Mail trägt am Ende des Betreffs eine kleine Kennung — bleibt sie in
+        der Antwort stehen, finden Rückmeldung und Korrektur später ganz von selbst wieder
+        zueinander.
       </p>
 
       <h2>Warum</h2>
       <p>
-        Die meisten Fehler in Artikeln sind klein: ein Komma, ein Buchstabendreher, eine
-        verdrehte Zahl. Sie sind schnell behoben — wenn sie jemand meldet. Dieses Werkzeug
-        macht das Melden so kurz wie möglich und bewahrt zugleich auf, welche Hinweise
-        unterwegs sind und was Redaktionen daraus gemacht haben.
+        Die meisten Fehler in Artikeln sind winzig: ein verirrtes Komma, zwei vertauschte
+        Buchstaben, eine verdrehte Zahl. Sie wären rasch behoben — wenn sie nur jemand
+        meldet. Dieses kleine Werkzeug macht das Melden so mühelos wie möglich und bewahrt
+        zugleich sorgfältig auf, welche Hinweise gerade unterwegs sind und was Redaktionen
+        stillschweigend daraus gemacht haben. Denn Texte werden besser, wo jemand aufmerksam
+        liest.
       </p>
 
       <h2 class="rubrik">Netzwelt</h2>
