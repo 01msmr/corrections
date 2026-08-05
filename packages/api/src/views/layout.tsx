@@ -155,10 +155,9 @@ const STYLES = `
   input, textarea, select {
     width: 100%; padding: .55rem .65rem; font: inherit;
     background: var(--feld); color: inherit;
+    /* Keine Tiefe: ein Textformular auf Papier ist ein linierter Kasten,
+       kein eingelassenes Becken. Der weisse Grund genuegt als Einladung. */
     border: 1px solid var(--linie); border-radius: 6px;
-    /* Leichter Innenschatten: das Feld liegt tiefer als das Blatt und wirkt
-       dadurch als Flaeche, die etwas aufnimmt. */
-    box-shadow: inset 0 2px 5px rgba(0, 0, 0, .18), inset 0 0 0 1px rgba(0, 0, 0, .03);
   }
 
   .arbeitsflaeche { display: grid; }
@@ -218,7 +217,6 @@ const STYLES = `
     color: var(--rand);
     background: var(--feld);
     border: 1px solid var(--linie); border-radius: 6px;
-    box-shadow: inset 0 2px 5px rgba(0, 0, 0, .18), inset 0 0 0 1px rgba(0, 0, 0, .03);
   }
   /* Das Zeilenschaltungszeichen sagt, dass der Knopf auch mit der Eingabetaste
      ausgeloest wird. aria-hidden, weil das fuer Vorlesesoftware ohnehin gilt. */
@@ -271,11 +269,6 @@ const STYLES = `
     .nebenspalte .abschluss { margin-top: auto; }
     .hauptspalte > .feld:last-child { margin-bottom: 0; }
     .nebenspalte .abschluss button { min-height: 9rem; }
-  }
-
-  @media (prefers-color-scheme: dark) {
-    input, textarea, select,
-    button:active { box-shadow: inset 0 2px 6px rgba(0, 0, 0, .55); }
   }
 
   /* Schmale Schirme: kompakter Kopf wie die mobile Ausgabe einer Zeitung --
