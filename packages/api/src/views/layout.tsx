@@ -77,7 +77,6 @@ const STYLES = `
     position: sticky; top: 0; z-index: 5;
     margin-bottom: 2.5rem;
     background: var(--papier);
-    border-bottom: 1px solid var(--linie);
     animation: kopfschatten linear both;
     animation-timeline: scroll(root);
     animation-range: 4rem 8rem;
@@ -124,7 +123,6 @@ const STYLES = `
   nav a { font: 700 .95rem/1 var(--mono); letter-spacing: .03em;
     color: var(--rand); text-decoration: none; padding: .6rem .95rem .5rem;
     border-bottom: 2px solid transparent; }
-  nav a + a { border-left: 1px solid var(--linie); }
   nav a:hover, nav a:focus-visible { color: var(--tinte); border-bottom-color: var(--korrektur); }
   /* Die aktuelle Seite ist rot hinterlegt statt groesser gesetzt: die Leiste
      behaelt so auf jeder Seite dieselbe Hoehe und springt beim Wechsel nicht. */
