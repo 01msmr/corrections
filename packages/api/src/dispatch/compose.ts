@@ -32,7 +32,7 @@ const QUOTE_INDENT = "    ";
  * allein ueber die Farbe: Rot-Gruen-Schwaeche ist die haeufigste Form der
  * Farbfehlsichtigkeit, und der Textteil kennt ohnehin keine Farbe.
  */
-const COLOR_BEFORE = "#d0342c";
+const COLOR_BEFORE = "#a3323b";
 const COLOR_AFTER = "#2f6f4e";
 
 function truncate(value: string, max: number): string {

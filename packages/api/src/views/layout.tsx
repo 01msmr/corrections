@@ -14,7 +14,7 @@ const STYLES = `
     color-scheme: light dark;
     --papier: #f7f7f4;
     --tinte: #1b1f23;
-    --korrektur: #d0342c;
+    --korrektur: #a3323b;
     --vorschlag: #2f6f4e;
     --rand: #6b7480;
     --linie: #dcddd8;
@@ -28,7 +28,7 @@ const STYLES = `
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --papier: #16181b; --tinte: #e8e6e1; --korrektur: #f2756b; --vorschlag: #7bc39a;
+      --papier: #16181b; --tinte: #e8e6e1; --korrektur: #dd7e85; --vorschlag: #7bc39a;
       --rand: #949ba6; --linie: #2e3237; --feld: #1d2024;
     }
   }
@@ -91,7 +91,11 @@ const STYLES = `
     align-items: baseline; justify-content: space-between;
   }
   .markenzeile.kopfinhalt { display: block; }
-  .marke { font: 700 2.2rem/1.1 var(--mono); letter-spacing: .09em; text-transform: uppercase;
+  /* Der Zeitungstitel laeuft nicht in der Schreibmaschine, sondern in einer
+     Didone -- der Schriftgattung klassischer Titelkoepfe. Didot und Bodoni
+     liegen auf Apple-Systemen, Georgia faengt den Rest ab. */
+  .marke { font: 700 2.6rem/1.1 "Didot", "Bodoni 72", Didot, Georgia, "Times New Roman", serif;
+    letter-spacing: .05em; text-transform: uppercase;
     color: inherit; text-decoration: none; }
   /* Die Schrift bleibt in Tinte; ausgezeichnet wird ueber eine Unterstreichung
      im selben Rot wie der Tilgungsstrich und in derselben Staerke. */
@@ -113,7 +117,7 @@ const STYLES = `
   .marke .tilgung::after {
     content: ""; position: absolute;
     left: -.22em; right: -.22em; top: -.15em; bottom: -.15em;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='26' viewBox='0 0 46 26' preserveAspectRatio='none'%3E%3Cpath d='M2.4 20.6C13.2 16.4 26.4 10.2 41.8 3.2c1.1-.5 1.9.6 1 1.3-2 1.5-4.6 3-8 4.8C25.6 14.4 13.4 20.4 4.4 24c-1.3.5-2.6-1.6-2-3.4z' fill='%23d0342c'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='26' viewBox='0 0 46 26' preserveAspectRatio='none'%3E%3Cpath d='M2.4 20.6C13.2 16.4 26.4 10.2 41.8 3.2c1.1-.5 1.9.6 1 1.3-2 1.5-4.6 3-8 4.8C25.6 14.4 13.4 20.4 4.4 24c-1.3.5-2.6-1.6-2-3.4z' fill='%23a3323b'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
   }
   nav { display: flex; gap: 0; flex-wrap: wrap; align-items: baseline;
     justify-content: center; width: 100%; }
@@ -182,7 +186,7 @@ const STYLES = `
     background-size: .8rem auto;
   }
   select:hover, select:focus-visible {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'%3E%3Cpath d='M1.6 1.7 6.5 6.8l4.9-5.1' fill='none' stroke='%23d0342c' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'%3E%3Cpath d='M1.6 1.7 6.5 6.8l4.9-5.1' fill='none' stroke='%23a3323b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
   optgroup { font: 600 .75rem var(--mono); letter-spacing: .06em; color: var(--rand); }
   optgroup option { font: 400 1rem var(--sans); letter-spacing: 0; color: var(--tinte); }
@@ -240,7 +244,12 @@ const STYLES = `
     vertical-align: top; }
   form.inline { display: inline; }
   tr[draggable="true"] { cursor: grab; }
-  tr.zieht { opacity: .45; }
+  tr.zieht { opacity: .4; }
+  /* Einfuegemarke: eine karminrote Linie an der Kante, an der die gezogene
+     Zeile beim Loslassen einsortiert wuerde. Als Innenschatten auf den Zellen,
+     weil border-collapse Zeilenraender verschluckt. */
+  tr.ziel-oben td { box-shadow: inset 0 2px 0 var(--korrektur); }
+  tr.ziel-unten td { box-shadow: inset 0 -2px 0 var(--korrektur); }
   .griff { color: var(--rand); user-select: none; width: 1.5rem; }
 
   @media (prefers-color-scheme: dark) {
@@ -276,7 +285,7 @@ const STYLES = `
      wird zur seitlich scrollbaren Zeile. */
   @media (max-width: 40rem) {
     .markenzeile { padding: 1rem 0 .5rem; }
-    .marke { font-size: 1.45rem; }
+    .marke { font-size: 1.7rem; }
     .untertitel { font-size: .68rem; letter-spacing: .1em; }
     .datum { position: static; transform: none; display: block; margin-top: .1rem; }
     nav { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
@@ -330,7 +339,7 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
     <body>
       <header>
         <div class="kopfinhalt markenzeile">
-          <a class="marke" href="/" aria-label="Korrekturen">
+          <a class="marke" href="/" aria-label="Korrekturen" draggable={false}>
             Korrektu<span class="tilgung">h</span>ren
           </a>
         </div>
@@ -344,16 +353,16 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
       <div class="navzeile">
         <div class="kopfinhalt">
           <nav>
-            <a href="/" aria-current={aktiv === "ueber" ? "page" : undefined}>
+            <a href="/" aria-current={aktiv === "ueber" ? "page" : undefined} draggable={false}>
               In eigener Sache
             </a>
-            <a href="/neu" aria-current={aktiv === "neu" ? "page" : undefined}>
+            <a href="/neu" aria-current={aktiv === "neu" ? "page" : undefined} draggable={false}>
               Neue Korrektur
             </a>
-            <a href="/admin/redaktionen" aria-current={aktiv === "redaktionen" ? "page" : undefined}>
+            <a href="/admin/redaktionen" aria-current={aktiv === "redaktionen" ? "page" : undefined} draggable={false}>
               Titel
             </a>
-            <a href="/admin/fehlerarten" aria-current={aktiv === "fehlerarten" ? "page" : undefined}>
+            <a href="/admin/fehlerarten" aria-current={aktiv === "fehlerarten" ? "page" : undefined} draggable={false}>
               Kategorien
             </a>
           </nav>
