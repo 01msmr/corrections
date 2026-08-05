@@ -112,6 +112,14 @@ export function detectErrorTypeKey(falsch: string, richtig: string): DetectedErr
       return istDatumswort(alt.wort) || istDatumswort(neu.wort) ? "falsches_datum" : "falsche_zahl";
     }
     if (istDreher(alt.wort, neu.wort)) return "buchstabendreher";
+    // Auch ein einzelnes ersetztes Zeichen ist fast immer ein Tippfehler,
+    // kein bewusst anderes Wort -- Dreher ist die wahrscheinlichere Deutung.
+    if (
+      alt.wort.length === neu.wort.length &&
+      [...alt.wort].filter((z, i) => z !== neu.wort[i]).length === 1
+    ) {
+      return "buchstabendreher";
+    }
     if (umEinZeichenErgaenzt(alt.wort, neu.wort)) return "zeichen_fehlt";
     if (umEinZeichenErgaenzt(neu.wort, alt.wort)) return "zeichen_zu_viel";
     // Grossgeschrieben mitten im Satz: sehr wahrscheinlich ein Eigenname. Am

@@ -69,6 +69,7 @@ export const ErrorTypeList: FC<{
     {hinweis ? <p class="hinweis">{hinweis}</p> : null}
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
+    <h2>Geführte Kategorien</h2>
     <table>
       <thead>
         <tr>

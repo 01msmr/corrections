@@ -40,7 +40,7 @@ export const UeberSeite: FC = () => (
         Hinter dieser Seite steckt wohltuend wenig: ein kleines Programm auf einem
         gemieteten Webserver und eine einzelne, sorgsam gehütete Datei als Ablage. Keine
         Konten bei Drittdiensten, keine Besucherzählung, keine Cookies — erhoben wird
-        schlicht nichts, was niemand braucht.
+        nur, was das Blatt selbst braucht.
       </p>
       <p>
         Beim Absenden holt sich das Programm den Artikel ein einziges Mal von der

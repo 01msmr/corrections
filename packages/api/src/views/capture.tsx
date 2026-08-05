@@ -271,6 +271,16 @@ export const CapturePreview: FC<{
       <a href="javascript:history.back()">Zurück zum Formular</a>
       <span class="zaehler"> — die Eingaben bleiben erhalten.</span>
     </p>
+    {/* Wer die Vorschau verlaesst, ohne zu senden, wird vom Browser gefragt --
+        die Systemabfrage, kein eigener Dialog. Das Senden selbst ist ausgenommen. */}
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `
+  let sendet = false;
+  document.querySelector('form[action="/neu"]').addEventListener("submit", () => { sendet = true; });
+  window.addEventListener("beforeunload", (e) => { if (!sendet) e.preventDefault(); });`,
+      }}
+    />
   </Layout>
 );
 

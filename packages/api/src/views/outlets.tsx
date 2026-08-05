@@ -115,11 +115,12 @@ export const OutletList: FC<{
     {hinweis ? <p class="hinweis">{hinweis}</p> : null}
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
+    <h2>Geführte Titel</h2>
     <table>
       <thead>
         <tr>
           <th>Name</th>
-          <th>Domains</th>
+          <th>Domain</th>
           <th>Kontakt</th>
           <th></th>
         </tr>

@@ -143,7 +143,7 @@ const STYLES = `
   nav a[aria-current="page"] { background: var(--korrektur); color: var(--papier); }
 
   h1 { font: 700 1.9rem/1.25 var(--mono); margin: 0 0 1.25rem; letter-spacing: .01em; }
-  h2 { font: 1.15rem/1.3 var(--mono); letter-spacing: .01em;
+  h2 { font: 700 1.15rem/1.3 var(--mono); letter-spacing: .01em;
     color: var(--tinte); margin: 2.5rem 0 .75rem; }
   /* Rubrik-Trenner wie im Blatt: der Name mittig, Linien zu beiden Seiten. */
   h2.rubrik { display: flex; align-items: center; gap: .9rem;

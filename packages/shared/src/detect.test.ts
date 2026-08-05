@@ -36,6 +36,10 @@ describe("detectErrorTypeKey", () => {
     expect(detectErrorTypeKey("Das Huas ist alt.", "Das Haus ist alt.")).toBe("buchstabendreher");
   });
 
+  it("deutet ein einzelnes getauschtes Zeichen als Buchstabendreher", () => {
+    expect(detectErrorTypeKey("Das Hxus ist alt.", "Das Haus ist alt.")).toBe("buchstabendreher");
+  });
+
   it("erkennt eine falsche Zahl", () => {
     expect(detectErrorTypeKey("rund 4,2 Millionen Menschen", "rund 2,4 Millionen Menschen")).toBe(
       "falsche_zahl",
