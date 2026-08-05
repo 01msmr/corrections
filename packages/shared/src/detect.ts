@@ -205,6 +205,33 @@ export function detectErrorCount(
   }
 }
 
+/**
+ * Bestimmt bei Satzzeichen-Fehlern das konkrete Zeichen: unterscheiden sich
+ * die beiden Fassungen in genau einer Zeichensorte, ist es diese — sonst
+ * null (gemischte Faelle bleiben generisch "Satzzeichen").
+ */
+export function detectErrorChar(
+  falsch: string,
+  richtig: string,
+  kategorie: DetectedErrorTypeKey | null,
+): string | null {
+  if (kategorie !== "komma_fehlt" && kategorie !== "komma_zu_viel") return null;
+  const zaehlung = (text: string): Map<string, number> => {
+    const anzahl = new Map<string, number>();
+    for (const zeichen of normalizeText(text).match(SATZZEICHEN) ?? []) {
+      anzahl.set(zeichen, (anzahl.get(zeichen) ?? 0) + 1);
+    }
+    return anzahl;
+  };
+  const inFalsch = zaehlung(falsch);
+  const inRichtig = zaehlung(richtig);
+  const verschieden: string[] = [];
+  for (const zeichen of new Set([...inFalsch.keys(), ...inRichtig.keys()])) {
+    if ((inFalsch.get(zeichen) ?? 0) !== (inRichtig.get(zeichen) ?? 0)) verschieden.push(zeichen);
+  }
+  return verschieden.length === 1 ? (verschieden[0] ?? null) : null;
+}
+
 /** Woerter, deren Fehlen oder Auftauchen die Aussage umkehrt. */
 const NEGATIONEN = new Set([
   "nicht", "kein", "keine", "keinen", "keinem", "keiner", "nie", "niemals", "nichts",

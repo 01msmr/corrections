@@ -27,7 +27,10 @@ Artikel korrigiert, und wenn ja, bei welchen Fehlerarten wie zuverlässig?
 
 1. **Erfassen.** Das Formular ist per Teilen-Funktion des Telefons erreichbar (Text
    markieren, teilen, Kurzbefehl öffnet die vorausgefüllte Seite) oder direkt im
-   Browser, mit URL und Zitat von Hand eingetragen.
+   Browser, mit URL und Zitat von Hand eingetragen. Überschrift, Fehlerart und —
+   bei zählbaren Arten — die Anzahl samt konkretem Satzzeichen erkennt der Server
+   automatisch und benennt sie sprachlich korrekt („zwei Zeichen fehlen",
+   „ein Komma zu viel"); jede Automatik ist von Hand übersteuerbar.
 2. **Verankern.** Der Server ruft den Artikel selbst ab und sucht das gemeldete
    Zitat im umgebenden Text. Statt eines reinen Substring-Vergleichs entstehen dabei
    Kontext-Anker — der Text kurz vor und nach der Stelle.
@@ -72,27 +75,45 @@ Frontend soll das auch so zeigen.
 ## Stand der Arbeit
 
 Umgesetzt sind die Phasen **P0–P2**: Monorepo-Grundgerüst, Erfassung und Versand,
-Stammdaten (Redaktionen, Fehlerarten), Kennzahlen-Ansichten und der öffentliche
-Serializer samt seiner Schutzmechanismen.
+Stammdaten (Medien, Fehlerarten), Kennzahlen-Ansichten und der öffentliche
+Serializer samt seiner Schutzmechanismen. Die Anwendung läuft produktiv auf einem
+Shared-Webhosting (Plesk/Passenger) und wird bei jedem Push automatisch deployt.
 
-Geplant, aber noch nicht gebaut: **P3** Zuordnung eingehender Antworten per IMAP,
-**P4** Nacherfassung bereits versendeter Mails aus dem Altbestand, **P5**
-regelmäßige Artikel-Prüfungen per Cronjob, **P6** das öffentliche Dashboard, **P7**
+Von **P4** (Nacherfassung des Altbestands) stehen die Werkzeuge: Korpus-Export,
+Vorlagen-Parser und Review-Queue samt Import (siehe unten). Geplant, aber noch
+nicht gebaut: **P3** Zuordnung eingehender Antworten per IMAP, **P5** regelmäßige
+Artikel-Prüfungen per Cronjob, **P6** das öffentliche Dashboard („Bilanz"), **P7**
 eine Methodik-Seite, die erklärt, was die Zahlen nicht aussagen.
 
-Es gibt noch keine Nutzer:innen und noch keinen Produktivbetrieb — das hier ist ein
-lauffähiger Codestand für die ersten drei Phasen, kein laufender Dienst.
+## Altbestand nacherfassen (Backfill)
+
+Über 1300 Korrekturmails aus den Jahren vor diesem Projekt stammen aus einem
+iOS-Kurzbefehl mit fester Vorlage. Drei Einmalwerkzeuge im Paket
+`packages/backfill` holen sie in die Datenbank — getrennt vom Server-Laufzeitpfad,
+gemeinsam mit dem Dauerbetrieb haben sie nur `packages/shared`:
+
+```bash
+pnpm backfill:korpus   # Gesendet-Ordner einmalig read-only als .eml nach fixtures.local/
+pnpm backfill:review   # Review-Queue auf :3223 — Enter übernehmen, E bearbeiten, X verwerfen
+pnpm backfill:import   # übernommene Entscheidungen als source='backfill' in die Datenbank
+```
+
+Der Parser liest die Vorlage konservativ (85 % sicher, Rest zur Prüfung oder
+verworfen — geraten wird nie), Entscheidungen landen als JSONL neben dem Korpus,
+und der Import ist über die Message-ID idempotent. `fixtures.local/` ist vom
+Repository ausgeschlossen; die Testfixtures im Code sind synthetisch.
 
 ## Erste Schritte
 
 Voraussetzung: Node.js ≥ 22, pnpm 9. Das Repo ist ein Monorepo aus
-`packages/shared` (Zod-Schemas, reine Normalisierungsfunktionen — die einzige
-Typquelle) und `packages/api` (Server: Formular, Versand, Admin-Oberfläche,
-Datenbank).
+`packages/shared` (Zod-Schemas, reine Normalisierungs-, Erkennungs- und
+Benennungsfunktionen — die einzige Typquelle), `packages/api` (Server: Formular,
+Versand, Admin-Oberfläche, Datenbank) und `packages/backfill` (Einmalwerkzeuge
+für den Altbestand).
 
 ```bash
 pnpm install   # Abhängigkeiten installieren
-pnpm test      # 147 Tests über 24 Dateien
+pnpm test      # 242 Tests über 31 Dateien
 pnpm build     # TypeScript-Build beider Pakete
 pnpm dev       # Entwicklungsserver mit Watch-Modus (tsx)
 pnpm bundle    # esbuild-Bündel für den Produktionsbetrieb
@@ -114,7 +135,7 @@ Testdaten.
 
 Ein GitHub-Actions-Workflow baut und bündelt die Anwendung bei jedem Push auf
 `main` und lädt die drei Artefakte — Web-Prozess, Worker-Prozess und Migrationen —
-per rsync über SSH auf den Server. Dort startet Phusion Passenger den Web-Prozess,
+per tar über SSH auf den Server (rsync steht in der Chroot nicht zur Verfügung). Dort startet Phusion Passenger den Web-Prozess,
 während ein Cronjob in regelmäßigen Abständen den Worker aufruft. Es gibt keinen
 Docker-Container und auf dem Server läuft kein Build-Schritt.
 

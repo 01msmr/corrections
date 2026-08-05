@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectErrorCount, detectErrorTypeKey, detectSeverity } from "./detect.js";
+import { detectErrorChar, detectErrorCount, detectErrorTypeKey, detectSeverity } from "./detect.js";
 
 describe("detectErrorTypeKey", () => {
   it("erkennt ein fehlendes Komma", () => {
@@ -73,6 +73,13 @@ describe("detectErrorTypeKey", () => {
     expect(detectErrorCount("Das Huas ist alt.", "Das Haus ist alt.", "buchstabendreher")).toBe(1);
     expect(detectErrorCount("a", "b", "falsche_wortwahl")).toBeNull();
     expect(detectErrorCount("a", "b", null)).toBeNull();
+  });
+
+  it("bestimmt bei Satzzeichen-Fehlern das konkrete Zeichen", () => {
+    expect(detectErrorChar("Er kam, und ging.", "Er kam und ging.", "komma_zu_viel")).toBe(",");
+    expect(detectErrorChar("Er kam an", "Er kam an.", "komma_fehlt")).toBe(".");
+    expect(detectErrorChar("Er kam sah und siegte", "Er kam, sah und siegte!", "komma_fehlt")).toBeNull();
+    expect(detectErrorChar("a,b", "ab", "zeichen_zu_viel")).toBeNull();
   });
 
   it("erkennt einen Buchstabendreher", () => {

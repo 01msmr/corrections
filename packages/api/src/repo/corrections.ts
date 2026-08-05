@@ -97,7 +97,7 @@ function sanitizedInsertFailure(ref: string, error: unknown): Error {
   return new Error("Anlegen der Meldung fehlgeschlagen");
 }
 
-function reserveRef(makeRef: () => string, insert: (ref: string) => void): string {
+export function reserveRef(makeRef: () => string, insert: (ref: string) => void): string {
   for (let attempt = 0; attempt < REF_ATTEMPTS; attempt++) {
     const ref = makeRef();
     try {
@@ -194,6 +194,7 @@ export async function createCorrection(
           headline,
           errorTypeId: errorType.id,
           errorCount: input.errorCount,
+          errorChar: input.errorChar,
           severity: input.severity,
           quoteBefore: input.quoteBefore,
           quotePrefix: anchors.prefix,
@@ -231,7 +232,7 @@ export async function createCorrection(
     articleUrlCanon: canon.canonical,
     headline,
     errorTypeKey: errorType.key,
-    errorTypeLabel: benenneFehlerart(errorType.key, errorType.label, input.errorCount),
+    errorTypeLabel: benenneFehlerart(errorType.key, errorType.label, input.errorCount, input.errorChar),
     severity: input.severity,
     quoteBefore: input.quoteBefore,
     suggestionAfter: input.suggestionAfter,

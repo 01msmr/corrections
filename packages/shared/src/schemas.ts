@@ -25,6 +25,11 @@ export const newCorrectionSchema = z.object({
     (wert) => (wert === "" || wert === undefined || wert === null ? null : wert),
     z.coerce.number().int().min(1).max(999).nullable(),
   ),
+  /** Konkretes Satzzeichen bei Satzzeichen-Kategorien ("," / "."). */
+  errorChar: z.preprocess(
+    (wert) => (wert === "" || wert === undefined || wert === null ? null : wert),
+    z.string().max(3).nullable(),
+  ),
   // union vor coerce: z.coerce.number() allein wuerde true zu 1 machen und
   // damit als gueltige Schwere durchgehen lassen.
   severity: z.union([z.string(), z.number()]).pipe(z.coerce.number().int().min(1).max(3)),

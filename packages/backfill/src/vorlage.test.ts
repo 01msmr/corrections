@@ -43,6 +43,7 @@ describe("parseVorlage", () => {
       fehlerartRoh: "ein Zeichen zu viel",
       fehlerartKey: "zeichen_zu_viel",
       fehlerartAnzahl: 1,
+      fehlerartZeichen: null,
       falsch: "Der Mondd ist rund.",
       richtig: "Der Mond ist rund.",
       konfidenz: "sicher",
@@ -86,6 +87,13 @@ describe("parseVorlage", () => {
       expect(ergebnis.fehlerartKey, label).toBe(key);
       expect(ergebnis.fehlerartAnzahl, label).toBe(anzahl);
     }
+  });
+
+  it("liest das konkrete Satzzeichen aus Komma-Labels", () => {
+    const komma = parseVorlage(BETREFF, beispiel({ fehlerart: "ein Komma zu viel" }));
+    expect(komma.fehlerartZeichen).toBe(",");
+    const generisch = parseVorlage(BETREFF, beispiel({ fehlerart: "ein Satzzeichen fehlt" }));
+    expect(generisch.fehlerartZeichen).toBeNull();
   });
 
   it("laesst unbekannte Labels ungemappt und stuft auf 'pruefen'", () => {

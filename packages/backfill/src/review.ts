@@ -107,8 +107,14 @@ function seite(eintrag: { datei: string; meldung: Altmeldung }, offen: number, g
     FEHLERARTEN.find(([key]) => key === meldung.fehlerartKey)?.[1] ?? (meldung.fehlerartRoh ?? "—");
   const zaehlt = meldung.fehlerartKey !== null && istZaehlbareFehlerart(meldung.fehlerartKey);
   const ablage =
-    zaehlt && meldung.fehlerartAnzahl ? `(${meldung.fehlerartAnzahl}) ${listenLabel}` : listenLabel;
-  const benennung = benenneFehlerart(meldung.fehlerartKey ?? "", listenLabel, meldung.fehlerartAnzahl);
+    (zaehlt && meldung.fehlerartAnzahl ? `(${meldung.fehlerartAnzahl}) ${listenLabel}` : listenLabel) +
+    (meldung.fehlerartZeichen ? ` [${meldung.fehlerartZeichen}]` : "");
+  const benennung = benenneFehlerart(
+    meldung.fehlerartKey ?? "",
+    listenLabel,
+    meldung.fehlerartAnzahl,
+    meldung.fehlerartZeichen,
+  );
   const rohLabel = meldung.fehlerartRoh
     ? `<p class="roh">Label im Original: „${escapeHtml(meldung.fehlerartRoh)}“</p>`
     : "";
@@ -135,6 +141,7 @@ function seite(eintrag: { datei: string; meldung: Altmeldung }, offen: number, g
   kbd { border: 1px solid #6b7480; border-radius: 3px; padding: 0 .3em; font-size: .75em; }
   .kategoriezeile { display: flex; gap: .5rem; }
   .kategoriezeile input { width: 4.5rem; flex: none; }
+  .kategoriezeile input[name="zeichen"] { width: 3.2rem; }
   .kategoriezeile select { flex: 1; min-width: 0; }
 </style></head><body>
   <h1>Noch ${offen} von ${gesamt} — <span class="konfidenz">${meldung.konfidenz}</span> · ${escapeHtml(datei)}
@@ -155,6 +162,7 @@ function seite(eintrag: { datei: string; meldung: Altmeldung }, offen: number, g
     <label>Fehlerart (Anzahl | Art)
       <span class="kategoriezeile">
         <input name="anzahl" type="number" min="1" max="999" value="${meldung.fehlerartAnzahl ?? ""}" aria-label="Anzahl">
+        <input name="zeichen" maxlength="3" value="${escapeHtml(meldung.fehlerartZeichen ?? "")}" aria-label="Satzzeichen" placeholder="z. B. ,">
         <select name="fehlerartKey">${auswahl}</select>
       </span>
     </label>
@@ -233,6 +241,7 @@ async function main(): Promise<void> {
               artikelUrl: String(body["artikelUrl"] ?? "") || null,
               fehlerartKey: String(body["fehlerartKey"] ?? "") || null,
               anzahl: String(body["anzahl"] ?? "") || null,
+              zeichen: String(body["zeichen"] ?? "") || null,
               falsch: String(body["falsch"] ?? "") || null,
               richtig: String(body["richtig"] ?? "") || null,
             },

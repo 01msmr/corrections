@@ -16,6 +16,8 @@ export interface VorlagenErgebnis {
   fehlerartKey: string | null;
   /** Anzahl aus dem Alt-Label ("zwei Zeichen fehlen" → 2), wenn zaehlbar. */
   fehlerartAnzahl: number | null;
+  /** Konkretes Satzzeichen aus dem Alt-Label ("ein Komma fehlt" → ","). */
+  fehlerartZeichen: string | null;
   falsch: string | null;
   richtig: string | null;
   konfidenz: Konfidenz;
@@ -27,7 +29,10 @@ export interface VorlagenErgebnis {
  * Kombinationen und Freitexte bleiben bewusst ungemappt — die Review-Queue
  * entscheidet.
  */
-const FEHLERART_NACH_LABEL = new Map<string, { key: string; anzahl: number | null }>([
+const FEHLERART_NACH_LABEL = new Map<
+  string,
+  { key: string; anzahl: number | null; zeichen?: string }
+>([
   ["ein zeichen fehlt", { key: "zeichen_fehlt", anzahl: 1 }],
   ["zwei zeichen fehlen", { key: "zeichen_fehlt", anzahl: 2 }],
   ["2 zeichen fehlen", { key: "zeichen_fehlt", anzahl: 2 }],
@@ -39,12 +44,12 @@ const FEHLERART_NACH_LABEL = new Map<string, { key: string; anzahl: number | nul
   ["ein leerzeichen zu viel", { key: "zeichen_zu_viel", anzahl: 1 }],
   ["ein buchstabendreher", { key: "buchstabendreher", anzahl: 1 }],
   ["zwei buchstabendreher", { key: "buchstabendreher", anzahl: 2 }],
-  ["ein komma fehlt", { key: "komma_fehlt", anzahl: 1 }],
-  ["zwei kommata fehlen", { key: "komma_fehlt", anzahl: 2 }],
-  ["zwei kommas fehlen", { key: "komma_fehlt", anzahl: 2 }],
+  ["ein komma fehlt", { key: "komma_fehlt", anzahl: 1, zeichen: "," }],
+  ["zwei kommata fehlen", { key: "komma_fehlt", anzahl: 2, zeichen: "," }],
+  ["zwei kommas fehlen", { key: "komma_fehlt", anzahl: 2, zeichen: "," }],
   ["ein satzzeichen fehlt", { key: "komma_fehlt", anzahl: 1 }],
-  ["ein komma zu viel", { key: "komma_zu_viel", anzahl: 1 }],
-  ["zwei kommata zu viel", { key: "komma_zu_viel", anzahl: 2 }],
+  ["ein komma zu viel", { key: "komma_zu_viel", anzahl: 1, zeichen: "," }],
+  ["zwei kommata zu viel", { key: "komma_zu_viel", anzahl: 2, zeichen: "," }],
   ["ein wort fehlt", { key: "wort_fehlt", anzahl: 1 }],
   ["zwei worte fehlen", { key: "wort_fehlt", anzahl: 2 }],
   ["drei worte fehlen", { key: "wort_fehlt", anzahl: 3 }],
@@ -114,9 +119,20 @@ export function parseVorlage(betreff: string, text: string): VorlagenErgebnis {
     fehlerartRoh !== null ? (FEHLERART_NACH_LABEL.get(fehlerartRoh.toLowerCase()) ?? null) : null;
   const fehlerartKey = zuordnung?.key ?? null;
   const fehlerartAnzahl = zuordnung?.anzahl ?? null;
+  const fehlerartZeichen = zuordnung?.zeichen ?? null;
 
   const kern = artikelUrl !== null && falsch !== null && richtig !== null;
   const konfidenz: Konfidenz = !kern ? "verworfen" : fehlerartKey !== null ? "sicher" : "pruefen";
 
-  return { ueberschrift, artikelUrl, fehlerartRoh, fehlerartKey, fehlerartAnzahl, falsch, richtig, konfidenz };
+  return {
+    ueberschrift,
+    artikelUrl,
+    fehlerartRoh,
+    fehlerartKey,
+    fehlerartAnzahl,
+    fehlerartZeichen,
+    falsch,
+    richtig,
+    konfidenz,
+  };
 }

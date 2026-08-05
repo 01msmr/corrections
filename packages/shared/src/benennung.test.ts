@@ -14,6 +14,15 @@ describe("benenneFehlerart", () => {
     expect(benenneFehlerart("buchstabendreher", "ein Buchstabendreher", 2)).toBe("zwei Buchstabendreher");
   });
 
+  it("nennt bei Satzzeichen das konkrete Zeichen", () => {
+    expect(benenneFehlerart("komma_zu_viel", "Satzzeichen zu viel", 1, ",")).toBe("ein Komma zu viel");
+    expect(benenneFehlerart("komma_fehlt", "Satzzeichen fehlen", 1, ".")).toBe("ein Punkt fehlt");
+    expect(benenneFehlerart("komma_fehlt", "Satzzeichen fehlen", 2, ",")).toBe("zwei Kommata fehlen");
+    expect(benenneFehlerart("komma_fehlt", "Satzzeichen fehlen", 1, "(")).toBe("eine Klammer fehlt");
+    expect(benenneFehlerart("komma_fehlt", "Satzzeichen fehlen", 1, "¡")).toBe("ein Satzzeichen fehlt");
+    expect(benenneFehlerart("komma_fehlt", "Satzzeichen fehlen", 1, null)).toBe("ein Satzzeichen fehlt");
+  });
+
   it("nutzt ab dreizehn Ziffern", () => {
     expect(benenneFehlerart("zeichen_fehlt", "Zeichen fehlen", 13)).toBe("13 Zeichen fehlen");
   });

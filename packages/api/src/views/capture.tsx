@@ -107,12 +107,14 @@ const ERKENNUNG_SCRIPT = `
   const schwere = document.getElementById("severity");
   const hinweis = document.getElementById("kategorie-hinweis");
   const anzahl = document.getElementById("errorCount");
+  const zeichenFeld = document.getElementById("errorChar");
   /* Das Anzahl-Feld gehoert nur zu zaehlbaren Kategorien; beim Wechsel auf
      eine nicht zaehlbare wird es geleert, damit nichts Falsches mitgeht. */
   const anzahlAbgleichen = () => {
     const zaehlbar = auswahl.selectedOptions[0]?.dataset.zaehlbar === "1";
     anzahl.hidden = !zaehlbar;
     if (!zaehlbar) anzahl.value = "";
+    zeichenFeld.value = "";
   };
   anzahlAbgleichen();
   let manuell = false;
@@ -141,6 +143,7 @@ const ERKENNUNG_SCRIPT = `
             kategorieVorschlag = daten.kategorie;
             anzahlAbgleichen();
             if (daten.anzahl) anzahl.value = String(daten.anzahl);
+            if (daten.zeichen) zeichenFeld.value = daten.zeichen;
             setzeHinweis(hinweis, ERKANNT, true);
           } else {
             setzeHinweis(hinweis, "", false);
@@ -255,6 +258,9 @@ export const CaptureForm: FC<{
               aria-label="Anzahl"
               hidden
             />
+            {/* Konkretes Satzzeichen, nur von der Erkennung befuellt --
+                macht aus "ein Satzzeichen zu viel" ein "ein Komma zu viel". */}
+            <input type="hidden" id="errorChar" name="errorChar" />
             <select id="errorTypeKey" name="errorTypeKey" required>
               {errorTypes.map((type) => (
                 <option value={type.key} data-zaehlbar={istZaehlbareFehlerart(type.key) ? "1" : undefined}>

@@ -67,8 +67,10 @@ export const corrections = sqliteTable(
     errorTypeId: text("error_type_id")
       .notNull()
       .references(() => errorTypes.id),
-    /** Anzahl der Einheiten bei zaehlbaren Kategorien ("2 Zeichen fehlen"). */
+    /** Anzahl der Einheiten bei zaehlbaren Kategorien ("zwei Zeichen fehlen"). */
     errorCount: integer("error_count"),
+    /** Konkretes Satzzeichen bei komma_-Kategorien ("," → "ein Komma zu viel"). */
+    errorChar: text("error_char"),
     severity: integer("severity").notNull(),
 
     quoteBefore: text("quote_before").notNull(),

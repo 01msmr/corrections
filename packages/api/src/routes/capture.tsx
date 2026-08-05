@@ -1,6 +1,7 @@
 import {
   benenneFehlerart,
   canonicalizeUrl,
+  detectErrorChar,
   detectErrorCount,
   detectErrorTypeKey,
   detectSeverity,
@@ -56,6 +57,7 @@ export function captureRoutes(deps: CreateDeps): Hono {
       kategorie: vorhanden ? erkannt : null,
       schwere: vorhanden ? detectSeverity(falsch, richtig, erkannt) : null,
       anzahl: vorhanden ? detectErrorCount(falsch, richtig, erkannt) : null,
+      zeichen: vorhanden ? detectErrorChar(falsch, richtig, erkannt) : null,
     });
   });
 
@@ -115,7 +117,12 @@ export function captureRoutes(deps: CreateDeps): Hono {
       articleUrlCanon: canon.canonical,
       headline: parsed.data.headline ?? null,
       errorTypeKey: errorType.key,
-      errorTypeLabel: benenneFehlerart(errorType.key, errorType.label, parsed.data.errorCount),
+      errorTypeLabel: benenneFehlerart(
+        errorType.key,
+        errorType.label,
+        parsed.data.errorCount,
+        parsed.data.errorChar,
+      ),
       severity: parsed.data.severity,
       quoteBefore: parsed.data.quoteBefore,
       suggestionAfter: parsed.data.suggestionAfter,

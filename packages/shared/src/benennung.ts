@@ -37,12 +37,47 @@ export function istZaehlbareFehlerart(key: string): boolean {
   return FORMEN.has(key);
 }
 
+/**
+ * Namen der konkreten Satzzeichen, mit Artikel in der Einzahl ("eine
+ * Klammer") und eigener Mehrzahl. Unbekannte Zeichen fallen auf die
+ * generische Satzzeichen-Form zurueck.
+ */
+const SATZZEICHEN_NAMEN = new Map<string, { eins: string; mehr: string }>([
+  [",", { eins: "ein Komma", mehr: "Kommata" }],
+  [".", { eins: "ein Punkt", mehr: "Punkte" }],
+  [";", { eins: "ein Semikolon", mehr: "Semikola" }],
+  [":", { eins: "ein Doppelpunkt", mehr: "Doppelpunkte" }],
+  ["!", { eins: "ein Ausrufezeichen", mehr: "Ausrufezeichen" }],
+  ["?", { eins: "ein Fragezeichen", mehr: "Fragezeichen" }],
+  ["–", { eins: "ein Gedankenstrich", mehr: "Gedankenstriche" }],
+  ["—", { eins: "ein Gedankenstrich", mehr: "Gedankenstriche" }],
+  ["-", { eins: "ein Bindestrich", mehr: "Bindestriche" }],
+  ["(", { eins: "eine Klammer", mehr: "Klammern" }],
+  [")", { eins: "eine Klammer", mehr: "Klammern" }],
+  ["„", { eins: "ein Anführungszeichen", mehr: "Anführungszeichen" }],
+  ["“", { eins: "ein Anführungszeichen", mehr: "Anführungszeichen" }],
+  ["»", { eins: "ein Anführungszeichen", mehr: "Anführungszeichen" }],
+  ["«", { eins: "ein Anführungszeichen", mehr: "Anführungszeichen" }],
+]);
+
 export function benenneFehlerart(
   key: string,
   label: string,
   anzahl: number | null | undefined,
+  zeichen?: string | null,
 ): string {
   const formen = FORMEN.get(key);
   if (!formen || anzahl === null || anzahl === undefined || anzahl < 1) return label;
+
+  /* Ist bei Satzzeichen-Fehlern das konkrete Zeichen bekannt, wird es beim
+     Namen genannt: "ein Komma zu viel", "zwei Punkte fehlen". */
+  const zeichenName = zeichen ? SATZZEICHEN_NAMEN.get(zeichen) : undefined;
+  if (zeichenName && (key === "komma_fehlt" || key === "komma_zu_viel")) {
+    const nachsatz = key === "komma_fehlt" ? (anzahl === 1 ? "fehlt" : "fehlen") : "zu viel";
+    return anzahl === 1
+      ? `${zeichenName.eins} ${nachsatz}`
+      : `${zahlwort(anzahl)} ${zeichenName.mehr} ${nachsatz}`;
+  }
+
   return `${zahlwort(anzahl)} ${anzahl === 1 ? formen.eins : formen.mehr}`;
 }
