@@ -155,13 +155,22 @@ const STYLES = `
     justify-content: space-between; gap: .2rem 1rem; margin: 0 0 .4rem;
     font: 1.05rem/1.3 var(--mono); letter-spacing: .01em; color: var(--tinte); }
   .feld { margin-bottom: 1.5rem; }
+  /* Wie ein gedrucktes Formular: keine weissen Kaesten auf dem Blatt, sondern
+     Linien im Blatt. Einzeilige Angaben stehen auf einer Grundlinie; nur
+     mehrzeilige Felder bekommen den duennen Rahmen, den auch gedruckte
+     Bemerkungsfelder haben. Beim Fokus uebernimmt der Rotstift die Linie. */
   input, textarea, select {
-    width: 100%; padding: .55rem .65rem; font: inherit;
-    background: var(--feld); color: inherit;
-    /* Keine Tiefe: ein Textformular auf Papier ist ein linierter Kasten,
-       kein eingelassenes Becken. Der weisse Grund genuegt als Einladung. */
-    border: 1px solid var(--linie); border-radius: 6px;
+    width: 100%; font: inherit;
+    background: transparent; color: inherit;
+    border: none; border-bottom: 1px solid var(--rand); border-radius: 0;
+    padding: .4rem .15rem;
   }
+  textarea { border: 1px solid var(--rand); padding: .5rem .6rem; }
+  input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: none; border-color: var(--korrektur);
+  }
+  input:focus-visible, select:focus-visible { box-shadow: 0 1px 0 var(--korrektur); }
+  textarea:focus-visible { box-shadow: inset 0 0 0 1px var(--korrektur); }
 
   .arbeitsflaeche { display: grid; }
   .abschluss { padding-top: 1.25rem; }
