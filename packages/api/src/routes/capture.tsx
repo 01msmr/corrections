@@ -3,6 +3,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { Hono } from "hono";
 import { getErrorTypeByKey, listErrorTypes } from "../repo/errorTypes.js";
 import { createCorrection, type CreateDeps } from "../repo/corrections.js";
+import { extractArticle } from "../article/extract.js";
 import { resolveOutletByHost } from "../repo/outlets.js";
 import { composeMail } from "../dispatch/compose.js";
 import { CaptureForm, CapturePreview, CaptureResult } from "../views/capture.js";
@@ -20,6 +21,18 @@ export function captureRoutes(deps: CreateDeps): Hono {
       />,
     ),
   );
+
+  /** Holt die Ueberschrift, sobald die URL im Formular steht. */
+  app.post("/neu/ueberschrift", async (c) => {
+    const body = await c.req.parseBody();
+    const roh = typeof body["url"] === "string" ? body["url"] : "";
+    const canon = canonicalizeUrl(roh);
+    if (!canon) return c.json({ ueberschrift: null });
+    const fetched = await deps.fetchArticle(canon.canonical);
+    if (!fetched.ok) return c.json({ ueberschrift: null });
+    const article = extractArticle(fetched.html, canon.canonical);
+    return c.json({ ueberschrift: article?.title ?? null });
+  });
 
   /**
    * Kategorie-Vorschlag fuer das Formular. Die Erkennung lebt in shared;

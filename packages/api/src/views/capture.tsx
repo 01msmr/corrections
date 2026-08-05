@@ -48,6 +48,35 @@ const FehlendeRedaktion: FC<{ host: string; zurueck: string }> = ({ host, zuruec
  * Entscheidung wird nie ueberschrieben.
  */
 const ERKENNUNG_SCRIPT = `
+  const url = document.getElementById("articleUrl");
+  const ueberschrift = document.getElementById("headline");
+  const ueberschriftHinweis = document.getElementById("ueberschrift-hinweis");
+  let ueberschriftManuell = false;
+  let urlZeitgeber = null;
+  ueberschrift.addEventListener("input", () => { ueberschriftManuell = true; });
+  const ueberschriftHolen = () => {
+    if (ueberschriftManuell || !url.value.trim()) return;
+    ueberschriftHinweis.textContent = "wird geholt …";
+    fetch("/neu/ueberschrift", {
+      method: "POST",
+      body: new URLSearchParams({ url: url.value }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((daten) => {
+        if (daten && daten.ueberschrift && !ueberschriftManuell) {
+          ueberschrift.value = daten.ueberschrift;
+          ueberschriftHinweis.textContent = "aus dem Artikel übernommen";
+        } else {
+          ueberschriftHinweis.textContent = "liess sich nicht laden — wird beim Senden erneut versucht";
+        }
+      })
+      .catch(() => { ueberschriftHinweis.textContent = ""; });
+  };
+  url.addEventListener("input", () => {
+    clearTimeout(urlZeitgeber);
+    urlZeitgeber = setTimeout(ueberschriftHolen, 500);
+  });
+
   const falsch = document.getElementById("quoteBefore");
   const richtig = document.getElementById("suggestionAfter");
   const auswahl = document.getElementById("errorTypeKey");
@@ -129,7 +158,9 @@ export const CaptureForm: FC<{
               <Zeichen art="titel" titel="Überschrift des Artikels" />
               Überschrift:
             </span>
-            <span class="zaehler">optional — wird sonst aus dem Artikel gelesen</span>
+            <span id="ueberschrift-hinweis" class="zaehler" aria-live="polite">
+              wird aus dem Artikel geholt, sobald die URL dasteht
+            </span>
           </label>
           <input id="headline" name="headline" type="text" />
         </div>

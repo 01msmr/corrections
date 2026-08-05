@@ -79,6 +79,27 @@ describe("GET /neu", () => {
   });
 });
 
+describe("POST /neu/ueberschrift", () => {
+  it("liefert die Überschrift des Artikels", async () => {
+    const res = await captureRoutes(deps).request("/neu/ueberschrift", {
+      method: "POST",
+      body: new URLSearchParams({ url: "https://beispiel-zeitung.de/politik/artikel-123" }),
+    });
+    expect(await res.json()).toEqual({ ueberschrift: "Fahrgastzahlen steigen deutlich" });
+  });
+
+  it("liefert null bei gescheitertem Abruf", async () => {
+    const res = await captureRoutes({
+      ...deps,
+      fetchArticle: async () => ({ ok: false, status: 403, reason: "http" }),
+    }).request("/neu/ueberschrift", {
+      method: "POST",
+      body: new URLSearchParams({ url: "https://beispiel-zeitung.de/x" }),
+    });
+    expect(await res.json()).toEqual({ ueberschrift: null });
+  });
+});
+
 describe("POST /neu/kategorie", () => {
   it("schlägt die erkannte Kategorie vor", async () => {
     const res = await captureRoutes(deps).request("/neu/kategorie", {
