@@ -30,6 +30,30 @@ export const UeberSeite: FC = () => (
         unterwegs sind und was Redaktionen daraus gemacht haben.
       </p>
 
+      <h2 class="rubrik">Netzwelt</h2>
+      <p>
+        Hinter dieser Seite steckt bewusst wenig: ein kleines Programm auf einem gemieteten
+        Webserver und eine einzelne Datei als Ablage. Es gibt keine Konten bei Drittdiensten,
+        keine Besucherzählung und keine Cookies.
+      </p>
+      <p>
+        Beim Absenden holt sich das Programm den Artikel einmal von der Zeitungsseite und
+        merkt sich, wo genau die Fundstelle steht — so lässt sich später nachsehen, ob die
+        Stelle inzwischen geändert wurde. Verschickt wird über ein gewöhnliches
+        E‑Mail‑Postfach; die Kennung im Betreff ist der Faden, an dem Antwort und Korrektur
+        wieder zusammenfinden.
+      </p>
+      <p>
+        Auch die Kategorie schlägt die Seite selbst vor: Sie vergleicht beide Fassungen Wort
+        für Wort — fehlt ein Komma, sind zwei Buchstaben verdreht, stimmt eine Zahl nicht?
+        Dahinter steckt keine künstliche Intelligenz, sondern eine Handvoll nachvollziehbarer
+        Regeln; wo sie sich nicht sicher sind, schlagen sie lieber nichts vor.
+      </p>
+      <p>
+        Der gesamte Quelltext ist offen einsehbar unter{" "}
+        <a href="https://github.com/01msmr/corrections">github.com/01msmr/corrections</a>.
+      </p>
+
       <p>
         <span class="zaehler">
           Erfassung und Verwaltung sind nicht öffentlich; die übrigen Menüpunkte fragen nach

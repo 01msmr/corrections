@@ -126,13 +126,13 @@ export const OutletList: FC<{
       </thead>
       <tbody>
         {outlets.map((outlet) => (
-          <tr>
+          <tr data-href={`/admin/redaktionen/${outlet.id}`}>
             <td>
-              <a href={`/admin/redaktionen/${outlet.id}`}>{outlet.name}</a>
+              <a href={`/admin/redaktionen/${outlet.id}`} draggable={false}>{outlet.name}</a>
             </td>
             <td>{outlet.domains.join(", ")}</td>
             <td>{outlet.contactEmails.length}</td>
-            <td>
+            <td class="aktion">
               <form
                 class="inline"
                 method="post"

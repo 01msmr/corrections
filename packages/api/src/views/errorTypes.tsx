@@ -18,11 +18,27 @@ const DRAG_SCRIPT = `
     for (const r of tbody.querySelectorAll("tr")) r.classList.remove("ziel-oben", "ziel-unten");
   };
   for (const zeile of tbody.querySelectorAll("tr")) {
-    zeile.addEventListener("dragstart", (e) => {
+    const griff = zeile.querySelector(".griff");
+    griff.addEventListener("dragstart", (e) => {
       gezogen = zeile;
       ausgangslage = reihen();
       zeile.classList.add("zieht");
       e.dataTransfer.effectAllowed = "move";
+    });
+    griff.addEventListener("dragend", () => {
+      zeile.classList.remove("zieht");
+      marken();
+      gezogen = null;
+      const jetzt = reihen();
+      if (jetzt === ausgangslage) return;
+      fetch("/admin/fehlerarten/reihenfolge", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "ids=" + jetzt,
+      }).then(
+        (res) => { status.textContent = res.ok ? "Reihenfolge gespeichert." : "Speichern fehlgeschlagen."; },
+        () => { status.textContent = "Speichern fehlgeschlagen."; },
+      );
     });
     zeile.addEventListener("dragover", (e) => {
       if (!gezogen || gezogen === zeile) return;
@@ -38,21 +54,6 @@ const DRAG_SCRIPT = `
       const r = zeile.getBoundingClientRect();
       const unten = e.clientY - r.top > r.height / 2;
       zeile.parentNode.insertBefore(gezogen, unten ? zeile.nextSibling : zeile);
-    });
-    zeile.addEventListener("dragend", () => {
-      zeile.classList.remove("zieht");
-      marken();
-      gezogen = null;
-      const jetzt = reihen();
-      if (jetzt === ausgangslage) return;
-      fetch("/admin/fehlerarten/reihenfolge", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: "ids=" + jetzt,
-      }).then(
-        (res) => { status.textContent = res.ok ? "Reihenfolge gespeichert." : "Speichern fehlgeschlagen."; },
-        () => { status.textContent = "Speichern fehlgeschlagen."; },
-      );
     });
   }
 `;
@@ -79,15 +80,15 @@ export const ErrorTypeList: FC<{
       </thead>
       <tbody id="fehlerarten-liste">
         {types.map((type) => (
-          <tr draggable="true" data-id={type.id}>
-            <td class="griff" aria-hidden="true">≡</td>
+          <tr data-id={type.id} data-href={`/admin/fehlerarten/${type.id}`}>
+            <td class="griff" draggable="true" aria-hidden="true">≡</td>
             <td>
               <a href={`/admin/fehlerarten/${type.id}`} draggable={false}>{type.label}</a>
             </td>
             <td>
               <code>{type.key}</code>
             </td>
-            <td>
+            <td class="aktion">
               <form
                 class="inline"
                 method="post"
@@ -102,7 +103,7 @@ export const ErrorTypeList: FC<{
       </tbody>
     </table>
     <p id="sortier-status" class="zaehler" aria-live="polite">
-      Zum Umsortieren Zeilen mit der Maus ziehen.
+      Zum Umsortieren am Griff vor der Zeile ziehen.
     </p>
     <script dangerouslySetInnerHTML={{ __html: DRAG_SCRIPT }} />
 

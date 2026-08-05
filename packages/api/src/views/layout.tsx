@@ -131,6 +131,12 @@ const STYLES = `
   h1 { font: 700 1.9rem/1.25 var(--mono); margin: 0 0 1.25rem; letter-spacing: .01em; }
   h2 { font: 1.15rem/1.3 var(--mono); letter-spacing: .01em;
     color: var(--tinte); margin: 2.5rem 0 .75rem; }
+  /* Rubrik-Trenner wie im Blatt: der Name mittig, Linien zu beiden Seiten. */
+  h2.rubrik { display: flex; align-items: center; gap: .9rem;
+    font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--korrektur); font-size: .95rem; margin-top: 3rem; }
+  h2.rubrik::before, h2.rubrik::after { content: ""; flex: 1;
+    border-top: 1px solid var(--linie); }
   a { color: inherit; text-underline-offset: .2em; }
 
   /* Das Korrekturzeichen sitzt unmittelbar vor der Beschriftung, nicht in einer
@@ -249,18 +255,28 @@ const STYLES = `
   th, td { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid var(--linie);
     vertical-align: middle; }
   form.inline { display: inline; }
-  /* Knoepfe in Tabellenzeilen sind Werkzeug, nicht Ziel der Seite: klein,
-     rechteckig, im Randton -- der Rotstift kommt erst beim Zeigen. */
+  /* Die ganze Zeile ist das Klickziel -- beim Zeigen fuellt sie sich einen Hauch
+     dunkler, nicht invers. Formulare und Griff sind davon ausgenommen. */
+  tr[data-href] { cursor: pointer; }
+  tr[data-href]:hover td { background: color-mix(in oklab, var(--tinte) 6%, var(--papier)); }
+  /* Knoepfe in Tabellenzeilen sind Werkzeug, nicht Ziel der Seite: nuechtern,
+     rechteckig, ueber die volle Zeilenhoehe -- der Rotstift kommt beim Zeigen.
+     height:100% braucht die 1px-Hoehe an der Zelle, sonst loest es sich nicht auf. */
+  td.aktion { padding: 0; width: 1%; height: 1px; }
+  td.aktion form { display: block; height: 100%; }
   table button {
-    display: inline-block; margin: 0; padding: .15rem .55rem; min-height: 0;
+    display: flex; align-items: center; margin: 0; padding: 0 .7rem; min-height: 0;
+    height: 100%; width: 100%;
     font: .75rem/1.4 var(--mono); letter-spacing: .02em; text-transform: none;
     background: transparent; color: var(--rand);
-    border: 1px solid var(--rand); border-radius: 2px;
+    border: none; border-left: 1px solid var(--linie); border-radius: 0;
   }
   table button:hover, table button:focus-visible {
     background: var(--korrektur); border-color: var(--korrektur); color: var(--papier);
   }
-  tr[draggable="true"] { cursor: grab; }
+  /* Gezogen wird nur am Griff vor der Zeile; der Trennstrich der Zeile beginnt
+     erst dahinter. */
+  .griff[draggable="true"] { cursor: grab; border-bottom-color: transparent; }
   tr.zieht { opacity: .4; }
   /* Einfuegemarke: eine karminrote Linie an der Kante, an der die gezogene
      Zeile beim Loslassen einsortiert wuerde. Als Innenschatten auf den Zellen,
@@ -389,6 +405,17 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
         {ohneTitel ? null : <h1>{title}</h1>}
         {children}
       </div>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+  for (const zeile of document.querySelectorAll("tr[data-href]")) {
+    zeile.addEventListener("click", (e) => {
+      if (e.target.closest("a, button, form, .griff")) return;
+      location.href = zeile.dataset.href;
+    });
+  }`,
+        }}
+      />
     </body>
   </html>
   );
