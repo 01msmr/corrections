@@ -23,19 +23,21 @@ und http://localhost:3223 öffnen. Auch der Import ist idempotent (Message-ID).
 Alle drei Befehle laufen von überall im Repo; Pfadangaben beziehen sich auf den
 Repo-Stamm. `DATABASE_PATH` steuert das Importziel (Vorgabe `data/korrektur.db`).
 
-**Import in die Produktion:** Das Werkzeug läuft nur lokal — auf dem Server liegt nur
-das Bündel. Also lokal importieren und die fertige Datei hochladen (der Import macht
-zum Schluss einen WAL-Checkpoint, die `.db` ist danach vollständig):
+**Import in die Produktion:** Nicht die Datenbank hochladen — das überschriebe alles,
+was inzwischen über das Formular erfasst wurde. Stattdessen die Entscheidungsdatei
+hochladen und den Import **auf dem Server** laufen lassen; er wird mitgeliefert
+(`tools/backfillImportCli.js`), ergänzt nur Fehlendes und löscht nie etwas:
 
 ```bash
-pnpm backfill:import
-scp -i ~/.ssh/netcup_deploy data/korrektur.db \
-  hosting189417@hosting189417.ae8d9.netcup.net:korrekturen.msmr.co/data/korrektur.db
+scp -i ~/.ssh/netcup_deploy fixtures.local/review-entscheidungen.jsonl \
+  hosting189417@hosting189417.ae8d9.netcup.net:korrekturen.msmr.co/
 ssh -i ~/.ssh/netcup_deploy hosting189417@hosting189417.ae8d9.netcup.net \
-  'cd korrekturen.msmr.co && rm -f data/korrektur.db-wal data/korrektur.db-shm && touch tmp/restart.txt'
+  'cd korrekturen.msmr.co && MIGRATIONS_DIR=./migrations DATABASE_PATH=./data/korrektur.db \
+   node tools/backfillImportCli.js review-entscheidungen.jsonl && rm review-entscheidungen.jsonl'
 ```
 
-Die alten `-wal`/`-shm`-Dateien müssen weg, sonst mischt SQLite sie in die neue Datei.
+Die Datei danach löschen (sie enthält Redaktionsadressen). Mehrfaches Ausführen ist
+gefahrlos: bekannte Message-IDs werden übersprungen.
 
 ## Regeln
 - TypeScript strict. Kein `any`, kein `as` außer in Typ-Guards.

@@ -98,10 +98,10 @@ pnpm backfill:review   # Review-Queue auf :3223 — Enter übernehmen, E bearbei
 pnpm backfill:import   # übernommene Entscheidungen als source='backfill' in die Datenbank
 ```
 
-Alle drei laufen von überall im Repo; Pfadangaben beziehen sich auf den Repo-Stamm,
-`DATABASE_PATH` steuert das Importziel. Auf dem Server liegt nur das Bündel — für die
-Produktion wird deshalb lokal importiert und die fertige Datenbankdatei hochgeladen
-(der Import schreibt zum Schluss das Write-Ahead-Log in die Datei zurück).
+Korpus und Review bleiben lokal: Die `.eml`-Dateien enthalten echte Korrespondenz und
+verlassen den Rechner nicht. Für die Produktion wandert nur die Entscheidungsdatei auf
+den Server, wo derselbe Import mitgeliefert wird — er ergänzt fehlende Datensätze und
+rührt vorhandene nicht an, sodass parallel erfasste Meldungen erhalten bleiben.
 
 Der Parser liest die Vorlage konservativ (85 % sicher, Rest zur Prüfung oder
 verworfen — geraten wird nie), Entscheidungen landen als JSONL neben dem Korpus,

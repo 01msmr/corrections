@@ -1,6 +1,3 @@
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
-import { dirname, isAbsolute, resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   canonicalizeUrl,
   detectSeverity,
@@ -9,9 +6,8 @@ import {
 } from "@korrektur/shared";
 import { createId } from "@paralleldrive/cuid2";
 import { eq } from "drizzle-orm";
-import { createDb, runMigrations, type Db } from "../db/client.js";
+import type { Db } from "../db/client.js";
 import { corrections } from "../db/schema.js";
-import { seed } from "../db/seed.js";
 import { reserveRef } from "../repo/corrections.js";
 import { getErrorTypeByKey } from "../repo/errorTypes.js";
 import { ensureOutletForHost } from "../repo/outlets.js";
@@ -24,8 +20,10 @@ import { ensureOutletForHost } from "../repo/outlets.js";
  * ueber die Message-ID: ein zweiter Lauf ueberspringt Vorhandenes.
  *
  * Liegt im api-Paket, damit Schema, Migrationen und Repos nicht dupliziert
- * werden — aber ausserhalb der Buendel-Einstiege (web.ts, worker.ts), also
- * nicht im Laufzeitpfad des Servers (§11.5).
+ * werden. Reine Logik ohne Dateizugriff — den Einstieg samt Pfaden und
+ * Ausgabe traegt `backfillImportCli.ts`. Der Server bekommt dieses Werkzeug
+ * mitgeliefert, es laeuft dort aber nur auf Zuruf: weder Passenger noch der
+ * Cronjob rufen es auf (§11.5).
  */
 
 export interface ReviewEntscheidung {
@@ -151,58 +149,4 @@ export function importiereEntscheidungen(
   }
 
   return ergebnis;
-}
-
-/* Standardpfade absolut aus dem Modulpfad ableiten: `pnpm --filter … exec`
-   startet im Paketverzeichnis, ein Aufruf von Hand meist im Repo-Stamm.
-   Relative Vorgaben waeren also je nach Startort etwas anderes. */
-const REPO = fileURLToPath(new URL("../../../../", import.meta.url));
-const STANDARD_JSONL = `${REPO}fixtures.local/review-entscheidungen.jsonl`;
-const STANDARD_DB = `${REPO}data/korrektur.db`;
-const MIGRATIONEN = fileURLToPath(new URL("../db/migrations", import.meta.url));
-
-/** Relative Angaben beziehen sich auf den Repo-Stamm, nicht auf das
- *  Verzeichnis, in dem pnpm das Werkzeug gerade gestartet hat. */
-function ausRepo(pfad: string): string {
-  return isAbsolute(pfad) ? pfad : resolve(REPO, pfad);
-}
-
-function main(): void {
-  const pfad = ausRepo(process.argv[2] ?? STANDARD_JSONL);
-  const datenbank = ausRepo(process.env["DATABASE_PATH"] ?? STANDARD_DB);
-  if (!existsSync(pfad)) {
-    console.error(
-      `Keine Entscheidungen gefunden: ${pfad}\n` +
-        "Erst die Review durchlaufen (pnpm backfill:review), dann importieren.",
-    );
-    process.exitCode = 1;
-    return;
-  }
-  const zeilen = readFileSync(pfad, "utf8").split("\n").filter(Boolean);
-  const eintraege: ReviewEntscheidung[] = zeilen.map(
-    (zeile) => JSON.parse(zeile) as ReviewEntscheidung,
-  );
-
-  mkdirSync(dirname(datenbank), { recursive: true });
-  const db = createDb(datenbank);
-  runMigrations(db, process.env["MIGRATIONS_DIR"] ?? MIGRATIONEN);
-  /* Stammdaten sicherstellen: ohne die Fehlerarten aus dem Seed findet der
-     Import keine Kategorie. seed() ist idempotent. */
-  seed(db);
-  const ergebnis = importiereEntscheidungen(db, eintraege, Math.floor(Date.now() / 1000));
-  /* Alles aus dem Write-Ahead-Log in die .db-Datei schreiben: Die Datenbank
-     wird nach dem Import als einzelne Datei auf den Server gelegt, und ohne
-     Checkpoint blieben die frischen Zeilen in der -wal-Datei zurueck. */
-  db.$client.exec("PRAGMA wal_checkpoint(TRUNCATE)");
-
-  console.log(
-    `Import: ${ergebnis.uebernommen} uebernommen, ${ergebnis.uebersprungen} schon da, ` +
-      `${ergebnis.nichtUebernommen} verworfen/uebergangen, ${ergebnis.fehler.length} Fehler`,
-  );
-  for (const fehler of ergebnis.fehler) console.warn(`  ${fehler}`);
-  console.log(`Datenbank: ${datenbank}`);
-}
-
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main();
 }

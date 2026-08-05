@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createDb, runMigrations, type Db } from "../db/client.js";
-import { corrections } from "../db/schema.js";
+import { createId } from "@paralleldrive/cuid2";
+import { corrections, errorTypes, outlets } from "../db/schema.js";
 import { seed } from "../db/seed.js";
 import { importiereEntscheidungen, type ReviewEntscheidung } from "./backfillImport.js";
 
@@ -60,6 +61,41 @@ describe("importiereEntscheidungen", () => {
     );
     expect(zweiter).toEqual({ uebernommen: 0, uebersprungen: 1, nichtUebernommen: 1, fehler: [] });
     expect(db.select().from(corrections).all()).toHaveLength(1);
+  });
+
+  it("laesst bestehende Meldungen anderer Herkunft unberuehrt", () => {
+    // Eine Meldung, wie sie ueber das Formular entsteht — der Import darf sie
+    // weder aendern noch loeschen (§11.5: er ergaenzt, er ersetzt nicht).
+    const bestand = createId();
+    db.insert(corrections)
+      .values({
+        id: bestand,
+        ref: "KWEB01",
+        idempotencyKey: "web-vorhanden",
+        createdAt: NOW,
+        dispatchMode: "smtp",
+        articleUrl: "https://beispiel-zeitung.de/live",
+        articleUrlCanon: "https://beispiel-zeitung.de/live",
+        outletId: db.select().from(outlets).all()[0]?.id ?? "",
+        errorTypeId: db.select().from(errorTypes).all()[0]?.id ?? "",
+        severity: 2,
+        quoteBefore: "aus dem Formular",
+        suggestionAfter: "unveraendert",
+        recipientEmail: "redaktion@beispiel-zeitung.de",
+        dispatchStatus: "sent",
+        sentAt: NOW,
+        source: "web",
+      })
+      .run();
+
+    importiereEntscheidungen(db, [entscheidung()], NOW);
+
+    const alle = db.select().from(corrections).all();
+    expect(alle).toHaveLength(2);
+    const unveraendert = alle.find((zeile) => zeile.id === bestand);
+    expect(unveraendert?.source).toBe("web");
+    expect(unveraendert?.quoteBefore).toBe("aus dem Formular");
+    expect(unveraendert?.ref).toBe("KWEB01");
   });
 
   it("meldet fehlende Pflichtfelder statt zu raten", () => {
