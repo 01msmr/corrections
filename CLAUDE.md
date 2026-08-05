@@ -20,6 +20,23 @@ sofort an `fixtures.local/review-entscheidungen.jsonl` angehängt; beim Neustart
 an der Sitzung, in der er gestartet wurde), einfach `pnpm backfill:review` neu aufrufen
 und http://localhost:3223 öffnen. Auch der Import ist idempotent (Message-ID).
 
+Alle drei Befehle laufen von überall im Repo; Pfadangaben beziehen sich auf den
+Repo-Stamm. `DATABASE_PATH` steuert das Importziel (Vorgabe `data/korrektur.db`).
+
+**Import in die Produktion:** Das Werkzeug läuft nur lokal — auf dem Server liegt nur
+das Bündel. Also lokal importieren und die fertige Datei hochladen (der Import macht
+zum Schluss einen WAL-Checkpoint, die `.db` ist danach vollständig):
+
+```bash
+pnpm backfill:import
+scp -i ~/.ssh/netcup_deploy data/korrektur.db \
+  hosting189417@hosting189417.ae8d9.netcup.net:korrekturen.msmr.co/data/korrektur.db
+ssh -i ~/.ssh/netcup_deploy hosting189417@hosting189417.ae8d9.netcup.net \
+  'cd korrekturen.msmr.co && rm -f data/korrektur.db-wal data/korrektur.db-shm && touch tmp/restart.txt'
+```
+
+Die alten `-wal`/`-shm`-Dateien müssen weg, sonst mischt SQLite sie in die neue Datei.
+
 ## Regeln
 - TypeScript strict. Kein `any`, kein `as` außer in Typ-Guards.
 - Zod-Schemas leben in `packages/shared` und sind die einzige Typquelle.
