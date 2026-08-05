@@ -22,7 +22,10 @@ const STYLES = `
     --knopf: #ebe8df;
     --knopfrand: #9aa1aa;
     --knopfrand-hover: #c3c8ce;
-    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    /* Courier New zuerst: die Schreibmaschinenschrift traegt das Motiv. Sie
+       laeuft hell und braucht groessere Grade und fette Schnitte -- die Werte
+       weiter unten sind darauf abgestimmt. */
+    --mono: "Courier New", Courier, ui-monospace, SFMono-Regular, Menlo, monospace;
     --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   @media (prefers-color-scheme: dark) {
@@ -58,7 +61,6 @@ const STYLES = `
     position: sticky; top: 0; z-index: 5;
     margin-bottom: 2.5rem;
     background: var(--papier);
-    border-bottom: 1px solid var(--linie);
     animation: kopfschatten linear both;
     animation-timeline: scroll(root);
     animation-range: 0 3rem;
@@ -77,7 +79,7 @@ const STYLES = `
     display: flex; flex-wrap: wrap; gap: .75rem 1.5rem;
     align-items: baseline; justify-content: space-between;
   }
-  .marke { font: 700 1.35rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase;
+  .marke { font: 700 1.55rem/1 var(--mono); letter-spacing: .06em; text-transform: uppercase;
     color: inherit; text-decoration: none; }
   /* Die Schrift bleibt in Tinte; ausgezeichnet wird ueber eine Unterstreichung
      im selben Rot wie der Tilgungsstrich und in derselben Staerke. */
@@ -98,11 +100,11 @@ const STYLES = `
      Deshalb eine gezeichnete Kurve als Data-URI statt einer gedrehten Linie. */
   .marke .tilgung::after {
     content: ""; position: absolute;
-    left: -.4em; right: -.4em; top: -.15em; bottom: -.15em;
+    left: -.22em; right: -.22em; top: -.15em; bottom: -.15em;
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='26' viewBox='0 0 46 26' preserveAspectRatio='none'%3E%3Cpath d='M2.4 20.6C13.2 16.4 26.4 10.2 41.8 3.2c1.1-.5 1.9.6 1 1.3-2 1.5-4.6 3-8 4.8C25.6 14.4 13.4 20.4 4.4 24c-1.3.5-2.6-1.6-2-3.4z' fill='%23d0342c'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
   }
   nav { display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: baseline; }
-  nav a { font: .85rem/1 var(--mono); letter-spacing: .02em;
+  nav a { font: 700 1rem/1 var(--mono); letter-spacing: .01em;
     color: var(--rand); text-decoration: none; padding-bottom: .15rem;
     border-bottom: 2px solid transparent; }
   nav a:hover, nav a:focus-visible { color: var(--tinte); border-bottom-color: var(--korrektur); }
@@ -112,7 +114,7 @@ const STYLES = `
   nav a[aria-current="page"] { color: var(--tinte); font-size: 1.3em; }
 
   h1 { font: 600 1.75rem/1.25 var(--sans); margin: 0 0 1.25rem; letter-spacing: -.01em; }
-  h2 { font: .85rem/1.3 var(--mono); letter-spacing: .02em;
+  h2 { font: 700 1.15rem/1.3 var(--mono); letter-spacing: .01em;
     color: var(--rand); margin: 2.5rem 0 .75rem; }
   a { color: inherit; text-underline-offset: .2em; }
 
@@ -134,7 +136,7 @@ const STYLES = `
      dass sie gleich aussieht, macht das sichtbar. */
   label { display: flex; flex-wrap: wrap; align-items: baseline;
     justify-content: space-between; gap: .2rem 1rem; margin: 0 0 .4rem;
-    font: .85rem/1.3 var(--mono); letter-spacing: .02em; color: var(--rand); }
+    font: 700 1.05rem/1.3 var(--mono); letter-spacing: .01em; color: var(--rand); }
   .feld { margin-bottom: 1.5rem; }
   input, textarea, select {
     width: 100%; padding: .55rem .65rem; font: inherit;
@@ -151,7 +153,7 @@ const STYLES = `
   .abschluss button { width: 100%; margin-top: 0; min-height: 3.6rem; }
   /* Zitat und Vorschlag im festen Raster: ein Leerzeichen zu viel oder ein
      Buchstabendreher ist nur so zu sehen. */
-  #quoteBefore, #suggestionAfter { font: .95rem/1.6 var(--mono); min-height: 5.5rem; }
+  #quoteBefore, #suggestionAfter { font: 1.05rem/1.6 var(--mono); min-height: 5.5rem; }
   #quoteBefore { border-left: 7px solid var(--korrektur); }
   #suggestionAfter { border-left: 7px solid var(--vorschlag); }
   textarea { min-height: 4.5rem; resize: vertical; }
@@ -184,7 +186,7 @@ const STYLES = `
        im hohen Knopf saehe zentrierter Text verloren aus. */
     display: flex; align-items: flex-end; justify-content: flex-end;
     margin-top: .5rem; padding: .8rem .7rem .7rem 1.2rem; cursor: pointer;
-    font: 600 1.125rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase;
+    font: 700 1.25rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase;
     background: var(--knopf); color: var(--knopfrand);
     /* 8px statt 6px: der 2px-Rahmen liegt aussen, dadurch wirkt der Bogen bei
        gleichem Wert enger als bei den Feldern mit ihrem 1px-Rahmen. */
@@ -214,10 +216,10 @@ const STYLES = `
   .hinweis p:last-child { margin-bottom: 0; }
 
   /* Die Kennung ist das, wonach spaeter gesucht wird — also im Raster und fett. */
-  .kennung { font: 600 1.05em var(--mono); letter-spacing: .06em; }
+  .kennung { font: 700 1.05em var(--mono); letter-spacing: .04em; }
 
   table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-  th { font: .85rem/1.3 var(--mono); letter-spacing: .02em; color: var(--rand); }
+  th { font: 700 1rem/1.3 var(--mono); letter-spacing: .01em; color: var(--rand); }
   th, td { text-align: left; padding: .55rem .5rem; border-bottom: 1px solid var(--linie);
     vertical-align: top; }
   form.inline { display: inline; }
@@ -298,6 +300,9 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
         <div class="kopftrenner"></div>
         <div class="kopfinhalt navzeile">
           <nav>
+            <a href="/" aria-current={aktiv === "ueber" ? "page" : undefined}>
+              Zur Sache
+            </a>
             <a href="/neu" aria-current={aktiv === "neu" ? "page" : undefined}>
               Neuer Hinweis
             </a>
@@ -306,9 +311,6 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
             </a>
             <a href="/admin/fehlerarten" aria-current={aktiv === "fehlerarten" ? "page" : undefined}>
               Fehlerarten
-            </a>
-            <a href="/" aria-current={aktiv === "ueber" ? "page" : undefined}>
-              Zur Sache
             </a>
           </nav>
         </div>
