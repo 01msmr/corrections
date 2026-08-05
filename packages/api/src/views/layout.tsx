@@ -19,8 +19,7 @@ const STYLES = `
     --rand: #6b7480;
     --linie: #dcddd8;
     --feld: #fffffe;
-    /* Markant, aber eine Stufe weicher als Volltonschwarz. */
-    --knopf: #2e333a;
+
     /* Courier New zuerst: die Schreibmaschinenschrift traegt das Motiv. Sie
        laeuft hell und braucht groessere Grade und fette Schnitte -- die Werte
        weiter unten sind darauf abgestimmt. */
@@ -30,7 +29,7 @@ const STYLES = `
   @media (prefers-color-scheme: dark) {
     :root {
       --papier: #16181b; --tinte: #e8e6e1; --korrektur: #f2756b; --vorschlag: #7bc39a;
-      --rand: #949ba6; --linie: #2e3237; --feld: #1d2024; --knopf: #3a4047;
+      --rand: #949ba6; --linie: #2e3237; --feld: #1d2024;
     }
   }
 
@@ -202,10 +201,13 @@ const STYLES = `
     display: flex; align-items: flex-end; justify-content: flex-end;
     margin-top: .5rem; padding: .8rem .7rem .7rem 1.2rem; cursor: pointer;
     font: 700 1.25rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase;
-    background: var(--knopf); color: var(--papier);
+    /* Markant durch die Kontur, nicht durch die Flaeche: ein gefuellter Block
+       erdrueckte das Blatt. Die Schrift steht in Tinte und bleibt voll lesbar;
+       beim Ueberfahren fuellt der Rotstift. */
+    background: transparent; color: var(--tinte);
     /* 8px statt 6px: der 2px-Rahmen liegt aussen, dadurch wirkt der Bogen bei
        gleichem Wert enger als bei den Feldern mit ihrem 1px-Rahmen. */
-    border: 2px solid var(--knopf); border-radius: 8px;
+    border: 2px solid var(--tinte); border-radius: 8px;
   }
   button:hover, button:focus-visible { background: var(--korrektur);
     border-color: var(--korrektur); color: var(--papier); }
@@ -274,8 +276,6 @@ const STYLES = `
   @media (prefers-color-scheme: dark) {
     input, textarea, select,
     button:active { box-shadow: inset 0 2px 6px rgba(0, 0, 0, .55); }
-    button { color: var(--tinte); }
-    button:hover, button:focus-visible { color: var(--papier); }
   }
 
   /* Schmale Schirme: kompakter Kopf wie die mobile Ausgabe einer Zeitung --
