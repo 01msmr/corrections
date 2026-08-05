@@ -303,7 +303,7 @@ export type Bereich = "neu" | "redaktionen" | "fehlerarten" | "ueber";
  * bleibt sie stehen, weil sie dort etwas Eigenes sagt.
  */
 const BEREICH_TITEL: Record<Bereich, string> = {
-  neu: "Neuer Hinweis",
+  neu: "Neue Korrektur",
   redaktionen: "Redaktionen",
   fehlerarten: "Fehlerarten",
   ueber: "In eigener Sache",
@@ -355,7 +355,7 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
               In eigener Sache
             </a>
             <a href="/neu" aria-current={aktiv === "neu" ? "page" : undefined}>
-              Neuer Hinweis
+              Neue Korrektur
             </a>
             <a href="/admin/redaktionen" aria-current={aktiv === "redaktionen" ? "page" : undefined}>
               Redaktionen

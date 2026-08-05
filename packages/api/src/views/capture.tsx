@@ -57,7 +57,7 @@ export const CaptureForm: FC<{
   fehler?: string | undefined;
   fehlendeRedaktion?: { host: string; zurueck: string } | undefined;
 }> = ({ errorTypes, idempotencyKey, url, quote, fehler, fehlendeRedaktion }) => (
-  <Layout title="Neuer Hinweis" aktiv="neu">
+  <Layout title="Neue Korrektur" aktiv="neu">
     {fehlendeRedaktion ? (
       <FehlendeRedaktion host={fehlendeRedaktion.host} zurueck={fehlendeRedaktion.zurueck} />
     ) : fehler ? (
