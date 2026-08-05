@@ -129,8 +129,8 @@ const STYLES = `
   nav a[aria-current="page"] { background: var(--korrektur); color: var(--papier); }
 
   h1 { font: 700 1.9rem/1.25 var(--mono); margin: 0 0 1.25rem; letter-spacing: .01em; }
-  h2 { font: 700 1.15rem/1.3 var(--mono); letter-spacing: .01em;
-    color: var(--rand); margin: 2.5rem 0 .75rem; }
+  h2 { font: 1.15rem/1.3 var(--mono); letter-spacing: .01em;
+    color: var(--tinte); margin: 2.5rem 0 .75rem; }
   a { color: inherit; text-underline-offset: .2em; }
 
   /* Das Korrekturzeichen sitzt unmittelbar vor der Beschriftung, nicht in einer
@@ -151,7 +151,7 @@ const STYLES = `
      dass sie gleich aussieht, macht das sichtbar. */
   label { display: flex; flex-wrap: wrap; align-items: baseline;
     justify-content: space-between; gap: .2rem 1rem; margin: 0 0 .4rem;
-    font: 700 1.05rem/1.3 var(--mono); letter-spacing: .01em; color: var(--rand); }
+    font: 1.05rem/1.3 var(--mono); letter-spacing: .01em; color: var(--tinte); }
   .feld { margin-bottom: 1.5rem; }
   input, textarea, select {
     width: 100%; padding: .55rem .65rem; font: inherit;
@@ -235,7 +235,7 @@ const STYLES = `
   .kennung { font: 700 1.05em var(--mono); letter-spacing: .04em; }
 
   table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-  th { font: 700 1rem/1.3 var(--mono); letter-spacing: .01em; color: var(--rand); }
+  th { font: 1rem/1.3 var(--mono); letter-spacing: .01em; color: var(--tinte); }
   th, td { text-align: left; padding: .55rem .5rem; border-bottom: 1px solid var(--linie);
     vertical-align: top; }
   form.inline { display: inline; }
