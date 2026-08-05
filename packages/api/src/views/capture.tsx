@@ -27,7 +27,7 @@ const FehlendeRedaktion: FC<{ host: string; zurueck: string }> = ({ host, zuruec
     </p>
     <p>
       <a href={`/admin/redaktionen?domain=${encodeURIComponent(host)}&zurueck=${encodeURIComponent(zurueck)}`}>
-        Redaktion jetzt anlegen
+        Titel jetzt anlegen
       </a>{" "}
       — Domain ist vorausgefüllt, danach geht es zurück zu diesem Hinweis.
     </p>
@@ -119,7 +119,7 @@ export const CaptureForm: FC<{
       {/* Nebenspalte: Einordnung und Randbemerkung — nötig, aber nicht die Arbeit. */}
       <aside class="nebenspalte">
         <div class="feld">
-          <label for="errorTypeKey">Fehlerart:</label>
+          <label for="errorTypeKey">Kategorie:</label>
           <select id="errorTypeKey" name="errorTypeKey" required>
             {errorTypes.map((type) => (
               <option value={type.key}>{type.label}</option>

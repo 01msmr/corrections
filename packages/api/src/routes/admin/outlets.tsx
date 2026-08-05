@@ -130,10 +130,10 @@ export function outletAdminRoutes(db: Db, now: () => number): Hono {
     const outcome = removeOutlet(db, c.req.param("id"));
     const hinweis =
       outcome === "archived"
-        ? "Redaktion archiviert, weil Hinweise darauf verweisen"
+        ? "Titel archiviert, weil Hinweise darauf verweisen"
         : outcome === "deleted"
-          ? "Redaktion gelöscht"
-          : "Redaktion nicht gefunden";
+          ? "Titel gelöscht"
+          : "Titel nicht gefunden";
     return c.redirect(`${BASE}?hinweis=${encodeURIComponent(hinweis)}`, 302);
   });
 
