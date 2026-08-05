@@ -295,6 +295,13 @@ const STYLES = `
     background: ${zauberstab(PALETTE.korrektur)} center / contain no-repeat;
   }
   .feld:has(.zaehler.erkannt) select { background-image: ${pfeil(PALETTE.korrektur)}; }
+  /* Anzahl und Kategorie in einer Zeile: das schmale Zahlfeld steht vor der
+     Auswahl, zusammen gelesen "2 | Zeichen fehlen". Das display:block der
+     Felder wuerde das hidden-Attribut ueberstimmen, deshalb explizit. */
+  .kategoriezeile { display: flex; gap: .6rem; }
+  .kategoriezeile #errorCount { width: 4.5rem; flex: none; }
+  .kategoriezeile select { flex: 1; min-width: 0; }
+  #errorCount[hidden] { display: none; }
 
   button {
     /* Beschriftung unten rechts: dort endet der Blick nach dem Ausfuellen, und

@@ -154,6 +154,57 @@ export function detectErrorTypeKey(falsch: string, richtig: string): DetectedErr
   return null;
 }
 
+/**
+ * Zaehlt die Einheiten zum erkannten Schluessel — fehlende oder ueberzaehlige
+ * Zeichen, Satzzeichen und Woerter — auf denselben Wegen, auf denen die
+ * Kategorie erkannt wurde. Fuer nicht zaehlbare Kategorien null; ein
+ * Buchstabendreher zaehlt als einer, weil die Erkennung nur den Einzelfall
+ * bejaht.
+ */
+export function detectErrorCount(
+  falsch: string,
+  richtig: string,
+  kategorie: DetectedErrorTypeKey | null,
+): number | null {
+  if (kategorie === null) return null;
+  const a = normalizeText(falsch);
+  const b = normalizeText(richtig);
+
+  switch (kategorie) {
+    case "komma_fehlt":
+    case "komma_zu_viel": {
+      const zeichenA = (a.match(SATZZEICHEN) ?? []).length;
+      const zeichenB = (b.match(SATZZEICHEN) ?? []).length;
+      const anzahl = Math.abs(zeichenB - zeichenA);
+      return anzahl > 0 ? anzahl : null;
+    }
+    case "wort_fehlt":
+    case "wort_zu_viel": {
+      const diff = diffWords(a, b);
+      const anzahl =
+        kategorie === "wort_fehlt"
+          ? geaenderteWoerter(diff.after).length
+          : geaenderteWoerter(diff.before).length;
+      return anzahl > 0 ? anzahl : null;
+    }
+    case "zeichen_fehlt":
+    case "zeichen_zu_viel": {
+      const diff = diffWords(a, b);
+      const inFalsch = geaenderteWoerter(diff.before);
+      const inRichtig = geaenderteWoerter(diff.after);
+      const alt = inFalsch[0];
+      const neu = inRichtig[0];
+      if (inFalsch.length !== 1 || inRichtig.length !== 1 || !alt || !neu) return null;
+      const anzahl = Math.abs(neu.wort.length - alt.wort.length);
+      return anzahl > 0 ? anzahl : null;
+    }
+    case "buchstabendreher":
+      return 1;
+    default:
+      return null;
+  }
+}
+
 /** Woerter, deren Fehlen oder Auftauchen die Aussage umkehrt. */
 const NEGATIONEN = new Set([
   "nicht", "kein", "keine", "keinen", "keinem", "keiner", "nie", "niemals", "nichts",

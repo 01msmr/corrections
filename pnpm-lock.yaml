@@ -78,6 +78,9 @@ importers:
       '@hono/node-server':
         specifier: ^1.13.7
         version: 1.19.17(hono@4.12.33)
+      '@korrektur/shared':
+        specifier: workspace:^
+        version: link:../shared
       hono:
         specifier: ^4.6.14
         version: 4.12.33

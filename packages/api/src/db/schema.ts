@@ -67,6 +67,8 @@ export const corrections = sqliteTable(
     errorTypeId: text("error_type_id")
       .notNull()
       .references(() => errorTypes.id),
+    /** Anzahl der Einheiten bei zaehlbaren Kategorien ("2 Zeichen fehlen"). */
+    errorCount: integer("error_count"),
     severity: integer("severity").notNull(),
 
     quoteBefore: text("quote_before").notNull(),

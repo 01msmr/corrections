@@ -19,6 +19,12 @@ export const newCorrectionSchema = z.object({
   articleUrl: z.string().url(),
   headline: nullableTrimmed(300),
   errorTypeKey: z.string().min(1).max(64),
+  /** Anzahl der Einheiten bei zaehlbaren Kategorien ("2 Zeichen fehlen");
+   *  leeres Feld heisst: keine Anzahl. */
+  errorCount: z.preprocess(
+    (wert) => (wert === "" || wert === undefined || wert === null ? null : wert),
+    z.coerce.number().int().min(1).max(999).nullable(),
+  ),
   // union vor coerce: z.coerce.number() allein wuerde true zu 1 machen und
   // damit als gueltige Schwere durchgehen lassen.
   severity: z.union([z.string(), z.number()]).pipe(z.coerce.number().int().min(1).max(3)),

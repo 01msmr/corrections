@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectErrorTypeKey, detectSeverity } from "./detect.js";
+import { detectErrorCount, detectErrorTypeKey, detectSeverity } from "./detect.js";
 
 describe("detectErrorTypeKey", () => {
   it("erkennt ein fehlendes Komma", () => {
@@ -62,6 +62,17 @@ describe("detectErrorTypeKey", () => {
     expect(detectErrorTypeKey("Er kam, sah, und siegte!!", "Er kam, sah und siegte!")).toBe(
       "komma_zu_viel",
     );
+  });
+
+  it("zaehlt die Einheiten zur erkannten Kategorie", () => {
+    expect(detectErrorCount("Das Hs ist alt.", "Das Haus ist alt.", "zeichen_fehlt")).toBe(2);
+    expect(detectErrorCount("Der Hundd bellt.", "Der Hund bellt.", "zeichen_zu_viel")).toBe(1);
+    expect(detectErrorCount("Er kam sah und siegte", "Er kam, sah und siegte!", "komma_fehlt")).toBe(2);
+    expect(detectErrorCount("Er kam an.", "Er kam gestern Abend an.", "wort_fehlt")).toBe(2);
+    expect(detectErrorCount("Er kam gestern Abend an.", "Er kam an.", "wort_zu_viel")).toBe(2);
+    expect(detectErrorCount("Das Huas ist alt.", "Das Haus ist alt.", "buchstabendreher")).toBe(1);
+    expect(detectErrorCount("a", "b", "falsche_wortwahl")).toBeNull();
+    expect(detectErrorCount("a", "b", null)).toBeNull();
   });
 
   it("erkennt einen Buchstabendreher", () => {

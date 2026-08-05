@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",
+    "@korrektur/shared": "workspace:^",
     "hono": "^4.6.14",
     "imapflow": "^1.0.191",
     "postal-mime": "^2.7.5"

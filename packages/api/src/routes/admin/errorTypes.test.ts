@@ -24,7 +24,7 @@ beforeEach(() => {
 describe("Adminoberfläche Fehlerarten", () => {
   it("listet die geseedeten Fehlerarten", async () => {
     const html = await (await errorTypeAdminRoutes(db, () => NOW).request("/admin/fehlerarten")).text();
-    expect(html).toContain("fehlende Satzzeichen");
+    expect(html).toContain("Satzzeichen fehlen");
     expect(html).toContain("Buchstabendreher");
   });
 

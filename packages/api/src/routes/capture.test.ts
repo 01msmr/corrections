@@ -65,7 +65,7 @@ describe("GET /neu", () => {
     const html = await res.text();
     expect(res.status).toBe(200);
     expect(html).toContain('name="quoteBefore"');
-    expect(html).toContain("fehlende Satzzeichen");
+    expect(html).toContain("Satzzeichen fehlen");
     expect(html).toMatch(/name="idempotencyKey" value="[a-z0-9]{16,}"/);
   });
 
@@ -107,7 +107,7 @@ describe("POST /neu/kategorie", () => {
       body: new URLSearchParams({ falsch: "Der Hundd bellt.", richtig: "Der Hund bellt." }),
     });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ kategorie: "zeichen_zu_viel", schwere: 1 });
+    expect(await res.json()).toEqual({ kategorie: "zeichen_zu_viel", schwere: 1, anzahl: 1 });
   });
 
   it("liefert null, wenn nichts Sicheres erkennbar ist", async () => {
@@ -115,11 +115,26 @@ describe("POST /neu/kategorie", () => {
       method: "POST",
       body: new URLSearchParams({ falsch: "Ganz anderer Text.", richtig: "Voellig neue Fassung hier." }),
     });
-    expect(await res.json()).toEqual({ kategorie: null, schwere: null });
+    expect(await res.json()).toEqual({ kategorie: null, schwere: null, anzahl: null });
   });
 });
 
 describe("POST /neu/vorschau", () => {
+  it("benennt zaehlbare Kategorien mit ihrer Anzahl", async () => {
+    const res = await captureRoutes(deps).request("/neu/vorschau", {
+      method: "POST",
+      body: form({
+        errorTypeKey: "zeichen_fehlt",
+        errorCount: "2",
+        quoteBefore: "Das Hs ist alt.",
+        suggestionAfter: "Das Haus ist alt.",
+      }),
+    });
+    const html = await res.text();
+    expect(res.status).toBe(200);
+    expect(html).toContain("2 Zeichen fehlen");
+  });
+
   it("zeigt die Mail als Vorschau, ohne einen Datensatz anzulegen", async () => {
     const res = await captureRoutes(deps).request("/neu/vorschau", { method: "POST", body: form() });
     const html = await res.text();

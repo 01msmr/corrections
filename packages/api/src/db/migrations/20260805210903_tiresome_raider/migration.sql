@@ -1,0 +1,1 @@
+ALTER TABLE `corrections` ADD `error_count` integer;

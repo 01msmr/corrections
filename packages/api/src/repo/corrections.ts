@@ -1,4 +1,4 @@
-import { canonicalizeUrl, generateRef, type NewCorrectionInput } from "@korrektur/shared";
+import { benenneFehlerart, canonicalizeUrl, generateRef, type NewCorrectionInput } from "@korrektur/shared";
 import { createId } from "@paralleldrive/cuid2";
 import { eq } from "drizzle-orm";
 import { deriveAnchors, type AnchorResult } from "../article/anchor.js";
@@ -193,6 +193,7 @@ export async function createCorrection(
           outletId: outlet.id,
           headline,
           errorTypeId: errorType.id,
+          errorCount: input.errorCount,
           severity: input.severity,
           quoteBefore: input.quoteBefore,
           quotePrefix: anchors.prefix,
@@ -230,7 +231,7 @@ export async function createCorrection(
     articleUrlCanon: canon.canonical,
     headline,
     errorTypeKey: errorType.key,
-    errorTypeLabel: errorType.label,
+    errorTypeLabel: benenneFehlerart(errorType.key, errorType.label, input.errorCount),
     severity: input.severity,
     quoteBefore: input.quoteBefore,
     suggestionAfter: input.suggestionAfter,

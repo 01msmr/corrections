@@ -2,6 +2,7 @@ import { appendFileSync, existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
+import { benenneFehlerart, istZaehlbareFehlerart } from "@korrektur/shared";
 import { Hono } from "hono";
 import { leseAltmeldung, type Altmeldung } from "./lesen.js";
 
@@ -24,13 +25,13 @@ const PORT = 3223;
  *  dupliziert statt aus dem api-Paket importiert — der Backfill teilt mit
  *  dem Dauerbetrieb nur `shared` (§11.5). */
 const FEHLERARTEN: [string, string][] = [
-  ["zeichen_fehlt", "fehlende Zeichen"],
-  ["zeichen_zu_viel", "überzählige Zeichen"],
+  ["zeichen_fehlt", "Zeichen fehlen"],
+  ["zeichen_zu_viel", "Zeichen zu viel"],
   ["buchstabendreher", "ein Buchstabendreher"],
-  ["komma_fehlt", "fehlende Satzzeichen"],
-  ["komma_zu_viel", "überzählige Satzzeichen"],
-  ["wort_fehlt", "fehlende Wörter"],
-  ["wort_zu_viel", "überzählige Wörter"],
+  ["komma_fehlt", "Satzzeichen fehlen"],
+  ["komma_zu_viel", "Satzzeichen zu viel"],
+  ["wort_fehlt", "Wörter fehlen"],
+  ["wort_zu_viel", "Wörter zu viel"],
   ["falsche_wortwahl", "falsche Wortwahl"],
   ["satzbau", "insgesamt unverständlich, falscher Satzbau"],
   ["inhaltsfehler", "Inhaltsfehler"],
@@ -93,10 +94,20 @@ function feld(name: string, beschriftung: string, wert: string | null, mehrzeili
 
 function seite(eintrag: { datei: string; meldung: Altmeldung }, offen: number, gesamt: number): string {
   const { datei, meldung } = eintrag;
-  const auswahl = FEHLERARTEN.map(
-    ([key, label]) =>
-      `<option value="${key}"${key === meldung.fehlerartKey ? " selected" : ""}>${escapeHtml(label)}</option>`,
-  ).join("");
+  /* Jede Option traegt ihre Sprachformen, damit die Benennungszeile beim
+     Aendern von Auswahl oder Anzahl ohne Server-Rundreise mitlaeuft. */
+  const auswahl = FEHLERARTEN.map(([key, label]) => {
+    const zaehlbar = istZaehlbareFehlerart(key);
+    const eins = benenneFehlerart(key, label, 1);
+    const mehr = benenneFehlerart(key, label, 2).replace(/^2 /, "");
+    const daten = zaehlbar ? ` data-eins="${escapeHtml(eins)}" data-mehr="${escapeHtml(mehr)}"` : "";
+    return `<option value="${key}"${key === meldung.fehlerartKey ? " selected" : ""}${daten}>${escapeHtml(label)}</option>`;
+  }).join("");
+  const benennung = benenneFehlerart(
+    meldung.fehlerartKey ?? "",
+    FEHLERARTEN.find(([key]) => key === meldung.fehlerartKey)?.[1] ?? (meldung.fehlerartRoh ?? "—"),
+    meldung.fehlerartAnzahl,
+  );
   const rohLabel = meldung.fehlerartRoh
     ? `<p class="roh">Label im Original: „${escapeHtml(meldung.fehlerartRoh)}“</p>`
     : "";
@@ -121,6 +132,9 @@ function seite(eintrag: { datei: string; meldung: Altmeldung }, offen: number, g
   button[value="uebernehmen"] { background: #2f6f4e; color: #fffffe; border-color: #2f6f4e; }
   button[value="verwerfen"] { color: #a3323b; border-color: #a3323b; }
   kbd { border: 1px solid #6b7480; border-radius: 3px; padding: 0 .3em; font-size: .75em; }
+  .kategoriezeile { display: flex; gap: .5rem; }
+  .kategoriezeile input { width: 4.5rem; flex: none; }
+  .kategoriezeile select { flex: 1; min-width: 0; }
 </style></head><body>
   <h1>Noch ${offen} von ${gesamt} — <span class="konfidenz">${meldung.konfidenz}</span> · ${escapeHtml(datei)}
     · <kbd>Enter</kbd> übernehmen <kbd>E</kbd> bearbeiten <kbd>X</kbd> verwerfen</h1>
@@ -137,7 +151,13 @@ function seite(eintrag: { datei: string; meldung: Altmeldung }, offen: number, g
     <input type="hidden" name="datei" value="${escapeHtml(datei)}">
     ${feld("ueberschrift", "Überschrift", meldung.ueberschrift)}
     ${feld("artikelUrl", "Artikel-URL", meldung.artikelUrl)}
-    <label>Fehlerart<select name="fehlerartKey">${auswahl}</select></label>
+    <label>Fehlerart (Anzahl | Art)
+      <span class="kategoriezeile">
+        <input name="anzahl" type="number" min="1" max="999" value="${meldung.fehlerartAnzahl ?? ""}" aria-label="Anzahl">
+        <select name="fehlerartKey">${auswahl}</select>
+      </span>
+    </label>
+    <p class="roh">wird abgelegt als: <strong id="benennung">${escapeHtml(benennung)}</strong></p>
     ${rohLabel}
     ${feld("falsch", "Falsch ist", meldung.falsch, true)}
     ${feld("richtig", "Richtig wäre", meldung.richtig, true)}
@@ -147,6 +167,16 @@ function seite(eintrag: { datei: string; meldung: Altmeldung }, offen: number, g
     </div>
   </form>
   <script>
+    const benennungZeigen = () => {
+      const select = document.querySelector("select[name=fehlerartKey]");
+      const option = select.selectedOptions[0];
+      const anzahl = Number(document.querySelector("input[name=anzahl]").value);
+      const ziel = document.getElementById("benennung");
+      if (!option.dataset.eins || !anzahl) { ziel.textContent = option.textContent; return; }
+      ziel.textContent = anzahl === 1 ? option.dataset.eins : anzahl + " " + option.dataset.mehr;
+    };
+    document.querySelector("select[name=fehlerartKey]").addEventListener("change", benennungZeigen);
+    document.querySelector("input[name=anzahl]").addEventListener("input", benennungZeigen);
     document.addEventListener("keydown", (e) => {
       const tippt = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
       if (e.key === "Enter" && !tippt) { document.querySelector('button[value="uebernehmen"]').click(); }
@@ -195,6 +225,7 @@ async function main(): Promise<void> {
               ueberschrift: String(body["ueberschrift"] ?? "") || null,
               artikelUrl: String(body["artikelUrl"] ?? "") || null,
               fehlerartKey: String(body["fehlerartKey"] ?? "") || null,
+              anzahl: String(body["anzahl"] ?? "") || null,
               falsch: String(body["falsch"] ?? "") || null,
               richtig: String(body["richtig"] ?? "") || null,
             },

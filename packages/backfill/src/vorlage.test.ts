@@ -42,6 +42,7 @@ describe("parseVorlage", () => {
       artikelUrl: "https://beispiel-zeitung.de/artikel/probe-123",
       fehlerartRoh: "ein Zeichen zu viel",
       fehlerartKey: "zeichen_zu_viel",
+      fehlerartAnzahl: 1,
       falsch: "Der Mondd ist rund.",
       richtig: "Der Mond ist rund.",
       konfidenz: "sicher",
@@ -66,21 +67,24 @@ describe("parseVorlage", () => {
     }
   });
 
-  it("bildet die gaengigen Alt-Labels auf die heutigen Schluessel ab", () => {
-    const faelle: [string, string][] = [
-      ["schlechter Satzbau", "satzbau"],
-      ["falscher Satzbau", "satzbau"],
-      ["zwei Zeichen fehlen", "zeichen_fehlt"],
-      ["2 Zeichen fehlen", "zeichen_fehlt"],
-      ["ein Leerzeichen fehlt", "zeichen_fehlt"],
-      ["zwei Worte zu viel", "wort_zu_viel"],
-      ["zwei Kommata fehlen", "komma_fehlt"],
-      ["ein Satzzeichen fehlt", "komma_fehlt"],
-      ["schlechte Wortwahl", "falsche_wortwahl"],
-      ["Inhaltsfehler", "inhaltsfehler"],
+  it("bildet die gaengigen Alt-Labels auf Schluessel und Anzahl ab", () => {
+    const faelle: [string, string, number | null][] = [
+      ["schlechter Satzbau", "satzbau", null],
+      ["falscher Satzbau", "satzbau", null],
+      ["zwei Zeichen fehlen", "zeichen_fehlt", 2],
+      ["2 Zeichen fehlen", "zeichen_fehlt", 2],
+      ["ein Leerzeichen fehlt", "zeichen_fehlt", 1],
+      ["zwei Worte zu viel", "wort_zu_viel", 2],
+      ["drei Worte fehlen", "wort_fehlt", 3],
+      ["zwei Kommata fehlen", "komma_fehlt", 2],
+      ["ein Satzzeichen fehlt", "komma_fehlt", 1],
+      ["schlechte Wortwahl", "falsche_wortwahl", null],
+      ["Inhaltsfehler", "inhaltsfehler", null],
     ];
-    for (const [label, key] of faelle) {
-      expect(parseVorlage(BETREFF, beispiel({ fehlerart: label })).fehlerartKey).toBe(key);
+    for (const [label, key, anzahl] of faelle) {
+      const ergebnis = parseVorlage(BETREFF, beispiel({ fehlerart: label }));
+      expect(ergebnis.fehlerartKey, label).toBe(key);
+      expect(ergebnis.fehlerartAnzahl, label).toBe(anzahl);
     }
   });
 

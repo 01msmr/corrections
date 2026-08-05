@@ -11,16 +11,17 @@ import { errorTypes, outletDomains, outlets } from "./schema.js";
  * Weitere werden ueber das Adminformular gepflegt.
  */
 export const DEFAULT_ERROR_TYPES = [
-  /* Bewusst ohne Anzahl im Namen: die Erkennung zaehlt selbst, ob eines oder
-     mehrere Zeichen fehlen bzw. zu viel sind. Die Schluessel bleiben die
-     alten, damit bestehende Datensaetze weiter darauf zeigen. */
-  { key: "zeichen_fehlt", label: "fehlende Zeichen", description: "Ein oder mehrere Zeichen fehlen (variable Anzahl)." },
-  { key: "zeichen_zu_viel", label: "überzählige Zeichen", description: "Ein oder mehrere Zeichen zu viel (variable Anzahl)." },
+  /* Grundformen ohne Anzahl im Namen: die Erkennung zaehlt selbst, und die
+     Benennung einer konkreten Meldung fuegt Anzahl und Form sprachlich
+     zusammen ("2 Zeichen fehlen", siehe benenneFehlerart in shared). Die
+     Schluessel bleiben die alten, damit Datensaetze weiter darauf zeigen. */
+  { key: "zeichen_fehlt", label: "Zeichen fehlen", description: "Anzahl frei — wird automatisch mitgezählt." },
+  { key: "zeichen_zu_viel", label: "Zeichen zu viel", description: "Anzahl frei — wird automatisch mitgezählt." },
   { key: "buchstabendreher", label: "ein Buchstabendreher", description: "" },
-  { key: "komma_fehlt", label: "fehlende Satzzeichen", description: "Komma, Punkt oder anderes Satzzeichen — eines oder mehrere (variable Anzahl)." },
-  { key: "komma_zu_viel", label: "überzählige Satzzeichen", description: "Ein oder mehrere Satzzeichen zu viel (variable Anzahl)." },
-  { key: "wort_fehlt", label: "fehlende Wörter", description: "Ein oder mehrere Wörter fehlen (variable Anzahl)." },
-  { key: "wort_zu_viel", label: "überzählige Wörter", description: "Ein oder mehrere Wörter zu viel (variable Anzahl)." },
+  { key: "komma_fehlt", label: "Satzzeichen fehlen", description: "Komma, Punkt oder anderes Satzzeichen; Anzahl frei." },
+  { key: "komma_zu_viel", label: "Satzzeichen zu viel", description: "Anzahl frei — wird automatisch mitgezählt." },
+  { key: "wort_fehlt", label: "Wörter fehlen", description: "Anzahl frei — wird automatisch mitgezählt." },
+  { key: "wort_zu_viel", label: "Wörter zu viel", description: "Anzahl frei — wird automatisch mitgezählt." },
   { key: "falsche_wortwahl", label: "falsche Wortwahl", description: "" },
   { key: "satzbau", label: "insgesamt unverständlich, falscher Satzbau", description: "" },
   { key: "inhaltsfehler", label: "Inhaltsfehler", description: "Sachlich unzutreffende Aussage." },

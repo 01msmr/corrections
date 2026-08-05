@@ -1,4 +1,11 @@
-import { canonicalizeUrl, detectErrorTypeKey, detectSeverity, newCorrectionSchema } from "@korrektur/shared";
+import {
+  benenneFehlerart,
+  canonicalizeUrl,
+  detectErrorCount,
+  detectErrorTypeKey,
+  detectSeverity,
+  newCorrectionSchema,
+} from "@korrektur/shared";
 import { createId } from "@paralleldrive/cuid2";
 import { Hono } from "hono";
 import { getErrorTypeByKey, listErrorTypes } from "../repo/errorTypes.js";
@@ -48,6 +55,7 @@ export function captureRoutes(deps: CreateDeps): Hono {
     return c.json({
       kategorie: vorhanden ? erkannt : null,
       schwere: vorhanden ? detectSeverity(falsch, richtig, erkannt) : null,
+      anzahl: vorhanden ? detectErrorCount(falsch, richtig, erkannt) : null,
     });
   });
 
@@ -107,7 +115,7 @@ export function captureRoutes(deps: CreateDeps): Hono {
       articleUrlCanon: canon.canonical,
       headline: parsed.data.headline ?? null,
       errorTypeKey: errorType.key,
-      errorTypeLabel: errorType.label,
+      errorTypeLabel: benenneFehlerart(errorType.key, errorType.label, parsed.data.errorCount),
       severity: parsed.data.severity,
       quoteBefore: parsed.data.quoteBefore,
       suggestionAfter: parsed.data.suggestionAfter,

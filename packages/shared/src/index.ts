@@ -4,6 +4,7 @@ export * from "./text.js";
 export * from "./diff.js";
 export * from "./regions.js";
 export * from "./detect.js";
+export * from "./benennung.js";
 export * from "./ref.js";
 export * from "./stats.js";
 export * from "./schemas.js";

@@ -14,47 +14,50 @@ export interface VorlagenErgebnis {
   fehlerartRoh: string | null;
   /** Heutiger Fehlerart-Schluessel, wenn das Alt-Label eindeutig zuzuordnen ist. */
   fehlerartKey: string | null;
+  /** Anzahl aus dem Alt-Label ("zwei Zeichen fehlen" → 2), wenn zaehlbar. */
+  fehlerartAnzahl: number | null;
   falsch: string | null;
   richtig: string | null;
   konfidenz: Konfidenz;
 }
 
 /**
- * Alt-Label → heutiger Schluessel, nur fuer die haeufigen, eindeutigen
- * Formulierungen (~95 % des Korpus). Kombinationen und Freitexte bleiben
- * bewusst ungemappt — die Review-Queue entscheidet.
+ * Alt-Label → heutiger Schluessel samt der im Label genannten Anzahl, nur
+ * fuer die haeufigen, eindeutigen Formulierungen (~95 % des Korpus).
+ * Kombinationen und Freitexte bleiben bewusst ungemappt — die Review-Queue
+ * entscheidet.
  */
-const FEHLERART_NACH_LABEL = new Map<string, string>([
-  ["ein zeichen fehlt", "zeichen_fehlt"],
-  ["zwei zeichen fehlen", "zeichen_fehlt"],
-  ["2 zeichen fehlen", "zeichen_fehlt"],
-  ["ein leerzeichen fehlt", "zeichen_fehlt"],
-  ["zwei leerzeichen fehlen", "zeichen_fehlt"],
-  ["eine worttrennung [leerzeichen] fehlt", "zeichen_fehlt"],
-  ["ein zeichen zu viel", "zeichen_zu_viel"],
-  ["zwei zeichen zu viel", "zeichen_zu_viel"],
-  ["ein leerzeichen zu viel", "zeichen_zu_viel"],
-  ["ein buchstabendreher", "buchstabendreher"],
-  ["zwei buchstabendreher", "buchstabendreher"],
-  ["ein komma fehlt", "komma_fehlt"],
-  ["zwei kommata fehlen", "komma_fehlt"],
-  ["zwei kommas fehlen", "komma_fehlt"],
-  ["ein satzzeichen fehlt", "komma_fehlt"],
-  ["ein komma zu viel", "komma_zu_viel"],
-  ["zwei kommata zu viel", "komma_zu_viel"],
-  ["ein wort fehlt", "wort_fehlt"],
-  ["zwei worte fehlen", "wort_fehlt"],
-  ["drei worte fehlen", "wort_fehlt"],
-  ["ein wort zu viel", "wort_zu_viel"],
-  ["zwei worte zu viel", "wort_zu_viel"],
-  ["drei worte zu viel", "wort_zu_viel"],
-  ["falsche wortwahl", "falsche_wortwahl"],
-  ["schlechte wortwahl", "falsche_wortwahl"],
-  ["schlechter satzbau", "satzbau"],
-  ["falscher satzbau", "satzbau"],
-  ["sehr schlechter satzbau", "satzbau"],
-  ["satzbau", "satzbau"],
-  ["inhaltsfehler", "inhaltsfehler"],
+const FEHLERART_NACH_LABEL = new Map<string, { key: string; anzahl: number | null }>([
+  ["ein zeichen fehlt", { key: "zeichen_fehlt", anzahl: 1 }],
+  ["zwei zeichen fehlen", { key: "zeichen_fehlt", anzahl: 2 }],
+  ["2 zeichen fehlen", { key: "zeichen_fehlt", anzahl: 2 }],
+  ["ein leerzeichen fehlt", { key: "zeichen_fehlt", anzahl: 1 }],
+  ["zwei leerzeichen fehlen", { key: "zeichen_fehlt", anzahl: 2 }],
+  ["eine worttrennung [leerzeichen] fehlt", { key: "zeichen_fehlt", anzahl: 1 }],
+  ["ein zeichen zu viel", { key: "zeichen_zu_viel", anzahl: 1 }],
+  ["zwei zeichen zu viel", { key: "zeichen_zu_viel", anzahl: 2 }],
+  ["ein leerzeichen zu viel", { key: "zeichen_zu_viel", anzahl: 1 }],
+  ["ein buchstabendreher", { key: "buchstabendreher", anzahl: 1 }],
+  ["zwei buchstabendreher", { key: "buchstabendreher", anzahl: 2 }],
+  ["ein komma fehlt", { key: "komma_fehlt", anzahl: 1 }],
+  ["zwei kommata fehlen", { key: "komma_fehlt", anzahl: 2 }],
+  ["zwei kommas fehlen", { key: "komma_fehlt", anzahl: 2 }],
+  ["ein satzzeichen fehlt", { key: "komma_fehlt", anzahl: 1 }],
+  ["ein komma zu viel", { key: "komma_zu_viel", anzahl: 1 }],
+  ["zwei kommata zu viel", { key: "komma_zu_viel", anzahl: 2 }],
+  ["ein wort fehlt", { key: "wort_fehlt", anzahl: 1 }],
+  ["zwei worte fehlen", { key: "wort_fehlt", anzahl: 2 }],
+  ["drei worte fehlen", { key: "wort_fehlt", anzahl: 3 }],
+  ["ein wort zu viel", { key: "wort_zu_viel", anzahl: 1 }],
+  ["zwei worte zu viel", { key: "wort_zu_viel", anzahl: 2 }],
+  ["drei worte zu viel", { key: "wort_zu_viel", anzahl: 3 }],
+  ["falsche wortwahl", { key: "falsche_wortwahl", anzahl: null }],
+  ["schlechte wortwahl", { key: "falsche_wortwahl", anzahl: null }],
+  ["schlechter satzbau", { key: "satzbau", anzahl: null }],
+  ["falscher satzbau", { key: "satzbau", anzahl: null }],
+  ["sehr schlechter satzbau", { key: "satzbau", anzahl: null }],
+  ["satzbau", { key: "satzbau", anzahl: null }],
+  ["inhaltsfehler", { key: "inhaltsfehler", anzahl: null }],
 ]);
 
 /** Inhalt des ersten „…“-Paars, sonst null. Innere Anfuehrungen bleiben
@@ -107,11 +110,13 @@ export function parseVorlage(betreff: string, text: string): VorlagenErgebnis {
     richtig = zitat(trenner ? nachRichtig.slice(0, trenner.index) : nachRichtig);
   }
 
-  const fehlerartKey =
+  const zuordnung =
     fehlerartRoh !== null ? (FEHLERART_NACH_LABEL.get(fehlerartRoh.toLowerCase()) ?? null) : null;
+  const fehlerartKey = zuordnung?.key ?? null;
+  const fehlerartAnzahl = zuordnung?.anzahl ?? null;
 
   const kern = artikelUrl !== null && falsch !== null && richtig !== null;
   const konfidenz: Konfidenz = !kern ? "verworfen" : fehlerartKey !== null ? "sicher" : "pruefen";
 
-  return { ueberschrift, artikelUrl, fehlerartRoh, fehlerartKey, falsch, richtig, konfidenz };
+  return { ueberschrift, artikelUrl, fehlerartRoh, fehlerartKey, fehlerartAnzahl, falsch, richtig, konfidenz };
 }

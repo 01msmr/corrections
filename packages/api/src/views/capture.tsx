@@ -1,4 +1,4 @@
-import { QUOTE_MAX_LENGTH } from "@korrektur/shared";
+import { istZaehlbareFehlerart, QUOTE_MAX_LENGTH } from "@korrektur/shared";
 import type { FC } from "hono/jsx";
 import type { ErrorTypeRecord } from "../repo/errorTypes.js";
 import { Layout } from "./layout.js";
@@ -106,12 +106,22 @@ const ERKENNUNG_SCRIPT = `
   const auswahl = document.getElementById("errorTypeKey");
   const schwere = document.getElementById("severity");
   const hinweis = document.getElementById("kategorie-hinweis");
+  const anzahl = document.getElementById("errorCount");
+  /* Das Anzahl-Feld gehoert nur zu zaehlbaren Kategorien; beim Wechsel auf
+     eine nicht zaehlbare wird es geleert, damit nichts Falsches mitgeht. */
+  const anzahlAbgleichen = () => {
+    const zaehlbar = auswahl.selectedOptions[0]?.dataset.zaehlbar === "1";
+    anzahl.hidden = !zaehlbar;
+    if (!zaehlbar) anzahl.value = "";
+  };
+  anzahlAbgleichen();
   let manuell = false;
   let kategorieVorschlag = null;
   let schwereManuell = false;
   let zeitgeber = null;
   auswahl.addEventListener("change", () => {
     manuell = true;
+    anzahlAbgleichen();
     const unveraendert = kategorieVorschlag !== null && auswahl.value === kategorieVorschlag;
     setzeHinweis(hinweis, unveraendert ? ERKANNT : "", unveraendert);
   });
@@ -129,6 +139,8 @@ const ERKENNUNG_SCRIPT = `
           if (daten.kategorie) {
             auswahl.value = daten.kategorie;
             kategorieVorschlag = daten.kategorie;
+            anzahlAbgleichen();
+            if (daten.anzahl) anzahl.value = String(daten.anzahl);
             setzeHinweis(hinweis, ERKANNT, true);
           } else {
             setzeHinweis(hinweis, "", false);
@@ -229,11 +241,28 @@ export const CaptureForm: FC<{
             <span>Kategorie:</span>
             <span id="kategorie-hinweis" class="zaehler" aria-live="polite"></span>
           </label>
-          <select id="errorTypeKey" name="errorTypeKey" required>
-            {errorTypes.map((type) => (
-              <option value={type.key}>{type.label}</option>
-            ))}
-          </select>
+          {/* Anzahl vor der Auswahl, damit sich die Zeile wie die spaetere
+              Benennung liest: "2 | Zeichen fehlen". Nur bei zaehlbaren
+              Kategorien sichtbar; die Erkennung zaehlt mit, von Hand bleibt
+              die Anzahl frei. Leer heisst: keine Anzahl. */}
+          <div class="kategoriezeile">
+            <input
+              id="errorCount"
+              name="errorCount"
+              type="number"
+              min="1"
+              max="999"
+              aria-label="Anzahl"
+              hidden
+            />
+            <select id="errorTypeKey" name="errorTypeKey" required>
+              {errorTypes.map((type) => (
+                <option value={type.key} data-zaehlbar={istZaehlbareFehlerart(type.key) ? "1" : undefined}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div class="feld">
