@@ -70,7 +70,8 @@ describe("parseVorlage", () => {
 
   it("bildet die gaengigen Alt-Labels auf Schluessel und Anzahl ab", () => {
     const faelle: [string, string, number | null][] = [
-      ["schlechter Satzbau", "satzbau", null],
+      ["schlechter Satzbau", "schlechter_satzbau", null],
+      ["sehr schlechter Satzbau", "schlechter_satzbau", null],
       ["falscher Satzbau", "satzbau", null],
       ["zwei Zeichen fehlen", "zeichen_fehlt", 2],
       ["2 Zeichen fehlen", "zeichen_fehlt", 2],

@@ -23,7 +23,11 @@ export const DEFAULT_ERROR_TYPES = [
   { key: "wort_fehlt", label: "Wörter fehlen", description: "Anzahl frei — wird automatisch mitgezählt." },
   { key: "wort_zu_viel", label: "Wörter zu viel", description: "Anzahl frei — wird automatisch mitgezählt." },
   { key: "falsche_wortwahl", label: "falsche Wortwahl", description: "" },
-  { key: "satzbau", label: "insgesamt unverständlich, falscher Satzbau", description: "" },
+  /* Zwei getrennte Satzbau-Faelle: falsch (grammatisch kaputt) und schlecht
+     (verstaendlich, aber holprig) — der Schluessel satzbau bleibt fuer den
+     falschen, damit Erkennung und Bestandsdaten weiter passen. */
+  { key: "satzbau", label: "falscher Satzbau", description: "Grammatisch falsch gebaut." },
+  { key: "schlechter_satzbau", label: "schlechter Satzbau", description: "Verständlich, aber holprig." },
   { key: "inhaltsfehler", label: "Inhaltsfehler", description: "Sachlich unzutreffende Aussage." },
   { key: "falsche_zahl", label: "eine falsche Zahl", description: "Zahl, Einheit oder Größenordnung." },
   { key: "falsches_datum", label: "ein falsches Datum", description: "Datum, Jahr oder Zeitangabe." },

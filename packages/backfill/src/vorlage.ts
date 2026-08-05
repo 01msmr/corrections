@@ -58,10 +58,9 @@ const FEHLERART_NACH_LABEL = new Map<
   ["drei worte zu viel", { key: "wort_zu_viel", anzahl: 3 }],
   ["falsche wortwahl", { key: "falsche_wortwahl", anzahl: null }],
   ["schlechte wortwahl", { key: "falsche_wortwahl", anzahl: null }],
-  ["schlechter satzbau", { key: "satzbau", anzahl: null }],
+  ["schlechter satzbau", { key: "schlechter_satzbau", anzahl: null }],
+  ["sehr schlechter satzbau", { key: "schlechter_satzbau", anzahl: null }],
   ["falscher satzbau", { key: "satzbau", anzahl: null }],
-  ["sehr schlechter satzbau", { key: "satzbau", anzahl: null }],
-  ["satzbau", { key: "satzbau", anzahl: null }],
   ["inhaltsfehler", { key: "inhaltsfehler", anzahl: null }],
 ]);
 
