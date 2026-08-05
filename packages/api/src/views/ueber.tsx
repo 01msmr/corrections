@@ -35,28 +35,31 @@ export const UeberSeite: FC = () => (
         liest.
       </p>
 
-      <h2 class="rubrik">Netzwelt</h2>
+      <h2 class="rubrik">Aus der Werkstatt</h2>
       <p>
-        Hinter dieser Seite steckt bewusst wenig: ein kleines Programm auf einem gemieteten
-        Webserver und eine einzelne Datei als Ablage. Es gibt keine Konten bei Drittdiensten,
-        keine Besucherzählung und keine Cookies.
+        Hinter dieser Seite steckt wohltuend wenig: ein kleines Programm auf einem
+        gemieteten Webserver und eine einzelne, sorgsam gehütete Datei als Ablage. Keine
+        Konten bei Drittdiensten, keine Besucherzählung, keine Cookies — erhoben wird
+        schlicht nichts, was niemand braucht.
       </p>
       <p>
-        Beim Absenden holt sich das Programm den Artikel einmal von der Zeitungsseite und
-        merkt sich, wo genau die Fundstelle steht — so lässt sich später nachsehen, ob die
-        Stelle inzwischen geändert wurde. Verschickt wird über ein gewöhnliches
-        E‑Mail‑Postfach; die Kennung im Betreff ist der Faden, an dem Antwort und Korrektur
-        wieder zusammenfinden.
+        Beim Absenden holt sich das Programm den Artikel ein einziges Mal von der
+        Zeitungsseite und merkt sich genau, wo die Fundstelle steht — so lässt sich später
+        in aller Ruhe nachsehen, ob die Stelle inzwischen berichtigt wurde. Verschickt wird
+        über ein ganz gewöhnliches E‑Mail‑Postfach; die Kennung im Betreff ist der dünne
+        Faden, an dem Antwort und Korrektur wieder zusammenfinden.
       </p>
       <p>
-        Auch die Kategorie schlägt die Seite selbst vor: Sie vergleicht beide Fassungen Wort
-        für Wort — fehlt ein Komma, sind zwei Buchstaben verdreht, stimmt eine Zahl nicht?
-        Dahinter steckt keine künstliche Intelligenz, sondern eine Handvoll nachvollziehbarer
-        Regeln; wo sie sich nicht sicher sind, schlagen sie lieber nichts vor.
+        Auch Kategorie und Schwere schlägt die Seite selbst vor: Sie vergleicht beide
+        Fassungen geduldig Wort für Wort — fehlt ein Komma, sind zwei Buchstaben verdreht,
+        stimmt eine Zahl nicht? Dahinter steckt keine künstliche Intelligenz, sondern eine
+        Handvoll nachvollziehbarer Regeln, gebaut wie Korrekturzeichen: klein und klar. Und
+        wo sie sich nicht sicher sind, schlagen sie lieber gar nichts vor.
       </p>
       <p>
-        Der gesamte Quelltext ist offen einsehbar unter{" "}
-        <a href="https://github.com/01msmr/corrections">github.com/01msmr/corrections</a>.
+        Der gesamte Quelltext liegt offen unter{" "}
+        <a href="https://github.com/01msmr/corrections">github.com/01msmr/corrections</a> —
+        für alle, die nachlesen möchten.
       </p>
 
       <p>
