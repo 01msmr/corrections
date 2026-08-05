@@ -28,6 +28,8 @@ export type CreateResult =
       id: string;
       ref: string;
       anchorQuality: AnchorResult["quality"];
+      /** False, wenn der Abruf scheiterte oder kein Artikeltext extrahierbar war. */
+      artikelGeladen: boolean;
       dispatchStatus: "sent" | "failed";
     }
   | {
@@ -118,6 +120,7 @@ function toDuplicateResult(row: typeof corrections.$inferSelect): CreateResult &
     id: row.id,
     ref: row.ref,
     anchorQuality: row.anchorQuality,
+    artikelGeladen: row.anchorQuality !== "none",
     dispatchStatus: row.dispatchStatus === "sent" ? "sent" : "failed",
   };
 }
@@ -163,10 +166,12 @@ export async function createCorrection(
   // Artikelabruf darf scheitern: dann fehlen nur die Anker (§6, Schritt 3).
   let anchors = NO_ANCHOR;
   let headline = input.headline;
+  let artikelGeladen = false;
   const fetched = await deps.fetchArticle(canon.canonical);
   if (fetched.ok) {
     const article = extractArticle(fetched.html, canon.canonical);
     if (article) {
+      artikelGeladen = true;
       anchors = deriveAnchors(article.text, input.quoteBefore);
       headline = headline ?? article.title;
     }
@@ -276,6 +281,7 @@ export async function createCorrection(
     id,
     ref,
     anchorQuality: anchors.quality,
+    artikelGeladen,
     dispatchStatus: sent.ok ? "sent" : "failed",
   };
 }

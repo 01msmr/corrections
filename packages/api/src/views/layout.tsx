@@ -59,6 +59,7 @@ const STYLES = `
      Spalten, die Rubrik sitzt damit mittig auf der vollen Breite. */
   .prosa { max-width: 62rem; margin: 0 auto; text-align: left; }
   .prosa .einstieg { font-size: 1.2rem; line-height: 1.55; }
+  .prosa h2:not(.rubrik) { margin-top: 1.6rem; }
   @media (min-width: 48rem) {
     .prosa { columns: 2; column-gap: 2.75rem; column-rule: 1px solid var(--linie); }
     .prosa .einstieg, .prosa h2.rubrik { column-span: all; }

@@ -243,11 +243,12 @@ export const CapturePreview: FC<{
   </Layout>
 );
 
-export const CaptureResult: FC<{ ref: string; anchored: boolean; sent: boolean }> = ({
-  ref,
-  anchored,
-  sent,
-}) => (
+export const CaptureResult: FC<{
+  ref: string;
+  anchored: boolean;
+  artikelGeladen: boolean;
+  sent: boolean;
+}> = ({ ref, anchored, artikelGeladen, sent }) => (
   <Layout title="Hinweis erfasst" aktiv="neu">
     <p class="hinweis">
       {sent ? (
@@ -265,8 +266,9 @@ export const CaptureResult: FC<{ ref: string; anchored: boolean; sent: boolean }
     </p>
     {anchored ? null : (
       <p class="hinweis">
-        Die Fundstelle konnte nicht im Artikel verankert werden. Eine spätere automatische
-        Korrekturerkennung ist für diesen Datensatz nur eingeschränkt möglich.
+        {artikelGeladen
+          ? "Die Fundstelle wurde im geladenen Artikel nicht eindeutig gefunden. Eine spätere automatische Korrekturerkennung ist für diesen Datensatz nur eingeschränkt möglich."
+          : "Der Artikel ließ sich nicht abrufen — viele Seiten liefern Servern nur eine Paywall- oder Zustimmungsseite aus. Ohne Artikeltext kann die Fundstelle nicht verankert werden; am Hinweis selbst ändert das nichts."}
       </p>
     )}
     <p>

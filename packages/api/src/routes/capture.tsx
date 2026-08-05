@@ -157,6 +157,7 @@ export function captureRoutes(deps: CreateDeps): Hono {
       <CaptureResult
         ref={result.ref}
         anchored={result.anchorQuality === "exact"}
+        artikelGeladen={result.artikelGeladen}
         sent={result.dispatchStatus === "sent"}
       />,
     );

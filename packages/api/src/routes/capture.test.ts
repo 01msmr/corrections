@@ -150,11 +150,19 @@ describe("POST /neu", () => {
     expect(html).toContain("zurueck=");
   });
 
-  it("warnt, wenn die Fundstelle nicht verankert werden konnte", async () => {
+  it("nennt beim gescheiterten Artikelabruf die Ursache", async () => {
     const res = await captureRoutes({
       ...deps,
       fetchArticle: async () => ({ ok: false, status: 403, reason: "http" }),
     }).request("/neu", { method: "POST", body: form() });
-    await expect(res.text()).resolves.toContain("konnte nicht im Artikel verankert werden");
+    await expect(res.text()).resolves.toContain("Der Artikel ließ sich nicht abrufen");
+  });
+
+  it("warnt, wenn die Fundstelle im geladenen Artikel fehlt", async () => {
+    const res = await captureRoutes(deps).request("/neu", {
+      method: "POST",
+      body: form({ quoteBefore: "diesen Satz gibt es im Artikel nicht" }),
+    });
+    await expect(res.text()).resolves.toContain("wurde im geladenen Artikel nicht eindeutig gefunden");
   });
 });
