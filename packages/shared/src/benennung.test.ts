@@ -2,16 +2,20 @@ import { describe, expect, it } from "vitest";
 import { benenneFehlerart, istZaehlbareFehlerart } from "./benennung.js";
 
 describe("benenneFehlerart", () => {
-  it("nutzt bei Anzahl 1 die Einzahlform", () => {
+  it("nutzt bei Anzahl 1 das Zahlwort mit Einzahlform", () => {
     expect(benenneFehlerart("zeichen_fehlt", "Zeichen fehlen", 1)).toBe("ein Zeichen fehlt");
     expect(benenneFehlerart("wort_zu_viel", "Wörter zu viel", 1)).toBe("ein Wort zu viel");
   });
 
-  it("stellt bei mehreren die Anzahl vor die Grundform", () => {
-    expect(benenneFehlerart("zeichen_fehlt", "Zeichen fehlen", 2)).toBe("2 Zeichen fehlen");
-    expect(benenneFehlerart("komma_zu_viel", "Satzzeichen zu viel", 3)).toBe("3 Satzzeichen zu viel");
-    expect(benenneFehlerart("wort_fehlt", "Wörter fehlen", 2)).toBe("2 Wörter fehlen");
-    expect(benenneFehlerart("buchstabendreher", "ein Buchstabendreher", 2)).toBe("2 Buchstabendreher");
+  it("schreibt kleine Anzahlen aus und stellt sie vor die Grundform", () => {
+    expect(benenneFehlerart("zeichen_fehlt", "Zeichen fehlen", 2)).toBe("zwei Zeichen fehlen");
+    expect(benenneFehlerart("komma_zu_viel", "Satzzeichen zu viel", 3)).toBe("drei Satzzeichen zu viel");
+    expect(benenneFehlerart("wort_fehlt", "Wörter fehlen", 2)).toBe("zwei Wörter fehlen");
+    expect(benenneFehlerart("buchstabendreher", "ein Buchstabendreher", 2)).toBe("zwei Buchstabendreher");
+  });
+
+  it("nutzt ab dreizehn Ziffern", () => {
+    expect(benenneFehlerart("zeichen_fehlt", "Zeichen fehlen", 13)).toBe("13 Zeichen fehlen");
   });
 
   it("laesst nicht zaehlbare Kategorien und fehlende Anzahl beim Listen-Label", () => {

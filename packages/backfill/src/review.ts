@@ -2,7 +2,7 @@ import { appendFileSync, existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
-import { benenneFehlerart, istZaehlbareFehlerart } from "@korrektur/shared";
+import { benenneFehlerart, istZaehlbareFehlerart, ZAHLWOERTER } from "@korrektur/shared";
 import { Hono } from "hono";
 import { leseAltmeldung, type Altmeldung } from "./lesen.js";
 
@@ -98,16 +98,17 @@ function seite(eintrag: { datei: string; meldung: Altmeldung }, offen: number, g
      Aendern von Auswahl oder Anzahl ohne Server-Rundreise mitlaeuft. */
   const auswahl = FEHLERARTEN.map(([key, label]) => {
     const zaehlbar = istZaehlbareFehlerart(key);
-    const eins = benenneFehlerart(key, label, 1);
-    const mehr = benenneFehlerart(key, label, 2).replace(/^2 /, "");
+    const eins = benenneFehlerart(key, label, 1).replace(/^ein /, "");
+    const mehr = benenneFehlerart(key, label, 2).replace(/^zwei /, "");
     const daten = zaehlbar ? ` data-eins="${escapeHtml(eins)}" data-mehr="${escapeHtml(mehr)}"` : "";
     return `<option value="${key}"${key === meldung.fehlerartKey ? " selected" : ""}${daten}>${escapeHtml(label)}</option>`;
   }).join("");
-  const benennung = benenneFehlerart(
-    meldung.fehlerartKey ?? "",
-    FEHLERARTEN.find(([key]) => key === meldung.fehlerartKey)?.[1] ?? (meldung.fehlerartRoh ?? "—"),
-    meldung.fehlerartAnzahl,
-  );
+  const listenLabel =
+    FEHLERARTEN.find(([key]) => key === meldung.fehlerartKey)?.[1] ?? (meldung.fehlerartRoh ?? "—");
+  const zaehlt = meldung.fehlerartKey !== null && istZaehlbareFehlerart(meldung.fehlerartKey);
+  const ablage =
+    zaehlt && meldung.fehlerartAnzahl ? `(${meldung.fehlerartAnzahl}) ${listenLabel}` : listenLabel;
+  const benennung = benenneFehlerart(meldung.fehlerartKey ?? "", listenLabel, meldung.fehlerartAnzahl);
   const rohLabel = meldung.fehlerartRoh
     ? `<p class="roh">Label im Original: „${escapeHtml(meldung.fehlerartRoh)}“</p>`
     : "";
@@ -157,7 +158,8 @@ function seite(eintrag: { datei: string; meldung: Altmeldung }, offen: number, g
         <select name="fehlerartKey">${auswahl}</select>
       </span>
     </label>
-    <p class="roh">wird abgelegt als: <strong id="benennung">${escapeHtml(benennung)}</strong></p>
+    <p class="roh">abgelegt als <strong id="ablage">${escapeHtml(ablage)}</strong>
+      — benannt als „<strong id="benennung">${escapeHtml(benennung)}</strong>“</p>
     ${rohLabel}
     ${feld("falsch", "Falsch ist", meldung.falsch, true)}
     ${feld("richtig", "Richtig wäre", meldung.richtig, true)}
@@ -167,13 +169,18 @@ function seite(eintrag: { datei: string; meldung: Altmeldung }, offen: number, g
     </div>
   </form>
   <script>
+    const ZAHLWOERTER = ${JSON.stringify(ZAHLWOERTER)};
     const benennungZeigen = () => {
       const select = document.querySelector("select[name=fehlerartKey]");
       const option = select.selectedOptions[0];
       const anzahl = Number(document.querySelector("input[name=anzahl]").value);
-      const ziel = document.getElementById("benennung");
-      if (!option.dataset.eins || !anzahl) { ziel.textContent = option.textContent; return; }
-      ziel.textContent = anzahl === 1 ? option.dataset.eins : anzahl + " " + option.dataset.mehr;
+      const zaehlbar = Boolean(option.dataset.eins) && anzahl > 0;
+      const zahlwort = ZAHLWOERTER[anzahl] ?? String(anzahl);
+      document.getElementById("ablage").textContent =
+        zaehlbar ? "(" + anzahl + ") " + option.textContent : option.textContent;
+      document.getElementById("benennung").textContent = zaehlbar
+        ? zahlwort + " " + (anzahl === 1 ? option.dataset.eins : option.dataset.mehr)
+        : option.textContent;
     };
     document.querySelector("select[name=fehlerartKey]").addEventListener("change", benennungZeigen);
     document.querySelector("input[name=anzahl]").addEventListener("input", benennungZeigen);

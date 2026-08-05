@@ -6,21 +6,32 @@
  */
 
 interface Sprachformen {
-  /** Formulierung fuer genau eine Einheit. */
+  /** Singularform hinter der Ziffer: "1 Wort zu viel". */
   eins: string;
-  /** Grundform fuer mehrere; die Anzahl wird davorgestellt ("2 Zeichen fehlen"). */
+  /** Pluralform hinter der Ziffer: "2 Wörter zu viel". */
   mehr: string;
 }
 
 const FORMEN = new Map<string, Sprachformen>([
-  ["zeichen_fehlt", { eins: "ein Zeichen fehlt", mehr: "Zeichen fehlen" }],
-  ["zeichen_zu_viel", { eins: "ein Zeichen zu viel", mehr: "Zeichen zu viel" }],
-  ["komma_fehlt", { eins: "ein Satzzeichen fehlt", mehr: "Satzzeichen fehlen" }],
-  ["komma_zu_viel", { eins: "ein Satzzeichen zu viel", mehr: "Satzzeichen zu viel" }],
-  ["wort_fehlt", { eins: "ein Wort fehlt", mehr: "Wörter fehlen" }],
-  ["wort_zu_viel", { eins: "ein Wort zu viel", mehr: "Wörter zu viel" }],
-  ["buchstabendreher", { eins: "ein Buchstabendreher", mehr: "Buchstabendreher" }],
+  ["zeichen_fehlt", { eins: "Zeichen fehlt", mehr: "Zeichen fehlen" }],
+  ["zeichen_zu_viel", { eins: "Zeichen zu viel", mehr: "Zeichen zu viel" }],
+  ["komma_fehlt", { eins: "Satzzeichen fehlt", mehr: "Satzzeichen fehlen" }],
+  ["komma_zu_viel", { eins: "Satzzeichen zu viel", mehr: "Satzzeichen zu viel" }],
+  ["wort_fehlt", { eins: "Wort fehlt", mehr: "Wörter fehlen" }],
+  ["wort_zu_viel", { eins: "Wort zu viel", mehr: "Wörter zu viel" }],
+  ["buchstabendreher", { eins: "Buchstabendreher", mehr: "Buchstabendreher" }],
 ]);
+
+/* Ausgeschrieben bis zwoelf, wie es die Typografie haelt; darueber Ziffern.
+   Index 1 ist "ein" (nicht "eins"), weil das Zahlwort vor dem Nomen steht. */
+export const ZAHLWOERTER = [
+  "", "ein", "zwei", "drei", "vier", "fünf", "sechs",
+  "sieben", "acht", "neun", "zehn", "elf", "zwölf",
+] as const;
+
+export function zahlwort(anzahl: number): string {
+  return ZAHLWOERTER[anzahl] ?? String(anzahl);
+}
 
 export function istZaehlbareFehlerart(key: string): boolean {
   return FORMEN.has(key);
@@ -33,5 +44,5 @@ export function benenneFehlerart(
 ): string {
   const formen = FORMEN.get(key);
   if (!formen || anzahl === null || anzahl === undefined || anzahl < 1) return label;
-  return anzahl === 1 ? formen.eins : `${anzahl} ${formen.mehr}`;
+  return `${zahlwort(anzahl)} ${anzahl === 1 ? formen.eins : formen.mehr}`;
 }

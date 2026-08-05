@@ -132,7 +132,7 @@ describe("POST /neu/vorschau", () => {
     });
     const html = await res.text();
     expect(res.status).toBe(200);
-    expect(html).toContain("2 Zeichen fehlen");
+    expect(html).toContain("zwei Zeichen fehlen");
   });
 
   it("zeigt die Mail als Vorschau, ohne einen Datensatz anzulegen", async () => {
