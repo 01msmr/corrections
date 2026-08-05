@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { REGION_GROUPS, regionOptionGroups } from "./regions.js";
+import { REGION_GROUPS, regionForDomain, regionOptionGroups } from "./regions.js";
 
 describe("regionOptionGroups", () => {
   it("stellt den deutschsprachigen Raum voran, dann Europa", () => {
@@ -45,5 +45,17 @@ describe("regionOptionGroups", () => {
   it("hängt einen bekannten Wert nicht zusätzlich an", () => {
     const groups = regionOptionGroups("de", "DE");
     expect(groups.some((g) => g.label === "Bereits erfasst")).toBe(false);
+  });
+
+  it("leitet den Sprachraum aus der Domain ab", () => {
+    expect(regionForDomain("spiegel.de")).toBe("DE");
+    expect(regionForDomain("orf.at")).toBe("AT");
+    expect(regionForDomain("bbc.co.uk")).toBe("GB");
+    expect(regionForDomain("lemonde.fr")).toBe("FR");
+  });
+
+  it("rät bei generischen Endungen nicht", () => {
+    expect(regionForDomain("nytimes.com")).toBeNull();
+    expect(regionForDomain("netzpolitik.org")).toBeNull();
   });
 });

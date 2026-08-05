@@ -84,3 +84,17 @@ export function regionOptionGroups(locale = "de", extra?: string | null): Region
   }
   return groups;
 }
+
+/**
+ * Leitet den Sprachraum aus der Domain ab: Laender-Endungen sind ISO-3166-
+ * Kuerzel (mit der historischen Ausnahme .uk fuer GB). Generische Endungen
+ * wie .com oder .org tragen keine Herkunft -- dann null, nie geraten.
+ */
+export function regionForDomain(domain: string): string | null {
+  const teile = domain.trim().toLowerCase().split(".");
+  const endung = teile[teile.length - 1] ?? "";
+  const code = endung === "uk" ? "GB" : endung.length === 2 ? endung.toUpperCase() : null;
+  if (code === null) return null;
+  const bekannt = new Set(REGION_GROUPS.flatMap((g) => g.codes));
+  return bekannt.has(code) ? code : null;
+}

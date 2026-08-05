@@ -1,3 +1,4 @@
+import { regionForDomain } from "@korrektur/shared";
 import { createId } from "@paralleldrive/cuid2";
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
@@ -49,7 +50,14 @@ export function ensureOutletForHost(
   const normalized = host.toLowerCase();
   const id = createId();
   db.insert(outlets)
-    .values({ id, name: normalized, primaryDomain: normalized, contactEmails: [], createdAt: now })
+    .values({
+      id,
+      name: normalized,
+      primaryDomain: normalized,
+      country: regionForDomain(normalized),
+      contactEmails: [],
+      createdAt: now,
+    })
     .run();
   db.insert(outletDomains).values({ id: createId(), outletId: id, domain: normalized }).run();
 
@@ -76,7 +84,8 @@ export function createOutlet(db: Db, input: OutletInput, now: number): OutletRec
       name: input.name,
       primaryDomain: domain,
       publisher: input.publisher,
-      country: input.country,
+      // Leer heisst "nicht angegeben" -- dann entscheidet die Domain-Endung.
+      country: input.country ?? regionForDomain(domain),
       notes: input.notes,
       contactEmails: input.contactEmails,
       createdAt: now,

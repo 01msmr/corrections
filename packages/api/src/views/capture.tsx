@@ -192,7 +192,7 @@ export const CaptureForm: FC<{
         <div class="abschluss">
           <button type="submit">
               <span class="knopftext">
-                Hinweis zusenden<span class="taste" aria-hidden="true">⏎</span>
+                Korrektur senden<span class="taste" aria-hidden="true">⏎</span>
               </span>
             </button>
         </div>

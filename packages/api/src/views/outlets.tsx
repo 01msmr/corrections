@@ -86,7 +86,10 @@ const Felder: FC<{
       </div>
 
       <div class="feld">
-        <label for="country">Sprachraum:</label>
+        <label for="country">
+          <span>Sprachraum:</span>
+          <span class="zaehler">leer = aus der Domain abgeleitet</span>
+        </label>
         <SprachraumAuswahl gewaehlt={eingabe?.country ?? outlet?.country ?? ""} />
       </div>
 
