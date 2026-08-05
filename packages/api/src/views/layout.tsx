@@ -78,13 +78,17 @@ const STYLES = `
      dann die Ressort-Navigation. Der Titel scrollt weg wie bei einer Zeitung;
      stehen bleibt nur die Navigationsleiste. */
   header { background: var(--papier); }
-  .markenzeile { display: block; text-align: center; padding: 1.6rem 0 .7rem; }
+  /* Oben knapper als es die Zahl vermuten laesst: die Didone bringt viel
+     eigenes Fleisch ueber den Versalien mit, erst .7rem zentriert optisch. */
+  .markenzeile { display: block; text-align: center; padding: .7rem 0; }
   /* Das Band ist der Trenner zwischen Titel und Ressortleiste: Untertitel
      hell auf Tinte, im Dunkelmodus entsprechend umgekehrt. */
   .datumszeile { background: var(--tinte); }
   .datumszeile .kopfinhalt {
     position: relative; display: block; text-align: center;
-    padding-top: .4rem; padding-bottom: .4rem;
+    /* Ungleich, damit es gleich aussieht: die Courier sitzt tief in ihrer
+       Zeilenbox, erst der knappere Deckel zentriert den Untertitel im Band. */
+    padding-top: .15rem; padding-bottom: .4rem;
   }
   .untertitel { font: 700 .85rem/1.5 var(--mono); letter-spacing: .14em;
     text-transform: uppercase; color: var(--papier); }
@@ -278,19 +282,20 @@ const STYLES = `
        erdrueckte das Blatt. Die Schrift steht in Tinte und bleibt voll lesbar;
        beim Ueberfahren fuellt der Rotstift. */
     background: transparent; color: var(--tinte);
-    /* 8px statt 6px: der 2px-Rahmen liegt aussen, dadurch wirkt der Bogen bei
-       gleichem Wert enger als bei den Feldern mit ihrem 1px-Rahmen. */
-    border: 2px solid var(--tinte); border-radius: 8px;
+    /* Eckig mit hartem Sockel: der Knopf steht wie ein Bleisatz-Klotz auf dem
+       Blatt -- kein weicher Schatten, eine versetzte volle Flaeche. */
+    border: 2px solid var(--tinte); border-radius: 0;
+    box-shadow: 5px 5px 0 0 var(--tinte);
   }
   button:hover, button:focus-visible { background: var(--tinte);
     border-color: var(--tinte); color: var(--papier); }
-  /* Beim Druecken nimmt der Knopf die Darstellung eines Formularfelds an --
-     gleiche Farbe, gleicher Rahmen, gleicher Innenschatten, gleicher Radius.
-     Er sinkt damit auf die Ebene der Felder statt darueber zu liegen. */
+  /* Beim Druecken sinkt der Klotz in seinen Sockel: der Knopf rueckt um die
+     Sockeltiefe nach unten rechts und liegt buendig auf dem Blatt. */
   button:active {
     color: var(--rand);
     background: var(--feld);
-    border: 1px solid var(--linie); border-radius: 6px;
+    border-color: var(--linie);
+    transform: translate(5px, 5px); box-shadow: none;
   }
   /* Das Zeilenschaltungszeichen sagt, dass der Knopf auch mit der Eingabetaste
      ausgeloest wird. aria-hidden, weil das fuer Vorlesesoftware ohnehin gilt. */
@@ -319,6 +324,14 @@ const STYLES = `
     border: 1px solid var(--linie); border-bottom: none; padding: .6rem .9rem;
     background: var(--feld); }
   .mailkopf .zaehler { display: inline; margin-right: .5rem; }
+  /* Die Korrekturfahne zeigt den Wortunterschied der beiden Fassungen:
+     Getilgtes durchgestrichen in Karmin, Eingefuegtes unterstrichen in Gruen.
+     Beide tragen Strich und Farbe -- keines der Mittel steht allein. */
+  .fahne { font: 1.05rem/1.6 var(--mono); margin: 0 0 1rem; }
+  .fahne del { color: var(--korrektur); text-decoration: line-through;
+    text-decoration-thickness: 2px; }
+  .fahne ins { color: var(--vorschlag); text-decoration: underline;
+    text-decoration-thickness: 2px; }
   .mailvorschau { border: 1px solid var(--linie); margin: 0 0 1.5rem; overflow-x: auto; }
   /* Die ganze Zeile ist das Klickziel -- beim Zeigen fuellt sie sich einen Hauch
      dunkler, nicht invers. Formulare und Griff sind davon ausgenommen. */

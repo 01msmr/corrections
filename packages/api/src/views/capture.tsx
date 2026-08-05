@@ -2,6 +2,7 @@ import { QUOTE_MAX_LENGTH } from "@korrektur/shared";
 import type { FC } from "hono/jsx";
 import type { ErrorTypeRecord } from "../repo/errorTypes.js";
 import { Layout } from "./layout.js";
+import { vergleicheFassungen } from "./vergleich.js";
 
 /**
  * Wird gezeigt, wenn fuer die Domain keine Kontaktadresse hinterlegt ist.
@@ -94,6 +95,14 @@ const ERKENNUNG_SCRIPT = `
 
   const falsch = document.getElementById("quoteBefore");
   const richtig = document.getElementById("suggestionAfter");
+  /* Die berichtigte Fassung beginnt als Kopie des Zitats: wer zwei Zeichen
+     tauschen will, soll nicht den ganzen Satz tippen. Die Kopie laeuft mit,
+     bis im Korrekturfeld von Hand gearbeitet wird -- und wieder, wenn es
+     ganz geleert wird. */
+  let richtigManuell = richtig.value.trim() !== "";
+  richtig.addEventListener("input", () => { richtigManuell = richtig.value.trim() !== ""; });
+  falsch.addEventListener("input", () => { if (!richtigManuell) richtig.value = falsch.value; });
+  if (!richtigManuell) richtig.value = falsch.value;
   const auswahl = document.getElementById("errorTypeKey");
   const schwere = document.getElementById("severity");
   const hinweis = document.getElementById("kategorie-hinweis");
@@ -270,7 +279,12 @@ export const CapturePreview: FC<{
   mailHtml: string;
   /** Alle Formularwerte, unveraendert als versteckte Felder weitergereicht. */
   werte: Record<string, string>;
-}> = ({ an, subject, mailHtml, werte }) => (
+}> = ({ an, subject, mailHtml, werte }) => {
+  /* Die Fahne entsteht serverseitig aus den durchgereichten Fassungen; sie
+     erscheint nur, wenn die beiden sich tatsaechlich unterscheiden. */
+  const fahne = vergleicheFassungen(werte["quoteBefore"] ?? "", werte["suggestionAfter"] ?? "");
+  const veraendert = fahne.some((stueck) => stueck.art !== "gleich");
+  return (
   <Layout title="Vorschau" aktiv="neu">
     <div class="mailkopf">
       <div>
@@ -280,6 +294,23 @@ export const CapturePreview: FC<{
         <span class="zaehler">Betreff:</span> {subject}
       </div>
     </div>
+    {veraendert ? (
+      <p class="fahne">
+        <span class="zaehler">Korrekturfahne: </span>
+        {fahne.map((stueck, i) => (
+          <>
+            {i > 0 ? " " : ""}
+            {stueck.art === "gleich" ? (
+              stueck.text
+            ) : stueck.art === "getilgt" ? (
+              <del>{stueck.text}</del>
+            ) : (
+              <ins>{stueck.text}</ins>
+            )}
+          </>
+        ))}
+      </p>
+    ) : null}
     {/* Inhalt stammt aus composeMail; alle Nutzereingaben sind dort maskiert. */}
     <div class="mailvorschau" dangerouslySetInnerHTML={{ __html: mailHtml }} />
     <form method="post" action="/neu">
@@ -303,7 +334,8 @@ export const CapturePreview: FC<{
       }}
     />
   </Layout>
-);
+  );
+};
 
 export const CaptureResult: FC<{
   ref: string;
