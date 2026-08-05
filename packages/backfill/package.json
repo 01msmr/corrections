@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "korpus": "node --env-file=../../.env.local --import tsx src/korpus.ts",
+    "probe": "node --import tsx src/probe.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "imapflow": "^1.0.191"
+    "imapflow": "^1.0.191",
+    "postal-mime": "^2.7.5"
   },
   "devDependencies": {
     "tsx": "^4.19.2",
