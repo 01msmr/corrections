@@ -88,7 +88,12 @@ export const ErrorTypeList: FC<{
               <code>{type.key}</code>
             </td>
             <td>
-              <form class="inline" method="post" action={`/admin/fehlerarten/${type.id}/loeschen`}>
+              <form
+                class="inline"
+                method="post"
+                action={`/admin/fehlerarten/${type.id}/loeschen`}
+                onsubmit={`return confirm('Kategorie „${type.label}“ wirklich entfernen?')`}
+              >
                 <button type="submit">Entfernen</button>
               </form>
             </td>

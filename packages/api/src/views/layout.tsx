@@ -57,18 +57,18 @@ const STYLES = `
      stehen bleibt nur die Navigationsleiste. */
   header { background: var(--papier); }
   .markenzeile { display: block; text-align: center; padding: 1.6rem 0 .7rem; }
-  .datumszeile {
-    border-top: 3px solid var(--tinte);
-    border-bottom: 1px solid var(--linie);
-  }
+  /* Das Band ist der Trenner zwischen Titel und Ressortleiste: Untertitel
+     hell auf Tinte, im Dunkelmodus entsprechend umgekehrt. */
+  .datumszeile { background: var(--tinte); }
   .datumszeile .kopfinhalt {
     position: relative; display: block; text-align: center;
-    padding-top: .35rem; padding-bottom: .35rem;
+    padding-top: .4rem; padding-bottom: .4rem;
   }
   .untertitel { font: 700 .85rem/1.5 var(--mono); letter-spacing: .14em;
-    text-transform: uppercase; color: var(--tinte); }
+    text-transform: uppercase; color: var(--papier); }
   .datum { position: absolute; right: 1.25rem; top: 50%; transform: translateY(-50%);
     font: .78rem/1.4 var(--mono); letter-spacing: .04em; color: var(--rand); }
+  .datumszeile .datum { color: var(--linie); }
   /* Nur die Ressortleiste bleibt beim Scrollen stehen. Der Schatten kommt erst,
      wenn der Titel darueber aus dem Bild ist -- ueber eine Scroll-Zeitachse,
      also ohne Skript; wo der Browser sie nicht kennt, klebt die Leiste ohne
@@ -218,8 +218,8 @@ const STYLES = `
        gleichem Wert enger als bei den Feldern mit ihrem 1px-Rahmen. */
     border: 2px solid var(--tinte); border-radius: 8px;
   }
-  button:hover, button:focus-visible { background: var(--korrektur);
-    border-color: var(--korrektur); color: var(--papier); }
+  button:hover, button:focus-visible { background: var(--tinte);
+    border-color: var(--tinte); color: var(--papier); }
   /* Beim Druecken nimmt der Knopf die Darstellung eines Formularfelds an --
      gleiche Farbe, gleicher Rahmen, gleicher Innenschatten, gleicher Radius.
      Er sinkt damit auf die Ebene der Felder statt darueber zu liegen. */
@@ -246,9 +246,20 @@ const STYLES = `
 
   table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
   th { font: 1rem/1.3 var(--mono); letter-spacing: .01em; color: var(--tinte); }
-  th, td { text-align: left; padding: .55rem .5rem; border-bottom: 1px solid var(--linie);
-    vertical-align: top; }
+  th, td { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid var(--linie);
+    vertical-align: middle; }
   form.inline { display: inline; }
+  /* Knoepfe in Tabellenzeilen sind Werkzeug, nicht Ziel der Seite: klein,
+     rechteckig, im Randton -- der Rotstift kommt erst beim Zeigen. */
+  table button {
+    display: inline-block; margin: 0; padding: .15rem .55rem; min-height: 0;
+    font: .75rem/1.4 var(--mono); letter-spacing: .02em; text-transform: none;
+    background: transparent; color: var(--rand);
+    border: 1px solid var(--rand); border-radius: 2px;
+  }
+  table button:hover, table button:focus-visible {
+    background: var(--korrektur); border-color: var(--korrektur); color: var(--papier);
+  }
   tr[draggable="true"] { cursor: grab; }
   tr.zieht { opacity: .4; }
   /* Einfuegemarke: eine karminrote Linie an der Kante, an der die gezogene

@@ -130,7 +130,12 @@ export const OutletList: FC<{
             <td>{outlet.domains.join(", ")}</td>
             <td>{outlet.contactEmails.length}</td>
             <td>
-              <form class="inline" method="post" action={`/admin/redaktionen/${outlet.id}/loeschen`}>
+              <form
+                class="inline"
+                method="post"
+                action={`/admin/redaktionen/${outlet.id}/loeschen`}
+                onsubmit={`return confirm('Titel „${outlet.name}“ wirklich entfernen?')`}
+              >
                 <button type="submit">Entfernen</button>
               </form>
             </td>
