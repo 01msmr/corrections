@@ -40,8 +40,8 @@ describe("composeMail", () => {
 
   it("hebt im HTML nur das abweichende Wort hervor, nicht den ganzen Satz", () => {
     const { html } = composeMail(INPUT);
-    expect(html).toContain('<span style="color:#c0392b;font-weight:700">4,2</span>');
-    expect(html).toContain('<span style="color:#2e7d32;font-weight:700">2,4</span>');
+    expect(html).toContain('<span style="color:#d0342c;font-weight:700">4,2</span>');
+    expect(html).toContain('<span style="color:#2f6f4e;font-weight:700">2,4</span>');
     // Der Rest des Satzes steht unmarkiert daneben, damit der Zusammenhang lesbar bleibt.
     expect(html).not.toContain(">Millionen</span>");
     expect(html).toContain("Millionen Menschen");

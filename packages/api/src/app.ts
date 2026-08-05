@@ -8,6 +8,7 @@ import { errorTypeAdminRoutes } from "./routes/admin/errorTypes.js";
 import { outletAdminRoutes } from "./routes/admin/outlets.js";
 import { captureRoutes } from "./routes/capture.js";
 import { health } from "./routes/health.js";
+import { ueberRoutes } from "./routes/ueber.js";
 
 export interface AppOptions {
   env: Env;
@@ -41,6 +42,8 @@ export function createApp(options: AppOptions): Hono {
   app.route("/", outletAdminRoutes(options.db, now));
   app.route("/", errorTypeAdminRoutes(options.db, now));
 
-  app.get("/", (c) => c.redirect("/neu", 302));
+  // Die Startseite ist oeffentlich: die Fusszeile jeder Korrekturmail verweist
+  // hierher, und der Empfaenger soll ohne Zugang lesen koennen, worum es geht.
+  app.route("/", ueberRoutes());
   return app;
 }

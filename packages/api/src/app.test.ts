@@ -71,9 +71,11 @@ describe("App-Verdrahtung", () => {
     }
   });
 
-  it("leitet die Wurzel auf das Erfassungsformular", async () => {
+  it("zeigt auf der Wurzel die öffentliche Startseite", async () => {
     const res = await app().request("/");
-    expect(res.status).toBe(302);
-    expect(res.headers.get("location")).toBe("/neu");
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain("Zur Sache");
+    expect(html).toContain("Textfehler");
   });
 });

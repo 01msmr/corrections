@@ -32,8 +32,8 @@ const QUOTE_INDENT = "    ";
  * allein ueber die Farbe: Rot-Gruen-Schwaeche ist die haeufigste Form der
  * Farbfehlsichtigkeit, und der Textteil kennt ohnehin keine Farbe.
  */
-const COLOR_BEFORE = "#c0392b";
-const COLOR_AFTER = "#2e7d32";
+const COLOR_BEFORE = "#d0342c";
+const COLOR_AFTER = "#2f6f4e";
 
 function truncate(value: string, max: number): string {
   if (max <= 0) return "";
@@ -144,24 +144,24 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
 
   // Inline-Stile statt Stylesheet: Mailprogramme entfernen <style> haeufig.
   const html = [
-    '<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#111">',
+    '<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#1b1f23">',
     `<p>Liebe ${escapeHtml(input.outletName)}-Redaktion,</p>`,
     `<p>${introHtml}</p>`,
-    '<hr style="border:none;border-top:1px solid #ccc;margin:20px 0">',
+    '<hr style="border:none;border-top:1px solid #dcddd8;margin:20px 0">',
     `<p>Falsch ist (${escapeHtml(input.errorTypeLabel)}):</p>`,
     `<p style="margin-left:24px">„${renderSegments(diff.before, COLOR_BEFORE)}“</p>`,
     "<p>Meiner Einschätzung nach wäre richtig:</p>",
     `<p style="margin-left:24px">„${renderSegments(diff.after, COLOR_AFTER)}“</p>`,
-    '<hr style="border:none;border-top:1px solid #ccc;margin:20px 0">',
+    '<hr style="border:none;border-top:1px solid #dcddd8;margin:20px 0">',
     commentHtml,
     "<p>Eine Rückmeldung wäre wunderbar.<br>Lassen Sie die Kennung am Ende des Betreffs bitte stehen, damit Ihre Antwort zugeordnet werden kann.</p>",
     "<p>Mit freundlichen Grüßen</p>",
-    '<p style="color:#666;font-size:13px">--<br>',
+    '<p style="color:#6b7480;font-size:13px">--<br>',
     `Diese Textkorrektur wurde über die Web-Anwendung <a href="${escapeHtml(input.baseUrl)}">${escapeHtml(input.baseUrl)}</a> erstellt und ist ohne Unterschrift gültig.</p>`,
     // Der Block steht in beiden Teilen: welchen ein Mailprogramm beim Antworten
     // zitiert, ist nicht vorhersagbar. Beide tragen denselben Inhalt, ein Parser
     // darf deshalb den ersten Treffer nehmen.
-    `<p style="color:#666;font-size:13px">Meta-Informationen:<br>${META_OPEN}<br>${escapeHtml(meta)}<br>${META_CLOSE}</p>`,
+    `<p style="color:#6b7480;font-size:13px">Meta-Informationen:<br>${META_OPEN}<br>${escapeHtml(meta)}<br>${META_CLOSE}</p>`,
     "</div>",
   ]
     .filter((part) => part.length > 0)

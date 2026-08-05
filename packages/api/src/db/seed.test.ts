@@ -20,7 +20,7 @@ describe("seed", () => {
     expect(rows.map((r) => r.key)).toEqual(
       expect.arrayContaining(DEFAULT_ERROR_TYPES.map((e) => e.key)),
     );
-    expect(rows.map((r) => r.key)).toContain("ueberschrift_deckt_nicht");
+    expect(rows.map((r) => r.key)).toContain("komma_fehlt");
   });
 
   it("legt drei Redaktionen mit je einer Domain an", () => {

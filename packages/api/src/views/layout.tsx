@@ -46,6 +46,9 @@ const STYLES = `
      ihr Raum ersetzt werden -- sonst beginnt das Formular direkt unter dem
      Balken. Seiten mit Ueberschrift bringen ihn selbst mit. */
   .blatt.ohne-titel { padding-top: 2.25rem; }
+  /* Fliesstext liest sich auf 72rem nicht mehr; die Startseite begrenzt ihn. */
+  .prosa { max-width: 42rem; }
+  .prosa .einstieg { font-size: 1.2rem; line-height: 1.55; }
 
   /* Die Kopfzeile bleibt stehen, damit die Navigation auf langen Seiten
      erreichbar bleibt. Der Schatten kommt erst, wenn wirklich etwas darunter
@@ -53,13 +56,19 @@ const STYLES = `
      nicht kennt, bleibt die Kopfzeile klebend und einfach ohne Schatten. */
   header {
     position: sticky; top: 0; z-index: 5;
-    padding: 1.5rem 0 .75rem; margin-bottom: 2.5rem;
+    margin-bottom: 2.5rem;
     background: var(--papier);
     border-bottom: 1px solid var(--linie);
     animation: kopfschatten linear both;
     animation-timeline: scroll(root);
     animation-range: 0 3rem;
   }
+  /* Zwei Zeilen wie ein Zeitungskopf: oben die Wortmarke, darunter -- durch
+     einen Trennstrich abgesetzt -- die Navigation, linksbuendig auf der
+     Spalte. Der Strich laeuft wie der Kopf selbst ueber die volle Breite. */
+  .markenzeile { padding-top: 1.1rem; padding-bottom: .65rem; }
+  .kopftrenner { border-bottom: 1px solid var(--linie); }
+  .navzeile { padding-top: .6rem; padding-bottom: .6rem; }
   @keyframes kopfschatten {
     from { box-shadow: 0 4px 12px -10px rgba(0, 0, 0, 0); }
     to { box-shadow: 0 4px 14px -8px rgba(0, 0, 0, .3); }
@@ -200,7 +209,7 @@ const STYLES = `
 
   .hinweis { padding: .85rem 1rem; margin: 0 0 1.5rem;
     background: var(--feld); border: 1px solid var(--linie);
-    border-left: 5px solid var(--rand); border-radius: 6px; }
+    border-left: 7px solid var(--rand); border-radius: 6px; }
   .hinweis p { margin: 0 0 .5rem; }
   .hinweis p:last-child { margin-bottom: 0; }
 
@@ -249,7 +258,7 @@ const STYLES = `
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 `;
 
-export type Bereich = "neu" | "redaktionen" | "fehlerarten";
+export type Bereich = "neu" | "redaktionen" | "fehlerarten" | "ueber";
 
 /**
  * Beschriftung der Navigationspunkte. Traegt die Seite denselben Titel wie ihr
@@ -261,6 +270,7 @@ const BEREICH_TITEL: Record<Bereich, string> = {
   neu: "Neuer Hinweis",
   redaktionen: "Redaktionen",
   fehlerarten: "Fehlerarten",
+  ueber: "Zur Sache",
 };
 
 export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | undefined }>> = ({
@@ -280,10 +290,13 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
     </head>
     <body>
       <header>
-        <div class="kopfinhalt">
-          <a class="marke" href="/neu" aria-label="Korrekturen">
+        <div class="kopfinhalt markenzeile">
+          <a class="marke" href="/" aria-label="Korrekturen">
             Korrektu<span class="tilgung">h</span>ren
           </a>
+        </div>
+        <div class="kopftrenner"></div>
+        <div class="kopfinhalt navzeile">
           <nav>
             <a href="/neu" aria-current={aktiv === "neu" ? "page" : undefined}>
               Neuer Hinweis
@@ -293,6 +306,9 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
             </a>
             <a href="/admin/fehlerarten" aria-current={aktiv === "fehlerarten" ? "page" : undefined}>
               Fehlerarten
+            </a>
+            <a href="/" aria-current={aktiv === "ueber" ? "page" : undefined}>
+              Zur Sache
             </a>
           </nav>
         </div>

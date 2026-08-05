@@ -48,7 +48,7 @@ function form(overrides: Record<string, string> = {}): FormData {
     idempotencyKey: "abcdef0123456789",
     articleUrl: "https://beispiel-zeitung.de/politik/artikel-123",
     headline: "",
-    errorTypeKey: "zahl",
+    errorTypeKey: "falsche_zahl",
     severity: "2",
     quoteBefore: "rund 4,2 Millionen Menschen",
     suggestionAfter: "rund 2,4 Millionen Menschen",
@@ -65,7 +65,7 @@ describe("GET /neu", () => {
     const html = await res.text();
     expect(res.status).toBe(200);
     expect(html).toContain('name="quoteBefore"');
-    expect(html).toContain("Überschrift deckt nicht");
+    expect(html).toContain("ein Komma fehlt");
     expect(html).toMatch(/name="idempotencyKey" value="[a-z0-9]{16,}"/);
   });
 

@@ -24,19 +24,19 @@ beforeEach(() => {
 describe("Adminoberfläche Fehlerarten", () => {
   it("listet die geseedeten Fehlerarten", async () => {
     const html = await (await errorTypeAdminRoutes(db, () => NOW).request("/admin/fehlerarten")).text();
-    expect(html).toContain("Überschrift deckt nicht");
-    expect(html).toContain("Falschzitat");
+    expect(html).toContain("ein Komma fehlt");
+    expect(html).toContain("Buchstabendreher");
   });
 
   it("legt eine neue Fehlerart an", async () => {
     const res = await post("/admin/fehlerarten", {
-      key: "toter_link",
-      label: "Toter Link",
-      description: "Verlinktes Ziel nicht erreichbar.",
+      key: "falschzitat",
+      label: "ein Falschzitat",
+      description: "Zitat unzutreffend oder sinnentstellend.",
       sortOrder: "130",
     });
     expect(res.status).toBe(302);
-    expect(getErrorTypeByKey(db, "toter_link")?.label).toBe("Toter Link");
+    expect(getErrorTypeByKey(db, "falschzitat")?.label).toBe("ein Falschzitat");
   });
 
   it("weist einen Schlüssel mit Leerzeichen ab", async () => {
@@ -52,7 +52,7 @@ describe("Adminoberfläche Fehlerarten", () => {
 
   it("meldet einen bereits vergebenen Schlüssel", async () => {
     const res = await post("/admin/fehlerarten", {
-      key: "zahl",
+      key: "falsche_zahl",
       label: "Noch eine Zahl",
       description: "",
       sortOrder: "200",
@@ -62,26 +62,26 @@ describe("Adminoberfläche Fehlerarten", () => {
   });
 
   it("bietet den Schlüssel beim Bearbeiten nicht als Eingabefeld an", async () => {
-    const id = getErrorTypeByKey(db, "zahl")?.id ?? "";
+    const id = getErrorTypeByKey(db, "falsche_zahl")?.id ?? "";
     const html = await (await errorTypeAdminRoutes(db, () => NOW).request(`/admin/fehlerarten/${id}`)).text();
     expect(html).not.toContain('name="key"');
-    expect(html).toContain("zahl");
+    expect(html).toContain("falsche_zahl");
   });
 
   it("ändert Bezeichnung und Reihenfolge", async () => {
-    const id = getErrorTypeByKey(db, "zahl")?.id ?? "";
+    const id = getErrorTypeByKey(db, "falsche_zahl")?.id ?? "";
     await post(`/admin/fehlerarten/${id}`, {
       label: "Zahlendreher",
       description: "Zahl falsch wiedergegeben.",
       sortOrder: "5",
     });
-    const updated = getErrorTypeByKey(db, "zahl");
+    const updated = getErrorTypeByKey(db, "falsche_zahl");
     expect(updated?.label).toBe("Zahlendreher");
     expect(updated?.sortOrder).toBe(5);
   });
 
   it("löscht eine unbenutzte Fehlerart und meldet das zurück", async () => {
-    const id = getErrorTypeByKey(db, "zahl")?.id ?? "";
+    const id = getErrorTypeByKey(db, "falsche_zahl")?.id ?? "";
     const res = await post(`/admin/fehlerarten/${id}/loeschen`, {});
     expect(res.status).toBe(302);
     expect(decodeURIComponent(res.headers.get("location") ?? "")).toContain("geloescht");

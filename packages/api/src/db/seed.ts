@@ -4,37 +4,28 @@ import type { Db } from "./client.js";
 import { errorTypes, outletDomains, outlets } from "./schema.js";
 
 /**
- * Die zwoelf Ausgangswerte aus §5.0, dazu "wortwahl".
- *
- * Der urspruengliche Kurzbefehl kannte zehn Fehlerarten, die den Eingriff am
- * Text benennen ("ein Komma fehlt") statt der Kategorie ("Zeichensetzung").
- * Neun davon gehen in den vorhandenen auf: Zeichen und Buchstabendreher in
- * `rechtschreibung`, Komma in `zeichensetzung`, fehlendes/ueberzaehliges Wort
- * und Satzbau in `grammatik`, Inhaltsfehler in `faktenfehler`. Nur "falsche
- * Wortwahl" hatte keine Entsprechung; sie steckt jetzt in `stil`, das als
- * Kategorie weiter traegt und auch unangemessenen Ton abdeckt.
- *
- * Bezeichnung und Beschreibung bilden dabei die Hierarchie ab, die das
- * Datenmodell nicht kennt: die Bezeichnung nennt die Kategorie, die
- * Beschreibung zaehlt die konkreten Faelle darunter auf. Deshalb stehen die
- * Formulierungen des Kurzbefehls dort woertlich.
- *
+ * Die Fehlerarten des urspruenglichen Kurzbefehls, ergaenzt um einige, die dort
+ * fehlten. Die Bezeichnungen benennen den Eingriff am Text ("ein Komma fehlt"),
+ * nicht die Kategorie ("Zeichensetzung") -- so stand es im Kurzbefehl, aus dem
+ * diese Anwendung entstanden ist, und so waehlt es sich schneller.
  * Weitere werden ueber das Adminformular gepflegt.
  */
 export const DEFAULT_ERROR_TYPES = [
-  { key: "rechtschreibung", label: "Rechtschreibung", description: "Falsch geschriebenes Wort; ein Zeichen fehlt oder steht zu viel; Buchstabendreher." },
-  { key: "grammatik", label: "Grammatik", description: "Fehlerhafter Satzbau oder Beugung; ein Wort fehlt oder steht zu viel; insgesamt unverständlich." },
-  { key: "zeichensetzung", label: "Zeichensetzung", description: "Komma, Punkt, Anführungszeichen; ein Komma fehlt oder steht zu viel." },
-  { key: "zahl", label: "Zahl", description: "Falsche Zahl, Einheit oder Größenordnung." },
-  { key: "datum", label: "Datum", description: "Falsches Datum, Jahr oder Zeitangabe." },
-  { key: "name", label: "Name", description: "Falsch geschriebener oder verwechselter Name." },
-  { key: "faktenfehler", label: "Faktenfehler", description: "Sachlich unzutreffende Aussage; Inhaltsfehler." },
-  { key: "falschzitat", label: "Falschzitat", description: "Zitat unzutreffend oder sinnentstellend." },
-  { key: "uebersetzung", label: "Übersetzung", description: "Fehlerhafte Übertragung aus einer Fremdsprache." },
-  { key: "bild", label: "Bild", description: "Falsche Bildunterschrift oder unpassendes Bild." },
-  { key: "ueberschrift_deckt_nicht", label: "Überschrift deckt nicht", description: "Überschrift wird vom Text nicht getragen." },
+  { key: "zeichen_fehlt", label: "ein Zeichen fehlt", description: "" },
+  { key: "zeichen_zu_viel", label: "ein Zeichen zu viel", description: "" },
+  { key: "buchstabendreher", label: "ein Buchstabendreher", description: "" },
+  { key: "komma_fehlt", label: "ein Komma fehlt", description: "" },
+  { key: "komma_zu_viel", label: "ein Komma zu viel", description: "" },
+  { key: "wort_fehlt", label: "ein Wort fehlt", description: "" },
+  { key: "wort_zu_viel", label: "ein Wort zu viel", description: "" },
+  { key: "falsche_wortwahl", label: "falsche Wortwahl", description: "" },
+  { key: "satzbau", label: "insgesamt unverständlich, falscher Satzbau", description: "" },
+  { key: "inhaltsfehler", label: "Inhaltsfehler", description: "Sachlich unzutreffende Aussage." },
+  { key: "falsche_zahl", label: "eine falsche Zahl", description: "Zahl, Einheit oder Größenordnung." },
+  { key: "falsches_datum", label: "ein falsches Datum", description: "Datum, Jahr oder Zeitangabe." },
+  { key: "falscher_name", label: "ein falscher Name", description: "Falsch geschrieben oder verwechselt." },
+  { key: "toter_link", label: "ein toter Link", description: "Verweis führt ins Leere." },
   { key: "sonstiges", label: "Sonstiges", description: "Passt in keine der übrigen Kategorien." },
-  { key: "stil", label: "Stil", description: "Falsche Wortwahl; unangemessener Ton." },
 ] as const;
 
 const DEFAULT_OUTLETS = [

@@ -18,7 +18,7 @@ const INPUT = {
   idempotencyKey: "abcdef0123456789",
   articleUrl: "https://beispiel-zeitung.de/politik/artikel-123?utm_source=x",
   headline: null,
-  errorTypeKey: "zahl",
+  errorTypeKey: "falsche_zahl",
   severity: 2,
   quoteBefore: "rund 4,2 Millionen Menschen",
   suggestionAfter: "rund 2,4 Millionen Menschen",
