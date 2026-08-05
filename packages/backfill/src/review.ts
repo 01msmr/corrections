@@ -27,6 +27,8 @@ const PORT = 3223;
 const FEHLERARTEN: [string, string][] = [
   ["zeichen_fehlt", "Zeichen fehlen"],
   ["zeichen_zu_viel", "Zeichen zu viel"],
+  ["leerzeichen_fehlt", "Leerzeichen fehlen"],
+  ["leerzeichen_zu_viel", "Leerzeichen zu viel"],
   ["buchstabendreher", "ein Buchstabendreher"],
   ["komma_fehlt", "Satzzeichen fehlen"],
   ["komma_zu_viel", "Satzzeichen zu viel"],

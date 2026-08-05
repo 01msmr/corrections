@@ -17,6 +17,8 @@ export const DEFAULT_ERROR_TYPES = [
      Schluessel bleiben die alten, damit Datensaetze weiter darauf zeigen. */
   { key: "zeichen_fehlt", label: "Zeichen fehlen", description: "Anzahl frei — wird automatisch mitgezählt." },
   { key: "zeichen_zu_viel", label: "Zeichen zu viel", description: "Anzahl frei — wird automatisch mitgezählt." },
+  { key: "leerzeichen_fehlt", label: "Leerzeichen fehlen", description: "Zusammengeschriebenes gehört getrennt; Anzahl frei." },
+  { key: "leerzeichen_zu_viel", label: "Leerzeichen zu viel", description: "Getrenntes gehört zusammen; Anzahl frei." },
   { key: "buchstabendreher", label: "ein Buchstabendreher", description: "" },
   { key: "komma_fehlt", label: "Satzzeichen fehlen", description: "Komma, Punkt oder anderes Satzzeichen; Anzahl frei." },
   { key: "komma_zu_viel", label: "Satzzeichen zu viel", description: "Anzahl frei — wird automatisch mitgezählt." },

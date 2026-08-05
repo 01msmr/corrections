@@ -103,6 +103,12 @@ verworfen — geraten wird nie), Entscheidungen landen als JSONL neben dem Korpu
 und der Import ist über die Message-ID idempotent. `fixtures.local/` ist vom
 Repository ausgeschlossen; die Testfixtures im Code sind synthetisch.
 
+**Die Review lässt sich jederzeit unterbrechen und fortsetzen.** Jede Entscheidung
+wird sofort an `fixtures.local/review-entscheidungen.jsonl` angehängt — nichts liegt
+nur im Browser oder im Arbeitsspeicher. Beim nächsten Start liest die Queue diese
+Datei und überspringt alles bereits Entschiedene; ist der Server beendet, genügt ein
+erneutes `pnpm backfill:review` und der Aufruf von http://localhost:3223.
+
 ## Erste Schritte
 
 Voraussetzung: Node.js ≥ 22, pnpm 9. Das Repo ist ein Monorepo aus

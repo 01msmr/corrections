@@ -10,6 +10,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { eq } from "drizzle-orm";
 import { createDb, runMigrations, type Db } from "../db/client.js";
 import { corrections } from "../db/schema.js";
+import { seed } from "../db/seed.js";
 import { reserveRef } from "../repo/corrections.js";
 import { getErrorTypeByKey } from "../repo/errorTypes.js";
 import { ensureOutletForHost } from "../repo/outlets.js";
@@ -161,6 +162,9 @@ function main(): void {
 
   const db = createDb(datenbank);
   runMigrations(db);
+  /* Stammdaten sicherstellen: ohne die Fehlerarten aus dem Seed findet der
+     Import keine Kategorie. seed() ist idempotent. */
+  seed(db);
   const ergebnis = importiereEntscheidungen(db, eintraege, Math.floor(Date.now() / 1000));
   console.log(
     `Import: ${ergebnis.uebernommen} uebernommen, ${ergebnis.uebersprungen} schon da, ` +

@@ -9,6 +9,17 @@ und stellt beides auswertbar dar. Spec: `docs/superpowers/specs/2026-08-01-korre
 - `pnpm db:generate` (Migration erzeugen), `pnpm db:seed`
 - `pnpm typecheck` / `pnpm lint`
 
+### Altbestand (Backfill, Einmalwerkzeuge)
+- `pnpm backfill:korpus` — Gesendet-Ordner einmalig als `.eml` nach `fixtures.local/korpus`
+- `pnpm backfill:review` — Review-Queue auf **http://localhost:3223**
+- `pnpm backfill:import` — übernommene Entscheidungen in die Datenbank
+
+**Die Review lässt sich jederzeit unterbrechen und fortsetzen.** Jede Entscheidung wird
+sofort an `fixtures.local/review-entscheidungen.jsonl` angehängt; beim Neustart
+überspringt die Queue alles bereits Entschiedene. Läuft der Server nicht mehr (er hängt
+an der Sitzung, in der er gestartet wurde), einfach `pnpm backfill:review` neu aufrufen
+und http://localhost:3223 öffnen. Auch der Import ist idempotent (Message-ID).
+
 ## Regeln
 - TypeScript strict. Kein `any`, kein `as` außer in Typ-Guards.
 - Zod-Schemas leben in `packages/shared` und sind die einzige Typquelle.

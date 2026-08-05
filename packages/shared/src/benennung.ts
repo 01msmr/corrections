@@ -15,6 +15,8 @@ interface Sprachformen {
 const FORMEN = new Map<string, Sprachformen>([
   ["zeichen_fehlt", { eins: "Zeichen fehlt", mehr: "Zeichen fehlen" }],
   ["zeichen_zu_viel", { eins: "Zeichen zu viel", mehr: "Zeichen zu viel" }],
+  ["leerzeichen_fehlt", { eins: "Leerzeichen fehlt", mehr: "Leerzeichen fehlen" }],
+  ["leerzeichen_zu_viel", { eins: "Leerzeichen zu viel", mehr: "Leerzeichen zu viel" }],
   ["komma_fehlt", { eins: "Satzzeichen fehlt", mehr: "Satzzeichen fehlen" }],
   ["komma_zu_viel", { eins: "Satzzeichen zu viel", mehr: "Satzzeichen zu viel" }],
   ["wort_fehlt", { eins: "Wort fehlt", mehr: "Wörter fehlen" }],

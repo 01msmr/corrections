@@ -374,6 +374,49 @@ const STYLES = `
     border: 1px solid var(--linie); border-bottom: none; padding: .6rem .9rem;
     background: var(--feld); }
   .mailkopf .zaehler { display: inline; margin-right: .5rem; }
+  /* Bilanz: Kennzahlen als Kaesten mit duenner Kante, keine Flaechen und
+     keine Ampelfarben -- ein Wert ist ein Wert, kein Urteil (§2.2). */
+  .eckdaten { display: grid; gap: 1rem; margin: 0 0 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+  .kennzahl { display: flex; flex-direction: column; gap: .15rem;
+    border: 1px solid var(--linie); padding: .8rem .9rem; background: var(--feld); }
+  .kennzahl-titel { font: 700 .72rem/1.4 var(--mono); letter-spacing: .1em;
+    text-transform: uppercase; color: var(--rand); }
+  .kennzahl-wert { font: 700 2rem/1.15 var(--mono); color: var(--tinte); }
+  .kennzahl-wert.klein { font-size: 1.15rem; line-height: 1.4; }
+  /* Fehlende Aussage sieht aus wie fehlende Aussage: leise, nicht als Null. */
+  .kennzahl-leer { font: italic 400 1.15rem/1.4 var(--sans); color: var(--rand); }
+  .kennzahl-fuss { font: .78rem/1.4 var(--mono); color: var(--tinte); }
+  .kennzahl-erklaerung { font: italic 400 .72rem/1.45 var(--sans); color: var(--rand);
+    margin-top: .35rem; }
+
+  /* Waagerechte Balken: Name links, Spur, Zahl rechts auf fester Breite,
+     damit die Ziffern untereinander stehen. */
+  .verteilung { display: flex; flex-direction: column; gap: .3rem; margin-bottom: 1.5rem; }
+  .balkenzeile { display: grid; grid-template-columns: minmax(6rem, 12rem) 1fr 2.5rem;
+    align-items: center; gap: .75rem; }
+  .balkenname { font: .9rem/1.4 var(--sans); }
+  .balkenspur { display: block; height: .85rem; background: var(--linie); }
+  .balkenfuellung { display: block; height: 100%; background: var(--korrektur); }
+  .balkenwert { font: 700 .85rem/1.4 var(--mono); text-align: right; }
+
+  /* Verlauf: senkrechte Balken auf gemeinsamer Grundlinie, seitlich
+     scrollbar -- eine Zeitreihe waechst mit den Monaten. */
+  .verlauf { display: flex; align-items: flex-end; gap: .4rem; height: 9rem;
+    margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: .2rem; }
+  /* max-width, damit wenige Monate keine plakativen Bloecke werden. */
+  .verlaufsspalte { display: flex; flex-direction: column; align-items: center;
+    justify-content: flex-end; height: 100%; min-width: 2.4rem; max-width: 4rem; flex: 1; }
+  .verlaufsbalken { display: block; width: 100%; background: var(--korrektur);
+    min-height: 2px; }
+  .verlaufswert { font: 700 .72rem/1.4 var(--mono); color: var(--tinte); }
+  .verlaufsmonat { font: .68rem/1.4 var(--mono); color: var(--rand); margin-top: .25rem;
+    white-space: nowrap; }
+
+  /* Fliesstext der Methodik schmal halten: lange Zeilen liest niemand. */
+  .prosa-schmal { max-width: 40rem; }
+  .prosa-schmal p { margin: 0 0 .8rem; }
+
   /* Die Korrekturfahne zeigt den Wortunterschied der beiden Fassungen:
      Getilgtes durchgestrichen in Karmin, Eingefuegtes unterstrichen in Gruen.
      Beide tragen Strich und Farbe -- keines der Mittel steht allein. */
@@ -484,7 +527,7 @@ const STYLES = `
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 `;
 
-export type Bereich = "neu" | "redaktionen" | "fehlerarten" | "ueber";
+export type Bereich = "neu" | "redaktionen" | "fehlerarten" | "bilanz" | "ueber";
 
 /**
  * Beschriftung der Navigationspunkte. Traegt die Seite denselben Titel wie ihr
@@ -496,6 +539,7 @@ const BEREICH_TITEL: Record<Bereich, string> = {
   neu: "Neue Korrektur",
   redaktionen: "Medien",
   fehlerarten: "Kategorien",
+  bilanz: "Bilanz",
   ueber: "In eigener Sache",
 };
 
@@ -553,6 +597,9 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
             </a>
             <a href="/admin/fehlerarten" aria-current={aktiv === "fehlerarten" ? "page" : undefined} draggable={false}>
               Kategorien
+            </a>
+            <a href="/bilanz" aria-current={aktiv === "bilanz" ? "page" : undefined} draggable={false}>
+              Bilanz
             </a>
             </nav>
           </div>

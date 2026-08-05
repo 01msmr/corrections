@@ -6,6 +6,7 @@ import type { Mailer } from "./dispatch/send.js";
 import type { Env } from "./env.js";
 import { errorTypeAdminRoutes } from "./routes/admin/errorTypes.js";
 import { outletAdminRoutes } from "./routes/admin/outlets.js";
+import { bilanzRoutes } from "./routes/bilanz.js";
 import { captureRoutes } from "./routes/capture.js";
 import { health } from "./routes/health.js";
 import { ueberRoutes } from "./routes/ueber.js";
@@ -45,6 +46,8 @@ export function createApp(options: AppOptions): Hono {
 
   // Die Startseite ist oeffentlich: die Fusszeile jeder Korrekturmail verweist
   // hierher, und der Empfaenger soll ohne Zugang lesen koennen, worum es geht.
+  // Dasselbe gilt fuer die Bilanz — sie ist der Zweck des Blatts (§10).
   app.route("/", ueberRoutes());
+  app.route("/", bilanzRoutes(options.db, now));
   return app;
 }
