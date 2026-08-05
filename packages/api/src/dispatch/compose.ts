@@ -1,4 +1,4 @@
-import { diffWords, type DiffSegment } from "@korrektur/shared";
+import { diffWords, PALETTE, type DiffSegment } from "@korrektur/shared";
 
 export interface ComposeInput {
   ref: string;
@@ -32,8 +32,8 @@ const QUOTE_INDENT = "    ";
  * allein ueber die Farbe: Rot-Gruen-Schwaeche ist die haeufigste Form der
  * Farbfehlsichtigkeit, und der Textteil kennt ohnehin keine Farbe.
  */
-const COLOR_BEFORE = "#a3323b";
-const COLOR_AFTER = "#2f6f4e";
+const COLOR_BEFORE = PALETTE.korrektur;
+const COLOR_AFTER = PALETTE.vorschlag;
 
 function truncate(value: string, max: number): string {
   if (max <= 0) return "";
@@ -135,8 +135,8 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
   );
 
   const introHtml = input.headline
-    ? `es gibt einen Fehler im Artikel „${escapeHtml(input.headline)}“, siehe: <a href="${escapeHtml(input.articleUrl)}" style="color:#1b1f23">${escapeHtml(input.articleUrl)}</a>`
-    : `es gibt einen Fehler in diesem Artikel: <a href="${escapeHtml(input.articleUrl)}" style="color:#1b1f23">${escapeHtml(input.articleUrl)}</a>`;
+    ? `es gibt einen Fehler im Artikel „${escapeHtml(input.headline)}“, siehe: <a href="${escapeHtml(input.articleUrl)}" style="color:${PALETTE.tinte}">${escapeHtml(input.articleUrl)}</a>`
+    : `es gibt einen Fehler in diesem Artikel: <a href="${escapeHtml(input.articleUrl)}" style="color:${PALETTE.tinte}">${escapeHtml(input.articleUrl)}</a>`;
 
   // Formsprache der Anwendung, uebersetzt in Mail-taugliches HTML: nur
   // Inline-Stile, Tabellen-Wrapper fuer die Lesebreite (Outlook), und nur
@@ -144,19 +144,19 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
   // Titels auf Windows, Courier New gibt es auf jedem System. Die
   // Papierfarbe ist fest gesetzt, damit Dunkelmodi der Clients das Blatt
   // nicht umfaerben.
-  const serif = "font-family:Georgia,'Times New Roman',serif;color:#1b1f23";
+  const serif = `font-family:Georgia,'Times New Roman',serif;color:${PALETTE.tinte}`;
   const schreibmaschine = "font-family:'Courier New',Courier,monospace";
   const absatz = `margin:0 0 14px;${serif};font-size:16px;line-height:1.6`;
   const zitat = (inhalt: string, kante: string) =>
-    `<div style="border-left:3px solid ${kante};background:#fffffe;border-top:1px solid #dcddd8;border-right:1px solid #dcddd8;border-bottom:1px solid #dcddd8;padding:10px 14px;margin:6px 0 16px;${schreibmaschine};font-size:14px;line-height:1.6;color:#1b1f23">„${inhalt}“</div>`;
+    `<div style="border-left:3px solid ${kante};background:${PALETTE.feld};border-top:1px solid ${PALETTE.linie};border-right:1px solid ${PALETTE.linie};border-bottom:1px solid ${PALETTE.linie};padding:10px 14px;margin:6px 0 16px;${schreibmaschine};font-size:14px;line-height:1.6;color:${PALETTE.tinte}">„${inhalt}“</div>`;
   const beschriftung = (text: string) =>
-    `<div style="${schreibmaschine};font-size:13px;color:#1b1f23;margin:0 0 2px">${text}</div>`;
-  const linie = '<div style="border-top:1px solid #dcddd8;margin:20px 0">&nbsp;</div>';
+    `<div style="${schreibmaschine};font-size:13px;color:${PALETTE.tinte};margin:0 0 2px">${text}</div>`;
+  const linie = `<div style="border-top:1px solid ${PALETTE.linie};margin:20px 0">&nbsp;</div>`;
 
   const kopf = [
-    `<div style="text-align:center;font-family:Didot,'Bodoni 72',Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;letter-spacing:2px;color:#1b1f23">KORREKTU<span style="text-decoration:line-through;text-decoration-color:#a3323b">H</span>REN</div>`,
-    `<div style="background:#1b1f23;color:#f7f7f4;${schreibmaschine};font-size:11px;font-weight:700;letter-spacing:2px;text-align:center;padding:5px 8px;margin:10px 0 22px">BLATT ZUR TEXTPFLEGE &bull; UNABHÄNGIG &bull; ÜBERPARTEILICH</div>`,
-    `<div style="${schreibmaschine};font-size:12px;font-weight:700;letter-spacing:2px;color:#a3323b;text-transform:uppercase;margin:0 0 4px">Korrektur</div>`,
+    `<div style="text-align:center;font-family:Didot,'Bodoni 72',Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;letter-spacing:2px;color:${PALETTE.tinte}">KORREKTU<span style="text-decoration:line-through;text-decoration-color:${PALETTE.korrektur}">H</span>REN</div>`,
+    `<div style="background:${PALETTE.tinte};color:${PALETTE.papier};${schreibmaschine};font-size:11px;font-weight:700;letter-spacing:2px;text-align:center;padding:5px 8px;margin:10px 0 22px">BLATT ZUR TEXTPFLEGE &bull; UNABHÄNGIG &bull; ÜBERPARTEILICH</div>`,
+    `<div style="${schreibmaschine};font-size:12px;font-weight:700;letter-spacing:2px;color:${PALETTE.korrektur};text-transform:uppercase;margin:0 0 4px">Korrektur</div>`,
     input.headline
       ? `<div style="${serif};font-size:21px;font-weight:700;line-height:1.3;margin:0 0 18px">${escapeHtml(input.headline)}</div>`
       : "",
@@ -179,17 +179,17 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
     commentHtml,
     `<p style="${absatz}">Eine Rückmeldung wäre wunderbar.<br>Lassen Sie die Kennung am Ende des Betreffs bitte stehen, damit Ihre Antwort zugeordnet werden kann.</p>`,
     `<p style="${absatz}">Mit freundlichen Grüßen</p>`,
-    `<p style="margin:0 0 6px;color:#6b7480;font-size:13px;${serif.replace("#1b1f23", "#6b7480")}">--<br>Diese Textkorrektur wurde über die Web-Anwendung <a href="${escapeHtml(input.baseUrl)}" style="color:#6b7480">${escapeHtml(input.baseUrl)}</a> erstellt und ist ohne Unterschrift gültig.</p>`,
+    `<p style="margin:0 0 6px;color:${PALETTE.rand};font-size:13px;${serif.replace(PALETTE.tinte, PALETTE.rand)}">--<br>Diese Textkorrektur wurde über die Web-Anwendung <a href="${escapeHtml(input.baseUrl)}" style="color:${PALETTE.rand}">${escapeHtml(input.baseUrl)}</a> erstellt und ist ohne Unterschrift gültig.</p>`,
     // Der Block steht in beiden Teilen: welchen ein Mailprogramm beim Antworten
     // zitiert, ist nicht vorhersagbar. Beide tragen denselben Inhalt, ein Parser
     // darf deshalb den ersten Treffer nehmen.
-    `<p style="margin:0;color:#6b7480;${schreibmaschine};font-size:12px">Meta-Informationen:<br>${META_OPEN}<br>${escapeHtml(meta)}<br>${META_CLOSE}</p>`,
+    `<p style="margin:0;color:${PALETTE.rand};${schreibmaschine};font-size:12px">Meta-Informationen:<br>${META_OPEN}<br>${escapeHtml(meta)}<br>${META_CLOSE}</p>`,
   ]
     .filter((part) => part.length > 0)
     .join("\n");
 
   const html = [
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f7f4"><tr><td align="center" style="padding:26px 12px 34px">',
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PALETTE.papier}"><tr><td align="center" style="padding:26px 12px 34px">`,
     '<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px"><tr><td align="left">',
     inhalt,
     "</td></tr></table>",

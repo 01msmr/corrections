@@ -68,6 +68,8 @@ describe("composeMail", () => {
   it("führt den Meta-Block auch im HTML-Teil, mit identischem Inhalt", () => {
     const { html } = composeMail(INPUT);
     expect(html).toContain("v=2; ref=K7QW3M; typ=zahl; sev=2;");
+    // Alle Palette-Werte muessen expandiert sein, nichts darf literal bleiben.
+    expect(html).not.toContain("${");
   });
 
   it("kodiert Sonderzeichen der URL, damit die Feldtrennung hält", () => {

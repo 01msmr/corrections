@@ -1,4 +1,8 @@
+import { PALETTE, PALETTE_DUNKEL } from "@korrektur/shared";
 import type { FC, PropsWithChildren } from "hono/jsx";
+
+/** Fuer Farben in data-URIs: "#a3323b" -> "%23a3323b". */
+const uri = (hex: string): string => hex.replace("#", "%23");
 
 /**
  * Motiv ist das Korrekturlesen, nicht die Zeitung: Manuskriptspalte mit aktivem
@@ -12,13 +16,13 @@ import type { FC, PropsWithChildren } from "hono/jsx";
 const STYLES = `
   :root {
     color-scheme: light dark;
-    --papier: #f7f7f4;
-    --tinte: #1b1f23;
-    --korrektur: #a3323b;
-    --vorschlag: #2f6f4e;
-    --rand: #6b7480;
-    --linie: #dcddd8;
-    --feld: #fffffe;
+    --papier: ${PALETTE.papier};
+    --tinte: ${PALETTE.tinte};
+    --korrektur: ${PALETTE.korrektur};
+    --vorschlag: ${PALETTE.vorschlag};
+    --rand: ${PALETTE.rand};
+    --linie: ${PALETTE.linie};
+    --feld: ${PALETTE.feld};
 
     /* Courier New zuerst: die Schreibmaschinenschrift traegt das Motiv. Sie
        laeuft hell und braucht groessere Grade und fette Schnitte -- die Werte
@@ -28,8 +32,10 @@ const STYLES = `
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --papier: #16181b; --tinte: #e8e6e1; --korrektur: #dd7e85; --vorschlag: #7bc39a;
-      --rand: #949ba6; --linie: #2e3237; --feld: #1d2024;
+      --papier: ${PALETTE_DUNKEL.papier}; --tinte: ${PALETTE_DUNKEL.tinte};
+      --korrektur: ${PALETTE_DUNKEL.korrektur}; --vorschlag: ${PALETTE_DUNKEL.vorschlag};
+      --rand: ${PALETTE_DUNKEL.rand}; --linie: ${PALETTE_DUNKEL.linie};
+      --feld: ${PALETTE_DUNKEL.feld};
     }
   }
 
@@ -47,9 +53,16 @@ const STYLES = `
      ihr Raum ersetzt werden -- sonst beginnt das Formular direkt unter dem
      Balken. Seiten mit Ueberschrift bringen ihn selbst mit. */
   .blatt.ohne-titel { padding-top: 2.25rem; }
-  /* Fliesstext liest sich auf 72rem nicht mehr; die Startseite begrenzt ihn. */
-  .prosa { max-width: 42rem; }
+  /* Die Startseite laeuft wie ein Blatt: ab Tabletbreite zwei gleich breite
+     Spalten mit feiner Spaltenlinie, linksbuendig -- Blocksatz ohne
+     Silbentrennung reisst Loecher. Vorspann und Rubriken spannen ueber beide
+     Spalten, die Rubrik sitzt damit mittig auf der vollen Breite. */
+  .prosa { max-width: 62rem; margin: 0 auto; text-align: left; }
   .prosa .einstieg { font-size: 1.2rem; line-height: 1.55; }
+  @media (min-width: 48rem) {
+    .prosa { columns: 2; column-gap: 2.75rem; column-rule: 1px solid var(--linie); }
+    .prosa .einstieg, .prosa h2.rubrik { column-span: all; }
+  }
 
   /* Der Kopf ist ein Zeitungskopf: der Titel zentriert wie ein Zeitungstitel,
      darunter die Datumszeile zwischen einer kraeftigen und einer feinen Linie,
@@ -116,7 +129,7 @@ const STYLES = `
   .marke .tilgung::after {
     content: ""; position: absolute;
     left: -.22em; right: -.22em; top: -.15em; bottom: -.15em;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='26' viewBox='0 0 46 26' preserveAspectRatio='none'%3E%3Cpath d='M2.4 20.6C13.2 16.4 26.4 10.2 41.8 3.2c1.1-.5 1.9.6 1 1.3-2 1.5-4.6 3-8 4.8C25.6 14.4 13.4 20.4 4.4 24c-1.3.5-2.6-1.6-2-3.4z' fill='%23a3323b'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='26' viewBox='0 0 46 26' preserveAspectRatio='none'%3E%3Cpath d='M2.4 20.6C13.2 16.4 26.4 10.2 41.8 3.2c1.1-.5 1.9.6 1 1.3-2 1.5-4.6 3-8 4.8C25.6 14.4 13.4 20.4 4.4 24c-1.3.5-2.6-1.6-2-3.4z' fill='${uri(PALETTE.korrektur)}'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
   }
   nav { display: flex; gap: 0; flex-wrap: wrap; align-items: baseline;
     justify-content: center; width: 100%; }
@@ -171,6 +184,14 @@ const STYLES = `
     padding: .4rem .15rem;
   }
   textarea { border: 1px solid var(--rand); padding: .5rem .6rem; }
+  /* Gesperrt sieht gesperrt aus: ausgegraut, gestrichelte Grundlinie, und der
+     Zeiger sagt es zusaetzlich. -webkit-text-fill-color, weil Safari die
+     Schriftfarbe gesperrter Felder sonst selbst abdunkelt. */
+  input:disabled {
+    color: var(--rand); -webkit-text-fill-color: var(--rand); opacity: 1;
+    border-bottom-style: dashed; cursor: not-allowed;
+  }
+  select { cursor: pointer; }
   input:focus-visible, select:focus-visible, textarea:focus-visible {
     outline: none; border-color: var(--korrektur);
   }
@@ -194,12 +215,12 @@ const STYLES = `
      nachgeladen wird. */
   select {
     -webkit-appearance: none; appearance: none; padding-right: 2.2rem;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'%3E%3Cpath d='M1.6 1.7 6.5 6.8l4.9-5.1' fill='none' stroke='%236b7480' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'%3E%3Cpath d='M1.6 1.7 6.5 6.8l4.9-5.1' fill='none' stroke='${uri(PALETTE.rand)}' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat; background-position: right .8rem center;
     background-size: .8rem auto;
   }
   select:hover, select:focus-visible {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'%3E%3Cpath d='M1.6 1.7 6.5 6.8l4.9-5.1' fill='none' stroke='%23a3323b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'%3E%3Cpath d='M1.6 1.7 6.5 6.8l4.9-5.1' fill='none' stroke='${uri(PALETTE.korrektur)}' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
   optgroup { font: 600 .75rem var(--mono); letter-spacing: .06em; color: var(--rand); }
   optgroup option { font: 400 1rem var(--sans); letter-spacing: 0; color: var(--tinte); }
@@ -216,7 +237,7 @@ const STYLES = `
        im hohen Knopf saehe zentrierter Text verloren aus. */
     display: flex; align-items: flex-end; justify-content: flex-end;
     margin-top: .5rem; padding: .8rem .7rem .7rem 1.2rem; cursor: pointer;
-    font: 700 1.25rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase;
+    font: 700 1.25rem/1 var(--mono); letter-spacing: .03em;
     /* Markant durch die Kontur, nicht durch die Flaeche: ein gefuellter Block
        erdrueckte das Blatt. Die Schrift steht in Tinte und bleibt voll lesbar;
        beim Ueberfahren fuellt der Rotstift. */
@@ -300,7 +321,7 @@ const STYLES = `
 
   @media (prefers-color-scheme: dark) {
     select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'%3E%3Cpath d='M1.6 1.7 6.5 6.8l4.9-5.1' fill='none' stroke='%23949ba6' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'%3E%3Cpath d='M1.6 1.7 6.5 6.8l4.9-5.1' fill='none' stroke='${uri(PALETTE_DUNKEL.rand)}' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     }
   }
 

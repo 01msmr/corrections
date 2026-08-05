@@ -127,11 +127,13 @@ export const ErrorTypeList: FC<{
 
 export const ErrorTypeEdit: FC<{ type: ErrorTypeRecord }> = ({ type }) => (
   <Layout title={`Kategorie: ${type.label}`} aktiv="fehlerarten">
-    <p class="hinweis">
-      Schlüssel <code>{type.key}</code> — nicht änderbar, weil er im Meta-Block bereits
-      versendeter Mails steht.
-    </p>
     <form method="post" action={`/admin/fehlerarten/${type.id}`}>
+      <label for="key">
+        <span>Schlüssel:</span>
+        <span class="zaehler">🔒 nicht änderbar — steht im Meta-Block versendeter Mails</span>
+      </label>
+      <input id="key" value={type.key} disabled />
+
       <label for="label">Bezeichnung:</label>
       <input id="label" name="label" required value={type.label} />
 

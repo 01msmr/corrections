@@ -13,3 +13,28 @@ export const QUOTE_MAX_LENGTH = 200;
 
 /** Zeichen vor und nach der Fundstelle je Kontext-Anker (§8.1). */
 export const ANCHOR_LENGTH = 48;
+
+/**
+ * Die Farbwelt der Anwendung, an genau einer Stelle. Oberflaeche (CSS-Variablen
+ * in layout.tsx) und Mail (Inline-Stile in compose.ts) fragen dieselben Werte
+ * ab -- die Mail kennt nur die helle Fassung, weil ihr Papierton fest steht.
+ */
+export const PALETTE = {
+  papier: "#f7f7f4",
+  tinte: "#1b1f23",
+  korrektur: "#a3323b",
+  vorschlag: "#2f6f4e",
+  rand: "#6b7480",
+  linie: "#dcddd8",
+  feld: "#fffffe",
+} as const;
+
+export const PALETTE_DUNKEL = {
+  papier: "#16181b",
+  tinte: "#e8e6e1",
+  korrektur: "#dd7e85",
+  vorschlag: "#7bc39a",
+  rand: "#949ba6",
+  linie: "#2e3237",
+  feld: "#1d2024",
+} as const;

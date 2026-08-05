@@ -9,7 +9,7 @@ import { Layout } from "./layout.js";
 export const UeberSeite: FC = () => (
   <Layout title="In eigener Sache" aktiv="ueber">
     <div class="prosa">
-      <h2 class="rubrik">Zur Sache</h2>
+      <h2 class="rubrik">In eigener Sache</h2>
       <p class="einstieg">
         Korrekturen sammelt Hinweise auf Textfehler in Online-Artikeln, schickt sie an die
         zuständige Redaktion und hält fest, was daraus wird.
