@@ -33,6 +33,7 @@ export const DEFAULT_ERROR_TYPES = [
   { key: "falsches_datum", label: "ein falsches Datum", description: "Datum, Jahr oder Zeitangabe." },
   { key: "falscher_name", label: "ein falscher Name", description: "Falsch geschrieben oder verwechselt." },
   { key: "toter_link", label: "ein toter Link", description: "Verweis führt ins Leere." },
+  { key: "linktext", label: "nichtssagender Linktext", description: "Linktext ohne Aussage („hier“, „mehr“) — der Linkzweck ist nicht erkennbar (WCAG 2.4.4)." },
   { key: "sonstiges", label: "Sonstiges", description: "Passt in keine der übrigen Kategorien." },
 ] as const;
 

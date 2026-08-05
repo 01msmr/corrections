@@ -62,6 +62,8 @@ const FEHLERART_NACH_LABEL = new Map<
   ["sehr schlechter satzbau", { key: "schlechter_satzbau", anzahl: null }],
   ["falscher satzbau", { key: "satzbau", anzahl: null }],
   ["inhaltsfehler", { key: "inhaltsfehler", anzahl: null }],
+  ["falsche verlinkung: links auf „hier“", { key: "linktext", anzahl: null }],
+  ["falsche verlinkung: „hier“", { key: "linktext", anzahl: null }],
 ]);
 
 /** Inhalt des ersten „…“-Paars, sonst null. Innere Anfuehrungen bleiben

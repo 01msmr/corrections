@@ -81,6 +81,7 @@ describe("parseVorlage", () => {
       ["zwei Kommata fehlen", "komma_fehlt", 2],
       ["ein Satzzeichen fehlt", "komma_fehlt", 1],
       ["schlechte Wortwahl", "falsche_wortwahl", null],
+      ["falsche Verlinkung: Links auf „hier“", "linktext", null],
       ["Inhaltsfehler", "inhaltsfehler", null],
     ];
     for (const [label, key, anzahl] of faelle) {

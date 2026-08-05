@@ -40,6 +40,7 @@ const FEHLERARTEN: [string, string][] = [
   ["falsches_datum", "ein falsches Datum"],
   ["falscher_name", "ein falscher Name"],
   ["toter_link", "ein toter Link"],
+  ["linktext", "nichtssagender Linktext"],
   ["sonstiges", "Sonstiges"],
 ];
 
