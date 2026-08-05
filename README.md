@@ -99,9 +99,10 @@ pnpm backfill:import   # übernommene Entscheidungen als source='backfill' in di
 ```
 
 Korpus und Review bleiben lokal: Die `.eml`-Dateien enthalten echte Korrespondenz und
-verlassen den Rechner nicht. Für die Produktion wandert nur die Entscheidungsdatei auf
-den Server, wo derselbe Import mitgeliefert wird — er ergänzt fehlende Datensätze und
-rührt vorhandene nicht an, sodass parallel erfasste Meldungen erhalten bleiben.
+verlassen den Rechner nicht. Für die Produktion wandert nur die Entscheidungsdatei über
+eine Adminseite auf den Server, wo derselbe Import läuft — er ergänzt fehlende
+Datensätze und rührt vorhandene nicht an, sodass parallel erfasste Meldungen erhalten
+bleiben.
 
 Der Parser liest die Vorlage konservativ (85 % sicher, Rest zur Prüfung oder
 verworfen — geraten wird nie), Entscheidungen landen als JSONL neben dem Korpus,

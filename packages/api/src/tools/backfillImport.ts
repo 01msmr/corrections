@@ -50,6 +50,30 @@ export interface ImportErgebnis {
   fehler: string[];
 }
 
+/**
+ * Liest die JSONL-Datei der Review. Eine kaputte Zeile bringt den Lauf nicht
+ * zu Fall — sie wird gemeldet, der Rest wird importiert. Rein, damit sowohl
+ * das Kommandozeilen-Werkzeug als auch die Adminseite dieselbe Lesart haben.
+ */
+export function leseEntscheidungen(inhalt: string): {
+  eintraege: ReviewEntscheidung[];
+  fehler: string[];
+} {
+  const eintraege: ReviewEntscheidung[] = [];
+  const fehler: string[] = [];
+  const zeilen = inhalt.split("\n");
+  zeilen.forEach((zeile, index) => {
+    const getrimmt = zeile.trim();
+    if (getrimmt.length === 0) return;
+    try {
+      eintraege.push(JSON.parse(getrimmt) as ReviewEntscheidung);
+    } catch {
+      fehler.push(`Zeile ${index + 1}: kein gültiges JSON`);
+    }
+  });
+  return { eintraege, fehler };
+}
+
 /** Schluessel, fuer die die Schwere-Heuristik definiert ist (Typwaechter). */
 const DETECT_KEYS = new Set([
   "zeichen_fehlt", "zeichen_zu_viel", "buchstabendreher", "komma_fehlt", "komma_zu_viel",

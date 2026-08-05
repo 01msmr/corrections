@@ -6,6 +6,7 @@ import type { Mailer } from "./dispatch/send.js";
 import type { Env } from "./env.js";
 import { errorTypeAdminRoutes } from "./routes/admin/errorTypes.js";
 import { outletAdminRoutes } from "./routes/admin/outlets.js";
+import { backfillAdminRoutes } from "./routes/admin/backfill.js";
 import { bilanzRoutes } from "./routes/bilanz.js";
 import { captureRoutes } from "./routes/capture.js";
 import { health } from "./routes/health.js";
@@ -43,6 +44,8 @@ export function createApp(options: AppOptions): Hono {
   );
   app.route("/", outletAdminRoutes(options.db, now));
   app.route("/", errorTypeAdminRoutes(options.db, now));
+  // Einmalwerkzeug: nach dem Altbestand-Import kann diese Zeile entfallen (§11.5).
+  app.route("/", backfillAdminRoutes(options.db, now));
 
   // Die Startseite ist oeffentlich: die Fusszeile jeder Korrekturmail verweist
   // hierher, und der Empfaenger soll ohne Zugang lesen koennen, worum es geht.

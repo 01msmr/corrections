@@ -49,6 +49,10 @@ describe("App-Verdrahtung", () => {
   it("schützt beide Adminbereiche", async () => {
     expect((await app().request("/admin/redaktionen")).status).toBe(401);
     expect((await app().request("/admin/fehlerarten")).status).toBe(401);
+    // Das Backfill-Werkzeug schreibt in die Datenbank — erst recht geschützt,
+    // auch beim Hochladen.
+    expect((await app().request("/admin/backfill")).status).toBe(401);
+    expect((await app().request("/admin/backfill", { method: "POST" })).status).toBe(401);
     expect(
       (await app().request("/admin/fehlerarten", { headers: { authorization: AUTH } })).status,
     ).toBe(200);

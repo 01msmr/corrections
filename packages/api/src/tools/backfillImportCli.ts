@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { createDb, runMigrations } from "../db/client.js";
 import { seed } from "../db/seed.js";
-import { importiereEntscheidungen, type ReviewEntscheidung } from "./backfillImport.js";
+import { importiereEntscheidungen, leseEntscheidungen } from "./backfillImport.js";
 
 /**
  * Einstieg fuer den Altbestand-Import — lokal ueber `pnpm backfill:import`,
@@ -38,10 +38,8 @@ function main(): void {
     return;
   }
 
-  const eintraege: ReviewEntscheidung[] = readFileSync(pfad, "utf8")
-    .split("\n")
-    .filter(Boolean)
-    .map((zeile) => JSON.parse(zeile) as ReviewEntscheidung);
+  const { eintraege, fehler: lesefehler } = leseEntscheidungen(readFileSync(pfad, "utf8"));
+  for (const fehler of lesefehler) console.warn(`  ${fehler}`);
 
   mkdirSync(dirname(datenbank), { recursive: true });
   const db = createDb(datenbank);

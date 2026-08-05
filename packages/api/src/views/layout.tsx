@@ -527,7 +527,7 @@ const STYLES = `
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 `;
 
-export type Bereich = "neu" | "redaktionen" | "fehlerarten" | "bilanz" | "ueber";
+export type Bereich = "neu" | "redaktionen" | "fehlerarten" | "bilanz" | "backfill" | "ueber";
 
 /**
  * Beschriftung der Navigationspunkte. Traegt die Seite denselben Titel wie ihr
@@ -540,6 +540,7 @@ const BEREICH_TITEL: Record<Bereich, string> = {
   redaktionen: "Medien",
   fehlerarten: "Kategorien",
   bilanz: "Bilanz",
+  backfill: "Altbestand",
   ueber: "In eigener Sache",
 };
 

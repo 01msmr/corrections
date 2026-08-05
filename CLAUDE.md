@@ -24,20 +24,17 @@ Alle drei Befehle laufen von überall im Repo; Pfadangaben beziehen sich auf den
 Repo-Stamm. `DATABASE_PATH` steuert das Importziel (Vorgabe `data/korrektur.db`).
 
 **Import in die Produktion:** Nicht die Datenbank hochladen — das überschriebe alles,
-was inzwischen über das Formular erfasst wurde. Stattdessen die Entscheidungsdatei
-hochladen und den Import **auf dem Server** laufen lassen; er wird mitgeliefert
-(`tools/backfillImportCli.js`), ergänzt nur Fehlendes und löscht nie etwas:
+was inzwischen über das Formular erfasst wurde. Stattdessen **https://korrekturen.msmr.co/admin/backfill**
+öffnen (Admin-Zugang) und dort `fixtures.local/review-entscheidungen.jsonl` hochladen.
+Der Import läuft im Serverprozess, legt nur fehlende Meldungen an und lässt vorhandene
+unberührt; mehrfaches Einspielen ist gefahrlos.
 
-```bash
-scp -i ~/.ssh/netcup_deploy fixtures.local/review-entscheidungen.jsonl \
-  hosting189417@hosting189417.ae8d9.netcup.net:korrekturen.msmr.co/
-ssh -i ~/.ssh/netcup_deploy hosting189417@hosting189417.ae8d9.netcup.net \
-  'cd korrekturen.msmr.co && MIGRATIONS_DIR=./migrations DATABASE_PATH=./data/korrektur.db \
-   node tools/backfillImportCli.js review-entscheidungen.jsonl && rm review-entscheidungen.jsonl'
-```
+Warum über die Oberfläche und nicht per SSH: In der Chroot des Hosters gibt es keine
+Node-Laufzeit (`/.nodenv/shims/node` zeigt ins Leere, `/opt/plesk/node` fehlt). Das
+CLI-Werkzeug `tools/backfillImportCli.js` wird trotzdem mitgeliefert — es läuft lokal
+und in jeder Umgebung, die Node im Pfad hat.
 
-Die Datei danach löschen (sie enthält Redaktionsadressen). Mehrfaches Ausführen ist
-gefahrlos: bekannte Message-IDs werden übersprungen.
+Ist der Altbestand drin, kann die Route entfallen: eine Zeile in `app.ts` (§11.5).
 
 ## Regeln
 - TypeScript strict. Kein `any`, kein `as` außer in Typ-Guards.
