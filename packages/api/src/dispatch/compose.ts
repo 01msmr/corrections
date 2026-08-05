@@ -135,37 +135,66 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
   );
 
   const introHtml = input.headline
-    ? `es gibt einen Fehler im Artikel<br>„${escapeHtml(input.headline)}“,<br>siehe: <a href="${escapeHtml(input.articleUrl)}">${escapeHtml(input.articleUrl)}</a>`
-    : `es gibt einen Fehler in diesem Artikel:<br><a href="${escapeHtml(input.articleUrl)}">${escapeHtml(input.articleUrl)}</a>`;
+    ? `es gibt einen Fehler im Artikel „${escapeHtml(input.headline)}“, siehe: <a href="${escapeHtml(input.articleUrl)}" style="color:#1b1f23">${escapeHtml(input.articleUrl)}</a>`
+    : `es gibt einen Fehler in diesem Artikel: <a href="${escapeHtml(input.articleUrl)}" style="color:#1b1f23">${escapeHtml(input.articleUrl)}</a>`;
+
+  // Formsprache der Anwendung, uebersetzt in Mail-taugliches HTML: nur
+  // Inline-Stile, Tabellen-Wrapper fuer die Lesebreite (Outlook), und nur
+  // Schriften, die ueberall liegen -- Georgia vertritt die Didone des
+  // Titels auf Windows, Courier New gibt es auf jedem System. Die
+  // Papierfarbe ist fest gesetzt, damit Dunkelmodi der Clients das Blatt
+  // nicht umfaerben.
+  const serif = "font-family:Georgia,'Times New Roman',serif;color:#1b1f23";
+  const schreibmaschine = "font-family:'Courier New',Courier,monospace";
+  const absatz = `margin:0 0 14px;${serif};font-size:16px;line-height:1.6`;
+  const zitat = (inhalt: string, kante: string) =>
+    `<div style="border-left:3px solid ${kante};background:#fffffe;border-top:1px solid #dcddd8;border-right:1px solid #dcddd8;border-bottom:1px solid #dcddd8;padding:10px 14px;margin:6px 0 16px;${schreibmaschine};font-size:14px;line-height:1.6;color:#1b1f23">„${inhalt}“</div>`;
+  const beschriftung = (text: string) =>
+    `<div style="${schreibmaschine};font-size:13px;color:#1b1f23;margin:0 0 2px">${text}</div>`;
+  const linie = '<div style="border-top:1px solid #dcddd8;margin:20px 0">&nbsp;</div>';
+
+  const kopf = [
+    `<div style="text-align:center;font-family:Didot,'Bodoni 72',Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;letter-spacing:2px;color:#1b1f23">KORREKTU<span style="text-decoration:line-through;text-decoration-color:#a3323b">H</span>REN</div>`,
+    `<div style="background:#1b1f23;color:#f7f7f4;${schreibmaschine};font-size:11px;font-weight:700;letter-spacing:2px;text-align:center;padding:5px 8px;margin:10px 0 22px">BLATT ZUR TEXTPFLEGE &bull; UNABHÄNGIG &bull; ÜBERPARTEILICH</div>`,
+    `<div style="${schreibmaschine};font-size:12px;font-weight:700;letter-spacing:2px;color:#a3323b;text-transform:uppercase;margin:0 0 4px">Korrektur</div>`,
+    input.headline
+      ? `<div style="${serif};font-size:21px;font-weight:700;line-height:1.3;margin:0 0 18px">${escapeHtml(input.headline)}</div>`
+      : "",
+  ];
 
   const commentHtml = comment
-    ? `<p>Anmerkung:<br>${escapeHtml(comment).replace(/\n/g, "<br>")}</p>`
+    ? `${beschriftung("Anmerkung:")}<p style="${absatz}">${escapeHtml(comment).replace(/\n/g, "<br>")}</p>`
     : "";
 
-  // Inline-Stile statt Stylesheet: Mailprogramme entfernen <style> haeufig.
-  const html = [
-    '<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#1b1f23">',
-    `<p>Liebe ${escapeHtml(input.outletName)}-Redaktion,</p>`,
-    `<p>${introHtml}</p>`,
-    '<hr style="border:none;border-top:1px solid #dcddd8;margin:20px 0">',
-    `<p>Falsch ist (${escapeHtml(input.errorTypeLabel)}):</p>`,
-    `<p style="margin-left:24px">„${renderSegments(diff.before, COLOR_BEFORE)}“</p>`,
-    "<p>Meiner Einschätzung nach wäre richtig:</p>",
-    `<p style="margin-left:24px">„${renderSegments(diff.after, COLOR_AFTER)}“</p>`,
-    '<hr style="border:none;border-top:1px solid #dcddd8;margin:20px 0">',
+  const inhalt = [
+    ...kopf,
+    `<p style="${absatz}">Liebe ${escapeHtml(input.outletName)}-Redaktion,</p>`,
+    `<p style="${absatz}">${introHtml}</p>`,
+    linie,
+    beschriftung(`Falsch ist (${escapeHtml(input.errorTypeLabel)}):`),
+    zitat(renderSegments(diff.before, COLOR_BEFORE), COLOR_BEFORE),
+    beschriftung("Meiner Einschätzung nach wäre richtig:"),
+    zitat(renderSegments(diff.after, COLOR_AFTER), COLOR_AFTER),
+    linie,
     commentHtml,
-    "<p>Eine Rückmeldung wäre wunderbar.<br>Lassen Sie die Kennung am Ende des Betreffs bitte stehen, damit Ihre Antwort zugeordnet werden kann.</p>",
-    "<p>Mit freundlichen Grüßen</p>",
-    '<p style="color:#6b7480;font-size:13px">--<br>',
-    `Diese Textkorrektur wurde über die Web-Anwendung <a href="${escapeHtml(input.baseUrl)}">${escapeHtml(input.baseUrl)}</a> erstellt und ist ohne Unterschrift gültig.</p>`,
+    `<p style="${absatz}">Eine Rückmeldung wäre wunderbar.<br>Lassen Sie die Kennung am Ende des Betreffs bitte stehen, damit Ihre Antwort zugeordnet werden kann.</p>`,
+    `<p style="${absatz}">Mit freundlichen Grüßen</p>`,
+    `<p style="margin:0 0 6px;color:#6b7480;font-size:13px;${serif.replace("#1b1f23", "#6b7480")}">--<br>Diese Textkorrektur wurde über die Web-Anwendung <a href="${escapeHtml(input.baseUrl)}" style="color:#6b7480">${escapeHtml(input.baseUrl)}</a> erstellt und ist ohne Unterschrift gültig.</p>`,
     // Der Block steht in beiden Teilen: welchen ein Mailprogramm beim Antworten
     // zitiert, ist nicht vorhersagbar. Beide tragen denselben Inhalt, ein Parser
     // darf deshalb den ersten Treffer nehmen.
-    `<p style="color:#6b7480;font-size:13px">Meta-Informationen:<br>${META_OPEN}<br>${escapeHtml(meta)}<br>${META_CLOSE}</p>`,
-    "</div>",
+    `<p style="margin:0;color:#6b7480;${schreibmaschine};font-size:12px">Meta-Informationen:<br>${META_OPEN}<br>${escapeHtml(meta)}<br>${META_CLOSE}</p>`,
   ]
     .filter((part) => part.length > 0)
     .join("\n");
+
+  const html = [
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f7f4"><tr><td align="center" style="padding:26px 12px 34px">',
+    '<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px"><tr><td align="left">',
+    inhalt,
+    "</td></tr></table>",
+    "</td></tr></table>",
+  ].join("\n");
 
   return { subject: buildSubject(input), text: lines.join("\n"), html };
 }
