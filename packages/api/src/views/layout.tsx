@@ -4,6 +4,14 @@ import type { FC, PropsWithChildren } from "hono/jsx";
 /** Fuer Farben in data-URIs: "#a3323b" -> "%23a3323b". */
 const uri = (hex: string): string => hex.replace("#", "%23");
 
+/* Die beiden gezeichneten Sinnbilder, je Farbe genau einmal erzeugt: der
+   Auswahlpfeil der Selects und der Zauberstab der Automatik. Daten-URIs wie
+   ueberall im Blatt -- kein Webfont, nichts wird nachgeladen. */
+const pfeil = (farbe: string): string =>
+  `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'%3E%3Cpath d='M1.6 1.7 6.5 6.8l4.9-5.1' fill='none' stroke='${uri(farbe)}' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`;
+const zauberstab = (farbe: string): string =>
+  `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M10.8 5.2 2.8 13.2' fill='none' stroke='${uri(farbe)}' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M12.9 1l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z' fill='${uri(farbe)}'/%3E%3Cpath d='M4.6 1l.45 1.15 1.15.45-1.15.45-.45 1.15-.45-1.15-1.15-.45 1.15-.45z' fill='${uri(farbe)}'/%3E%3Cpath d='M13.6 7.3l.45 1.15 1.15.45-1.15.45-.45 1.15-.45-1.15-1.15-.45 1.15-.45z' fill='${uri(farbe)}'/%3E%3C/svg%3E")`;
+
 /**
  * Motiv ist das Korrekturlesen, nicht die Zeitung: Manuskriptspalte mit aktivem
  * Rand, Korrekturzeichen statt Nummerierung, Rotstift nur fuer die Fundstelle.
@@ -161,11 +169,14 @@ const STYLES = `
      dunkel und handgezeichnet, der Bleistift gelb. */
   .zeichen { font-size: 1.15em; line-height: 0; margin-right: .35em;
     vertical-align: 0; }
+  /* Ausgeklammert, nicht gestrichen: URL, Titel und Notiz kommen ohne
+     Zeichen aus, die Glyphen bleiben aber fuer eine Rueckkehr notiert.
   .zeichen-url::before { content: "🔗"; }
   .zeichen-titel::before { content: "📰"; }
+  .zeichen-notiz::before { content: "✏️"; }
+  */
   .zeichen-falsch::before { content: "❌"; }
   .zeichen-richtig::before { content: "✔️"; }
-  .zeichen-notiz::before { content: "✏️"; }
 
   /* Beschriftungen im selben Stil wie die Navigation: dicktengleich, ohne
      Versalien, im Randton. Beides ist Auszeichnungsebene, nicht Inhalt --
@@ -216,12 +227,12 @@ const STYLES = `
      nachgeladen wird. */
   select {
     -webkit-appearance: none; appearance: none; padding-right: 2.2rem;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'%3E%3Cpath d='M1.6 1.7 6.5 6.8l4.9-5.1' fill='none' stroke='${uri(PALETTE.rand)}' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-image: ${pfeil(PALETTE.rand)};
     background-repeat: no-repeat; background-position: right .8rem center;
     background-size: .8rem auto;
   }
   select:hover, select:focus-visible {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'%3E%3Cpath d='M1.6 1.7 6.5 6.8l4.9-5.1' fill='none' stroke='${uri(PALETTE.korrektur)}' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-image: ${pfeil(PALETTE.korrektur)};
   }
   optgroup { font: 600 .75rem var(--mono); letter-spacing: .06em; color: var(--rand); }
   optgroup option { font: 400 1rem var(--sans); letter-spacing: 0; color: var(--tinte); }
@@ -232,6 +243,30 @@ const STYLES = `
      einer anderen Sprechebene als die Beschriftung links daneben. */
   .zaehler { font: italic 400 .72rem/1.4 var(--sans); letter-spacing: 0;
     text-transform: none; color: var(--rand); }
+  /* Automatisch befuellte Felder tragen ihren Hinweis als Stempel: hell auf
+     Karmin, eckig wie die Ressortmarke, kursiv wie die uebrigen Zusaetze.
+     Die Aussage steht im Text selbst, die Farbe traegt sie also nie allein. */
+  .zaehler.erkannt { color: var(--papier); background: var(--korrektur);
+    padding: .05rem .25rem; }
+  /* Das zugehoerige Feld nimmt einen Hauch der Stempelfarbe an, als haette
+     das Stempelkissen aufs Papier abgefaerbt: der Wert kam aus der Automatik,
+     nicht von Hand. Der Ton ist aus der Palette gemischt, kein eigener Wert. */
+  .feld:has(.zaehler.erkannt) :is(input, select, textarea) {
+    background-color: color-mix(in oklab, var(--korrektur) 12%, var(--feld));
+    /* Aufgehellt und kursiv, nicht voll und aufrecht: der Vorschlag ist erst
+       Vermutung, kein Urteil -- die Kursive ist die Stimme der Automatik. */
+    color: color-mix(in oklab, var(--korrektur) 60%, var(--feld));
+    font-style: italic; }
+  /* Vor dem automatisch befuellten Feld steht der Zauberstab -- das vertraute
+     Sinnbild fuers Auto-Ausfuellen, gezeichnet in der Stempelfarbe. Er sitzt
+     links neben dem Feld am Blattrand, wie eine Marginalie des Korrektors. */
+  .feld:has(.zaehler.erkannt) { position: relative; }
+  .feld:has(.zaehler.erkannt)::after {
+    content: ""; position: absolute; left: -1.4em; bottom: .55em;
+    width: 1em; height: 1em;
+    background: ${zauberstab(PALETTE.korrektur)} center / contain no-repeat;
+  }
+  .feld:has(.zaehler.erkannt) select { background-image: ${pfeil(PALETTE.korrektur)}; }
 
   button {
     /* Beschriftung unten rechts: dort endet der Blick nach dem Ausfuellen, und
@@ -329,8 +364,12 @@ const STYLES = `
 
   @media (prefers-color-scheme: dark) {
     select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'%3E%3Cpath d='M1.6 1.7 6.5 6.8l4.9-5.1' fill='none' stroke='${uri(PALETTE_DUNKEL.rand)}' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-image: ${pfeil(PALETTE_DUNKEL.rand)};
     }
+    .feld:has(.zaehler.erkannt)::after {
+      background-image: ${zauberstab(PALETTE_DUNKEL.korrektur)};
+    }
+    .feld:has(.zaehler.erkannt) select { background-image: ${pfeil(PALETTE_DUNKEL.korrektur)}; }
   }
 
   /* Ab Tabletbreite bekommt die Seite mehr Raum, und die beiden Fassungen
@@ -381,7 +420,7 @@ export type Bereich = "neu" | "redaktionen" | "fehlerarten" | "ueber";
  */
 const BEREICH_TITEL: Record<Bereich, string> = {
   neu: "Neue Korrektur",
-  redaktionen: "Titel",
+  redaktionen: "Medien",
   fehlerarten: "Kategorien",
   ueber: "In eigener Sache",
 };
@@ -435,7 +474,7 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
               Neue Korrektur
             </a>
             <a href="/admin/redaktionen" aria-current={aktiv === "redaktionen" ? "page" : undefined} draggable={false}>
-              Titel
+              Medien
             </a>
             <a href="/admin/fehlerarten" aria-current={aktiv === "fehlerarten" ? "page" : undefined} draggable={false}>
               Kategorien

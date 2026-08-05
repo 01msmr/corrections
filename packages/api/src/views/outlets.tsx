@@ -111,11 +111,11 @@ export const OutletList: FC<{
   /** Nach fehlgeschlagener Validierung: die getippten Werte, nicht verworfen. */
   eingabe?: OutletFormValues | undefined;
 }> = ({ outlets, hinweis, fehler, vorgabeDomain, zurueck, eingabe }) => (
-  <Layout title="Titel" aktiv="redaktionen">
+  <Layout title="Medien" aktiv="redaktionen">
     {hinweis ? <p class="hinweis">{hinweis}</p> : null}
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
-    <h2>Geführte Titel</h2>
+    <h2>Medien</h2>
     <table>
       <thead>
         <tr>
@@ -138,7 +138,7 @@ export const OutletList: FC<{
                 class="inline"
                 method="post"
                 action={`/admin/redaktionen/${outlet.id}/loeschen`}
-                onsubmit={`return confirm('Titel „${outlet.name}“ wirklich entfernen?')`}
+                onsubmit={`return confirm('Medium „${outlet.name}“ wirklich entfernen?')`}
               >
                 <button type="submit">Entfernen</button>
               </form>
@@ -148,7 +148,7 @@ export const OutletList: FC<{
       </tbody>
     </table>
 
-    <h2>Neuer Titel</h2>
+    <h2>Neues Medium</h2>
     {vorgabeDomain ? (
       <p class="hinweis">
         Domain <strong>{vorgabeDomain}</strong> kommt aus einem Hinweis, für den noch
@@ -164,7 +164,7 @@ export const OutletList: FC<{
 );
 
 export const OutletEdit: FC<{ outlet: OutletRecord }> = ({ outlet }) => (
-  <Layout title={`Titel: ${outlet.name}`} aktiv="redaktionen">
+  <Layout title={`Medium: ${outlet.name}`} aktiv="redaktionen">
     <form method="post" action={`/admin/redaktionen/${outlet.id}`}>
       <Felder outlet={outlet} />
       <button type="submit">Speichern</button>

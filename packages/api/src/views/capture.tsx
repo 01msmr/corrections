@@ -27,7 +27,7 @@ const FehlendeRedaktion: FC<{ host: string; zurueck: string }> = ({ host, zuruec
     </p>
     <p>
       <a href={`/admin/redaktionen?domain=${encodeURIComponent(host)}&zurueck=${encodeURIComponent(zurueck)}`}>
-        Titel jetzt anlegen
+        Medium jetzt anlegen
       </a>{" "}
       — Domain ist vorausgefüllt, danach geht es zurück zu diesem Hinweis.
     </p>
@@ -48,15 +48,29 @@ const FehlendeRedaktion: FC<{ host: string; zurueck: string }> = ({ host, zuruec
  * Entscheidung wird nie ueberschrieben.
  */
 const ERKENNUNG_SCRIPT = `
+  const setzeHinweis = (el, text, erkannt) => {
+    el.textContent = text;
+    el.classList.toggle("erkannt", Boolean(erkannt));
+  };
+  const ERKANNT = "automatisch erkannt";
+  const UEBERNOMMEN = "automatisch aus dem Artikel übernommen";
   const url = document.getElementById("articleUrl");
   const ueberschrift = document.getElementById("headline");
   const ueberschriftHinweis = document.getElementById("ueberschrift-hinweis");
   let ueberschriftManuell = false;
+  let ueberschriftVorschlag = null;
   let urlZeitgeber = null;
-  ueberschrift.addEventListener("input", () => { ueberschriftManuell = true; });
+  /* Die Markierung bleibt nur, solange der Text dem Vorschlag entspricht:
+     wer ihn veraendert, macht Handarbeit daraus -- wer ihn zuruecktippt, nicht. */
+  ueberschrift.addEventListener("input", () => {
+    ueberschriftManuell = true;
+    if (ueberschriftVorschlag === null) return;
+    const unveraendert = ueberschrift.value.trim() === ueberschriftVorschlag;
+    setzeHinweis(ueberschriftHinweis, unveraendert ? UEBERNOMMEN : "", unveraendert);
+  });
   const ueberschriftHolen = () => {
     if (ueberschriftManuell || !url.value.trim()) return;
-    ueberschriftHinweis.textContent = "wird geholt …";
+    setzeHinweis(ueberschriftHinweis, "wird geholt …", false);
     fetch("/neu/ueberschrift", {
       method: "POST",
       body: new URLSearchParams({ url: url.value }),
@@ -65,12 +79,13 @@ const ERKENNUNG_SCRIPT = `
       .then((daten) => {
         if (daten && daten.ueberschrift && !ueberschriftManuell) {
           ueberschrift.value = daten.ueberschrift;
-          ueberschriftHinweis.textContent = "aus dem Artikel übernommen";
+          ueberschriftVorschlag = daten.ueberschrift.trim();
+          setzeHinweis(ueberschriftHinweis, UEBERNOMMEN, true);
         } else {
-          ueberschriftHinweis.textContent = "liess sich nicht laden — wird beim Senden erneut versucht";
+          setzeHinweis(ueberschriftHinweis, "liess sich nicht laden — wird beim Senden erneut versucht", false);
         }
       })
-      .catch(() => { ueberschriftHinweis.textContent = ""; });
+      .catch(() => { setzeHinweis(ueberschriftHinweis, "", false); });
   };
   url.addEventListener("input", () => {
     clearTimeout(urlZeitgeber);
@@ -83,9 +98,14 @@ const ERKENNUNG_SCRIPT = `
   const schwere = document.getElementById("severity");
   const hinweis = document.getElementById("kategorie-hinweis");
   let manuell = false;
+  let kategorieVorschlag = null;
   let schwereManuell = false;
   let zeitgeber = null;
-  auswahl.addEventListener("change", () => { manuell = true; hinweis.textContent = ""; });
+  auswahl.addEventListener("change", () => {
+    manuell = true;
+    const unveraendert = kategorieVorschlag !== null && auswahl.value === kategorieVorschlag;
+    setzeHinweis(hinweis, unveraendert ? ERKANNT : "", unveraendert);
+  });
   schwere.addEventListener("change", () => { schwereManuell = true; });
   const pruefen = () => {
     if (!falsch.value.trim() || !richtig.value.trim()) return;
@@ -99,9 +119,10 @@ const ERKENNUNG_SCRIPT = `
         if (!manuell) {
           if (daten.kategorie) {
             auswahl.value = daten.kategorie;
-            hinweis.textContent = "automatisch erkannt";
+            kategorieVorschlag = daten.kategorie;
+            setzeHinweis(hinweis, ERKANNT, true);
           } else {
-            hinweis.textContent = "";
+            setzeHinweis(hinweis, "", false);
           }
         }
         if (!schwereManuell && daten.schwere) schwere.value = String(daten.schwere);
@@ -145,7 +166,7 @@ export const CaptureForm: FC<{
         <div class="feld">
           <label for="articleUrl">
             <span>
-              <Zeichen art="url" titel="Adresse des Artikels" />
+              {/* <Zeichen art="url" titel="Adresse des Artikels" /> */}
               Artikel-URL:
             </span>
           </label>
@@ -155,7 +176,7 @@ export const CaptureForm: FC<{
         <div class="feld">
           <label for="headline">
             <span>
-              <Zeichen art="titel" titel="Überschrift des Artikels" />
+              {/* <Zeichen art="titel" titel="Überschrift des Artikels" /> */}
               Überschrift:
             </span>
             <span id="ueberschrift-hinweis" class="zaehler" aria-live="polite">
@@ -220,7 +241,7 @@ export const CaptureForm: FC<{
         <div class="feld">
           <label for="comment">
             <span>
-              <Zeichen art="notiz" titel="Randbemerkung" />
+              {/* <Zeichen art="notiz" titel="Randbemerkung" /> */}
               Anmerkung:
             </span>
             <span class="zaehler">optional</span>
