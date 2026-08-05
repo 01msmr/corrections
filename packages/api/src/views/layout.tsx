@@ -53,24 +53,33 @@ const STYLES = `
   .prosa { max-width: 42rem; }
   .prosa .einstieg { font-size: 1.2rem; line-height: 1.55; }
 
-  /* Die Kopfzeile bleibt stehen, damit die Navigation auf langen Seiten
-     erreichbar bleibt. Der Schatten kommt erst, wenn wirklich etwas darunter
-     liegt — ueber eine Scroll-Zeitachse, also ohne Skript. Wo der Browser sie
-     nicht kennt, bleibt die Kopfzeile klebend und einfach ohne Schatten. */
-  header {
+  /* Der Kopf ist ein Zeitungskopf: der Titel zentriert wie ein Zeitungstitel,
+     darunter die Datumszeile zwischen einer kraeftigen und einer feinen Linie,
+     dann die Ressort-Navigation. Der Titel scrollt weg wie bei einer Zeitung;
+     stehen bleibt nur die Navigationsleiste. */
+  header { background: var(--papier); }
+  .markenzeile { display: block; text-align: center; padding: 1.6rem 0 .7rem; }
+  .datumszeile {
+    border-top: 3px solid var(--tinte);
+    border-bottom: 1px solid var(--linie);
+  }
+  .datumszeile .kopfinhalt {
+    justify-content: center; padding-top: .3rem; padding-bottom: .3rem;
+    font: .8rem/1.4 var(--mono); letter-spacing: .05em; color: var(--rand);
+  }
+  /* Nur die Ressortleiste bleibt beim Scrollen stehen. Der Schatten kommt erst,
+     wenn der Titel darueber aus dem Bild ist -- ueber eine Scroll-Zeitachse,
+     also ohne Skript; wo der Browser sie nicht kennt, klebt die Leiste ohne
+     Schatten. */
+  .navzeile {
     position: sticky; top: 0; z-index: 5;
     margin-bottom: 2.5rem;
     background: var(--papier);
+    border-bottom: 1px solid var(--linie);
     animation: kopfschatten linear both;
     animation-timeline: scroll(root);
-    animation-range: 0 3rem;
+    animation-range: 4rem 8rem;
   }
-  /* Zwei Zeilen wie ein Zeitungskopf: oben die Wortmarke, darunter -- durch
-     einen Trennstrich abgesetzt -- die Navigation, linksbuendig auf der
-     Spalte. Der Strich laeuft wie der Kopf selbst ueber die volle Breite. */
-  .markenzeile { padding-top: 1.1rem; padding-bottom: .65rem; }
-  .kopftrenner { border-bottom: 1px solid var(--linie); }
-  .navzeile { padding-top: .6rem; padding-bottom: .6rem; }
   @keyframes kopfschatten {
     from { box-shadow: 0 4px 12px -10px rgba(0, 0, 0, 0); }
     to { box-shadow: 0 4px 14px -8px rgba(0, 0, 0, .3); }
@@ -79,7 +88,8 @@ const STYLES = `
     display: flex; flex-wrap: wrap; gap: .75rem 1.5rem;
     align-items: baseline; justify-content: space-between;
   }
-  .marke { font: 700 1.55rem/1 var(--mono); letter-spacing: .06em; text-transform: uppercase;
+  .markenzeile.kopfinhalt { display: block; }
+  .marke { font: 700 2.2rem/1.1 var(--mono); letter-spacing: .09em; text-transform: uppercase;
     color: inherit; text-decoration: none; }
   /* Die Schrift bleibt in Tinte; ausgezeichnet wird ueber eine Unterstreichung
      im selben Rot wie der Tilgungsstrich und in derselben Staerke. */
@@ -103,17 +113,20 @@ const STYLES = `
     left: -.22em; right: -.22em; top: -.15em; bottom: -.15em;
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='26' viewBox='0 0 46 26' preserveAspectRatio='none'%3E%3Cpath d='M2.4 20.6C13.2 16.4 26.4 10.2 41.8 3.2c1.1-.5 1.9.6 1 1.3-2 1.5-4.6 3-8 4.8C25.6 14.4 13.4 20.4 4.4 24c-1.3.5-2.6-1.6-2-3.4z' fill='%23d0342c'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
   }
-  nav { display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: baseline; }
-  nav a { font: 700 1rem/1 var(--mono); letter-spacing: .01em;
-    color: var(--rand); text-decoration: none; padding-bottom: .15rem;
+  nav { display: flex; gap: 0; flex-wrap: wrap; align-items: baseline;
+    justify-content: center; width: 100%; }
+  nav a { font: 700 .85rem/1 var(--mono); letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--rand); text-decoration: none; padding: .6rem .95rem .5rem;
     border-bottom: 2px solid transparent; }
+  nav a + a { border-left: 1px solid var(--linie); }
   nav a:hover, nav a:focus-visible { color: var(--tinte); border-bottom-color: var(--korrektur); }
   /* Die aktuelle Seite traegt keine zusaetzliche Linie: Groesse und Tinte
      zeichnen sie bereits aus, eine Unterlaengung waere ein zweites Mittel
      fuer dieselbe Aussage. */
   nav a[aria-current="page"] { color: var(--tinte); font-size: 1.3em; }
 
-  h1 { font: 600 1.75rem/1.25 var(--sans); margin: 0 0 1.25rem; letter-spacing: -.01em; }
+  h1 { font: 700 1.9rem/1.25 var(--mono); margin: 0 0 1.25rem; letter-spacing: .01em; }
   h2 { font: 700 1.15rem/1.3 var(--mono); letter-spacing: .01em;
     color: var(--rand); margin: 2.5rem 0 .75rem; }
   a { color: inherit; text-underline-offset: .2em; }
@@ -275,6 +288,16 @@ const BEREICH_TITEL: Record<Bereich, string> = {
   ueber: "Zur Sache",
 };
 
+/** Formatierung nur in der Ansicht (Projektregel); die Zeile erneuert sich je Aufruf. */
+function datumszeile(): string {
+  return new Intl.DateTimeFormat("de-DE", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date());
+}
+
 export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | undefined }>> = ({
   title,
   aktiv,
@@ -297,8 +320,14 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
             Korrektu<span class="tilgung">h</span>ren
           </a>
         </div>
-        <div class="kopftrenner"></div>
-        <div class="kopfinhalt navzeile">
+        <div class="datumszeile">
+          <div class="kopfinhalt">
+            <span>{datumszeile()} · Unabhängiges Blatt für Textpflege</span>
+          </div>
+        </div>
+      </header>
+      <div class="navzeile">
+        <div class="kopfinhalt">
           <nav>
             <a href="/" aria-current={aktiv === "ueber" ? "page" : undefined}>
               Zur Sache
@@ -314,7 +343,7 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
             </a>
           </nav>
         </div>
-      </header>
+      </div>
       <div class={ohneTitel ? "blatt ohne-titel" : "blatt"}>
         {ohneTitel ? null : <h1>{title}</h1>}
         {children}
