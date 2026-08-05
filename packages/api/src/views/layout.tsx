@@ -121,8 +121,7 @@ const STYLES = `
   }
   nav { display: flex; gap: 0; flex-wrap: wrap; align-items: baseline;
     justify-content: center; width: 100%; }
-  nav a { font: 700 .85rem/1 var(--mono); letter-spacing: .08em;
-    text-transform: uppercase;
+  nav a { font: 700 .95rem/1 var(--mono); letter-spacing: .03em;
     color: var(--rand); text-decoration: none; padding: .6rem .95rem .5rem;
     border-bottom: 2px solid transparent; }
   nav a + a { border-left: 1px solid var(--linie); }
