@@ -109,18 +109,20 @@ const STYLES = `
   .datum { position: absolute; right: 1.25rem; top: 50%; transform: translateY(-50%);
     font: .78rem/1.4 var(--mono); letter-spacing: .04em; color: var(--rand); }
   .datumszeile .datum { color: var(--linie); }
-  /* Nur die Ressortleiste bleibt beim Scrollen stehen. Der Schatten kommt erst,
+  /* Untertitelband und Ressortleiste bleiben beim Scrollen gemeinsam stehen;
+     nur der Titel scrollt weg wie bei einer Zeitung. Der Schatten kommt erst,
      wenn der Titel darueber aus dem Bild ist -- ueber eine Scroll-Zeitachse,
-     also ohne Skript; wo der Browser sie nicht kennt, klebt die Leiste ohne
-     Schatten. */
-  .navzeile {
+     also ohne Skript; wo der Browser sie nicht kennt, klebt der Kopf ohne
+     Schatten. Der Block steht ausserhalb des headers, weil sticky nicht
+     ueber die Grenzen des Elternkastens hinaus kleben kann. */
+  .klebekopf {
     position: sticky; top: 0; z-index: 5;
     margin-bottom: 2.5rem;
-    background: var(--papier);
     animation: kopfschatten linear both;
     animation-timeline: scroll(root);
     animation-range: 4rem 8rem;
   }
+  .navzeile { background: var(--papier); }
   @keyframes kopfschatten {
     from { box-shadow: 0 4px 12px -10px rgba(0, 0, 0, 0); }
     to { box-shadow: 0 4px 14px -8px rgba(0, 0, 0, .3); }
@@ -169,15 +171,16 @@ const STYLES = `
   nav a[aria-current="page"] { background: var(--korrektur); color: var(--papier); }
 
   h1 { font: 700 1.9rem/1.25 var(--mono); margin: 0 0 1.25rem; letter-spacing: .01em; }
+  /* Zwischenueberschriften als Balken ueber die volle Spaltenbreite: hell
+     auf Karmin wie die aktive Ressortmarke, mit leiser Rundung. */
   h2 { font: 700 1.15rem/1.3 var(--mono); letter-spacing: .01em;
-    color: var(--tinte); margin: 2.5rem 0 .75rem; }
-  /* Rubrik-Trenner wie im Blatt: der Name mittig, Linien zu beiden Seiten. */
-  h2.rubrik { display: flex; align-items: center; gap: .9rem;
-    font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--korrektur); font-size: 1.25rem; margin-top: 3rem; }
+    color: var(--papier); background: var(--korrektur);
+    border-radius: 4px; padding: .2rem .7rem;
+    margin: 2.5rem 0 .75rem; }
+  /* Rubriken bleiben die groesste Sprechstufe: zentriert und gesperrt. */
+  h2.rubrik { text-align: center; letter-spacing: .14em;
+    text-transform: uppercase; font-size: 1.25rem; margin-top: 3rem; }
   h2.rubrik:first-child { margin-top: 0; }
-  h2.rubrik::before, h2.rubrik::after { content: ""; flex: 1;
-    border-top: 1px solid var(--linie); }
   a { color: inherit; text-underline-offset: .2em; }
 
   /* Das Korrekturzeichen sitzt unmittelbar vor der Beschriftung, nicht in einer
@@ -519,16 +522,17 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
             Korrektu<span class="tilgung">h</span>ren
           </a>
         </div>
+      </header>
+      <div class="klebekopf">
         <div class="datumszeile">
           <div class="kopfinhalt">
             <span class="untertitel">Blatt zur Textpflege • Unabhängig • Überparteilich</span>
             <span class="datum">{datumszeile()}</span>
           </div>
         </div>
-      </header>
-      <div class="navzeile">
-        <div class="kopfinhalt">
-          <nav>
+        <div class="navzeile">
+          <div class="kopfinhalt">
+            <nav>
             <a href="/" aria-current={aktiv === "ueber" ? "page" : undefined} draggable={false}>
               In eigener Sache
             </a>
@@ -541,7 +545,8 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
             <a href="/admin/fehlerarten" aria-current={aktiv === "fehlerarten" ? "page" : undefined} draggable={false}>
               Kategorien
             </a>
-          </nav>
+            </nav>
+          </div>
         </div>
       </div>
       <div class={ohneTitel ? "blatt ohne-titel" : "blatt"}>
