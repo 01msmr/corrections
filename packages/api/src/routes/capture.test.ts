@@ -65,7 +65,7 @@ describe("GET /neu", () => {
     const html = await res.text();
     expect(res.status).toBe(200);
     expect(html).toContain('name="quoteBefore"');
-    expect(html).toContain("ein Komma fehlt");
+    expect(html).toContain("fehlende Satzzeichen");
     expect(html).toMatch(/name="idempotencyKey" value="[a-z0-9]{16,}"/);
   });
 

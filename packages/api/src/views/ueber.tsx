@@ -64,7 +64,7 @@ export const UeberSeite: FC = () => (
 
       <p>
         <span class="zaehler">
-          Erfassung und Verwaltung sind nicht öffentlich; die übrigen Menüpunkte fragen nach
+          Erfassung und Verwaltung sind nicht öffentlich; diese Menüpunkte fragen nach
           einem Zugang.
         </span>
       </p>

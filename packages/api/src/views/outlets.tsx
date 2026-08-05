@@ -42,7 +42,7 @@ const Felder: FC<{
   vorgabeDomain?: string | undefined;
   eingabe?: OutletFormValues | undefined;
 }> = ({ outlet, vorgabeDomain, eingabe }) => (
-  <div class="arbeitsflaeche">
+  <div class="arbeitsflaeche zeilenraster">
     {/* Hauptspalte: wer die Redaktion ist. */}
     <div class="hauptspalte">
       <div class="feld">
@@ -65,18 +65,21 @@ const Felder: FC<{
         />
       </div>
 
-      <div class="feld">
-        <label for="publisher">Verlag:</label>
-        <input id="publisher" name="publisher" value={eingabe?.publisher ?? outlet?.publisher ?? ""} />
-      </div>
+      {/* Verlag und Notizen werden nicht mehr abgefragt (fuer den Versand
+          zaehlen Name, Domain und Adresse). Bestehende Werte laufen versteckt
+          mit, damit das Speichern sie nicht leert. */}
+      <input type="hidden" name="publisher" value={eingabe?.publisher ?? outlet?.publisher ?? ""} />
+      <input type="hidden" name="notes" value={eingabe?.notes ?? outlet?.notes ?? ""} />
     </div>
 
     {/* Nebenspalte: wie sie erreicht und eingeordnet wird. */}
     <div class="nebenspalte">
+      {/* Eine Adresse genuegt fast immer; wer doch mehrere braucht, trennt
+          mit Komma -- gespeichert wird weiterhin die Liste. */}
       <div class="feld">
         <label for="contactEmails">
-          <span>Kontaktadressen:</span>{" "}
-          <span class="zaehler">kommagetrennt, erste ist Standardempfänger</span>
+          <span>E-Mail-Adresse:</span>
+          <span class="zaehler">Empfänger der Hinweise</span>
         </label>
         <input
           id="contactEmails"
@@ -93,10 +96,6 @@ const Felder: FC<{
         <SprachraumAuswahl gewaehlt={eingabe?.country ?? outlet?.country ?? ""} />
       </div>
 
-      <div class="feld">
-        <label for="notes">Notizen:</label>
-        <textarea id="notes" name="notes">{eingabe?.notes ?? outlet?.notes ?? ""}</textarea>
-      </div>
     </div>
   </div>
 );

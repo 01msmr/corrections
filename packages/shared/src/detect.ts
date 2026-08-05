@@ -23,6 +23,11 @@ export type DetectedErrorTypeKey =
   | "falsche_wortwahl"
   | "satzbau";
 
+/* Satzzeichen im weiten Sinn: Interpunktion, Anfuehrungen, Gedankenstriche.
+   Der Vergleich verlangt, dass die Texte ohne sie gleich sind -- deshalb darf
+   die Klasse grosszuegig sein, falsch klassifiziert wird dadurch nichts. */
+const SATZZEICHEN = /[.,;:!?…„“”»«‚'"()–—-]/g;
+
 const MONATE =
   /^(januar|februar|märz|april|mai|juni|juli|august|september|oktober|november|dezember|jan|feb|mär|apr|jun|jul|aug|sep|okt|nov|dez)\.?,?$/i;
 
@@ -32,21 +37,21 @@ function istDatumswort(wort: string): boolean {
   return /^\d{1,2}\.$/.test(kern) || /^(1[6-9]|20)\d\d$/.test(kern) || MONATE.test(kern);
 }
 
-/** Ergibt `lang` durch Einfuegen genau eines Zeichens aus `kurz`? */
-function umEinZeichenErgaenzt(kurz: string, lang: string): boolean {
-  if (lang.length !== kurz.length + 1) return false;
+/**
+ * Ergibt `lang` allein durch Einfuegen von Zeichen aus `kurz` -- also: fehlen
+ * in `kurz` nur Zeichen, egal wie viele? Gezaehlt wird ueber die Teilfolge;
+ * damit aus "er" gegen "erklaerte" kein Zeichenfehler wird, muss mindestens
+ * die Haelfte des laengeren Worts erhalten bleiben (konservativ, §"lieber
+ * kein Vorschlag als ein falscher").
+ */
+function nurZeichenErgaenzt(kurz: string, lang: string): boolean {
+  if (lang.length <= kurz.length) return false;
+  if (kurz.length * 2 < lang.length) return false;
   let i = 0;
-  let uebersprungen = false;
-  for (let j = 0; j < lang.length; j++) {
-    if (kurz[i] === lang[j]) {
-      i++;
-    } else if (uebersprungen) {
-      return false;
-    } else {
-      uebersprungen = true;
-    }
+  for (let j = 0; j < lang.length && i < kurz.length; j++) {
+    if (kurz[i] === lang[j]) i++;
   }
-  return true;
+  return i === kurz.length;
 }
 
 /** Genau zwei benachbarte Zeichen vertauscht, sonst identisch? */
@@ -82,23 +87,27 @@ export function detectErrorTypeKey(falsch: string, richtig: string): DetectedErr
   const b = normalizeText(richtig);
   if (a.length === 0 || b.length === 0 || a === b) return null;
 
-  // Nur Kommas verschieden? Dann entscheidet ihre Anzahl.
-  const ohneKommaA = a.replace(/,/g, "").replace(/\s+/g, " ").trim();
-  const ohneKommaB = b.replace(/,/g, "").replace(/\s+/g, " ").trim();
-  if (ohneKommaA === ohneKommaB) {
-    const kommasA = (a.match(/,/g) ?? []).length;
-    const kommasB = (b.match(/,/g) ?? []).length;
-    if (kommasB > kommasA) return "komma_fehlt";
-    if (kommasB < kommasA) return "komma_zu_viel";
-    return null; // verschobenes Komma: kein eindeutiger Schluessel
+  // Nur Satzzeichen verschieden? Dann entscheidet ihre gezaehlte Anzahl --
+  // eines oder mehrere, die Schluessel heissen aus historischen Gruenden
+  // weiter komma_*, bezeichnen aber inzwischen alle Satzzeichen.
+  const ohneZeichenA = a.replace(SATZZEICHEN, "").replace(/\s+/g, " ").trim();
+  const ohneZeichenB = b.replace(SATZZEICHEN, "").replace(/\s+/g, " ").trim();
+  if (ohneZeichenA === ohneZeichenB) {
+    const zeichenA = (a.match(SATZZEICHEN) ?? []).length;
+    const zeichenB = (b.match(SATZZEICHEN) ?? []).length;
+    if (zeichenB > zeichenA) return "komma_fehlt";
+    if (zeichenB < zeichenA) return "komma_zu_viel";
+    return null; // verschobenes Satzzeichen: kein eindeutiger Schluessel
   }
 
   const diff = diffWords(a, b);
   const inFalsch = geaenderteWoerter(diff.before);
   const inRichtig = geaenderteWoerter(diff.after);
 
-  if (inFalsch.length === 0 && inRichtig.length === 1) return "wort_fehlt";
-  if (inFalsch.length === 1 && inRichtig.length === 0) return "wort_zu_viel";
+  // Nur hinzugekommen oder nur weggefallen: fehlende bzw. ueberzaehlige
+  // Woerter, unabhaengig davon, wie viele es sind.
+  if (inFalsch.length === 0 && inRichtig.length >= 1) return "wort_fehlt";
+  if (inFalsch.length >= 1 && inRichtig.length === 0) return "wort_zu_viel";
 
   if (inFalsch.length === 1 && inRichtig.length === 1) {
     const alt = inFalsch[0];
@@ -120,8 +129,8 @@ export function detectErrorTypeKey(falsch: string, richtig: string): DetectedErr
     ) {
       return "buchstabendreher";
     }
-    if (umEinZeichenErgaenzt(alt.wort, neu.wort)) return "zeichen_fehlt";
-    if (umEinZeichenErgaenzt(neu.wort, alt.wort)) return "zeichen_zu_viel";
+    if (nurZeichenErgaenzt(alt.wort, neu.wort)) return "zeichen_fehlt";
+    if (nurZeichenErgaenzt(neu.wort, alt.wort)) return "zeichen_zu_viel";
     // Grossgeschrieben mitten im Satz: sehr wahrscheinlich ein Eigenname. Am
     // Anfang traegt die Grossschreibung nichts, dort beginnt jeder Satz so.
     if (
@@ -136,8 +145,8 @@ export function detectErrorTypeKey(falsch: string, richtig: string): DetectedErr
   }
 
   // Gleiche Woerter, andere Reihenfolge: ein Satzbau-Fall.
-  const sortiertA = [...ohneKommaA.split(" ")].sort();
-  const sortiertB = [...ohneKommaB.split(" ")].sort();
+  const sortiertA = [...ohneZeichenA.split(" ")].sort();
+  const sortiertB = [...ohneZeichenB.split(" ")].sort();
   if (sortiertA.length === sortiertB.length && sortiertA.every((w, i) => w === sortiertB[i])) {
     return "satzbau";
   }

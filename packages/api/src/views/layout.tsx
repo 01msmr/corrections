@@ -9,6 +9,16 @@ const uri = (hex: string): string => hex.replace("#", "%23");
    ueberall im Blatt -- kein Webfont, nichts wird nachgeladen. */
 const pfeil = (farbe: string): string =>
   `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'%3E%3Cpath d='M1.6 1.7 6.5 6.8l4.9-5.1' fill='none' stroke='${uri(farbe)}' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`;
+/* Der isometrische Koerper der Knoepfe: n harte 1px-Stufen, aus denen die
+   Kantenflaeche des Klotzes entsteht. Aussen (erhaben) laufen sie nach unten
+   rechts hinter den Koerper, innen (eingedrueckt) als abgedunkelte
+   Seitenwaende der Aushoehlung nach oben links hinein. */
+const klotzKanten = (stufen: number, innen = false): string =>
+  Array.from(
+    { length: stufen },
+    (_, i) => `${innen ? "inset " : ""}${i + 1}px ${i + 1}px 0 var(--klotzkante)`,
+  ).join(", ");
+
 const zauberstab = (farbe: string): string =>
   `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M10.8 5.2 2.8 13.2' fill='none' stroke='${uri(farbe)}' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M12.9 1l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z' fill='${uri(farbe)}'/%3E%3Cpath d='M4.6 1l.45 1.15 1.15.45-1.15.45-.45 1.15-.45-1.15-1.15-.45 1.15-.45z' fill='${uri(farbe)}'/%3E%3Cpath d='M13.6 7.3l.45 1.15 1.15.45-1.15.45-.45 1.15-.45-1.15-1.15-.45 1.15-.45z' fill='${uri(farbe)}'/%3E%3C/svg%3E")`;
 
@@ -31,6 +41,9 @@ const STYLES = `
     --rand: ${PALETTE.rand};
     --linie: ${PALETTE.linie};
     --feld: ${PALETTE.feld};
+    /* Schattenfarbe der Klotz-Kanten: hell laeuft sie in Tinte, dunkel als
+       echter Schatten -- die helle Dunkel-Tinte wuerde die Kante beleuchten. */
+    --klotzkante: var(--tinte);
 
     /* Courier New zuerst: die Schreibmaschinenschrift traegt das Motiv. Sie
        laeuft hell und braucht groessere Grade und fette Schnitte -- die Werte
@@ -44,6 +57,7 @@ const STYLES = `
       --korrektur: ${PALETTE_DUNKEL.korrektur}; --vorschlag: ${PALETTE_DUNKEL.vorschlag};
       --rand: ${PALETTE_DUNKEL.rand}; --linie: ${PALETTE_DUNKEL.linie};
       --feld: ${PALETTE_DUNKEL.feld};
+      --klotzkante: rgb(0 0 0);
     }
   }
 
@@ -194,6 +208,11 @@ const STYLES = `
      mehrzeilige Felder bekommen den duennen Rahmen, den auch gedruckte
      Bemerkungsfelder haben. Beim Fokus uebernimmt der Rotstift die Linie. */
   input, textarea, select {
+    /* Block statt inline-block: die Grundlinien-Phantomluecke unter den
+       Feldern wuerde sonst jede Zeile um ein paar Pixel hoeher machen als
+       das sichtbare Feld -- und alles daneben saesse um genau diese Pixel
+       zu tief. */
+    display: block;
     width: 100%; font: inherit;
     background: transparent; color: inherit;
     border: none; border-bottom: 1px solid var(--rand); border-radius: 0;
@@ -282,20 +301,39 @@ const STYLES = `
        erdrueckte das Blatt. Die Schrift steht in Tinte und bleibt voll lesbar;
        beim Ueberfahren fuellt der Rotstift. */
     background: transparent; color: var(--tinte);
-    /* Eckig mit hartem Sockel: der Knopf steht wie ein Bleisatz-Klotz auf dem
-       Blatt -- kein weicher Schatten, eine versetzte volle Flaeche. */
-    border: 2px solid var(--tinte); border-radius: 0;
-    box-shadow: 5px 5px 0 0 var(--tinte);
+    /* Jeder freistehende Knopf ist ein Bleisatz-Klotz: eckig, beleuchtete
+       Deckflaeche mittelgrau, die Kanten dunkler als sichtbar ausgezogener
+       isometrischer Koerper, aus dem erst der weiche Schlagschatten faellt.
+       Einzige Ausnahme sind die Zeilenknoepfe in Tabellen (siehe unten). */
+    background: var(--rand); color: var(--papier);
+    /* Die Deckflaeche ist reine Fuellung ohne Kontur; der transparente Rahmen
+       haelt nur die Geometrie der frueheren Kontur. */
+    border: 2px solid transparent; border-radius: 0;
+    transition: transform .09s ease, box-shadow .09s ease;
+    /* Die Grundflaeche (z=0) liegt exakt auf der Layoutposition, im Raster
+       der Formularfelder (x wie y). In Ruhe schwebt die Deckflaeche um die
+       Kantentiefe darueber, die Kanten fuehren auf die Grundflaeche zurueck,
+       aus der der weiche Schlagschatten faellt. */
+    transform: translate(-5px, -5px);
+    box-shadow: ${klotzKanten(5)}, 9px 10px 10px -6px rgba(0, 0, 0, .35);
   }
-  button:hover, button:focus-visible { background: var(--tinte);
-    border-color: var(--tinte); color: var(--papier); }
-  /* Beim Druecken sinkt der Klotz in seinen Sockel: der Knopf rueckt um die
-     Sockeltiefe nach unten rechts und liegt buendig auf dem Blatt. */
+  /* Beim Zeigen hebt sich der Klotz weiter aus dem Blatt; die Grundflaeche
+     bleibt im Raster verankert. */
+  button:hover, button:focus-visible {
+    transform: translate(-7px, -7px);
+    box-shadow: ${klotzKanten(7)}, 12px 13px 14px -7px rgba(0, 0, 0, .4);
+  }
+  /* Beim Druecken kippt der Koerper ins Negativ: die Flaeche sinkt um die
+     Kantentiefe unter die Grundflaeche. Die Aushoehlung zeigt dieselben
+     isometrischen Seitenwaende wie der erhabene Koerper -- abgedunkelt, weil
+     sie im eigenen Schatten liegen --, dazu der weiche Schattenfall auf die
+     vertiefte Flaeche. Die Flaechenfarbe selbst bleibt unveraendert. */
   button:active {
-    color: var(--rand);
-    background: var(--feld);
-    border-color: var(--linie);
-    transform: translate(5px, 5px); box-shadow: none;
+    transform: none;
+    /* Die Fuellung endet an der Innenkante des (transparenten) Rahmens: um
+       die Vertiefung herum scheint das Blatt durch, kein grauer Saum. */
+    background-clip: padding-box;
+    box-shadow: ${klotzKanten(5, true)}, inset 9px 10px 12px -5px rgba(0, 0, 0, .4);
   }
   /* Das Zeilenschaltungszeichen sagt, dass der Knopf auch mit der Eingabetaste
      ausgeloest wird. aria-hidden, weil das fuer Vorlesesoftware ohnehin gilt. */
@@ -353,16 +391,19 @@ const STYLES = `
     font: .75rem/1.4 var(--mono); letter-spacing: .02em; text-transform: none;
     background: transparent; color: var(--rand);
     border: none; border-left: 1px solid var(--linie); border-radius: 0;
+    box-shadow: none; transition: none; transform: none;
   }
   table button:hover, table button:focus-visible {
     background: var(--korrektur); border-color: var(--korrektur); color: var(--papier);
+    transform: none; box-shadow: none;
   }
-  /* Der allgemeine Druckzustand verwandelt Knoepfe in Feldform samt Radius --
-     fuer die rechteckigen Zeilenknoepfe gilt das nicht, sie bleiben beim
-     Druecken (und waehrend die Rueckfrage offen ist) in ihrer Form. */
+  /* Der allgemeine Druckzustand laesst Knoepfe sinken -- fuer die flachen
+     Zeilenknoepfe gilt das nicht, sie bleiben beim Druecken (und waehrend
+     die Rueckfrage offen ist) in Form und Lage. */
   table button:active {
     background: var(--korrektur); color: var(--papier);
     border: none; border-left: 1px solid var(--korrektur); border-radius: 0;
+    transform: none; box-shadow: none;
   }
   /* Gezogen wird nur am Griff vor der Zeile; der Trennstrich der Zeile beginnt
      erst dahinter. */
@@ -405,6 +446,14 @@ const STYLES = `
     .nebenspalte .abschluss { margin-top: auto; }
     .hauptspalte > .feld:last-child { margin-bottom: 0; }
     .nebenspalte .abschluss button { min-height: 9rem; }
+    /* Verwaltungsformulare (Zeilenraster): die Spalten-Wrapper loesen sich im
+       Raster auf, jedes Feldpaar teilt sich eine echte Rasterzeile -- so
+       stehen die Zeilen beider Spalten exakt nebeneinander, auch wenn rechts
+       ein Hinweis umbricht oder ein Feld hoeher ist. */
+    .zeilenraster .hauptspalte, .zeilenraster .nebenspalte { display: contents; }
+    .zeilenraster { grid-auto-flow: row dense; align-items: start; }
+    .zeilenraster .hauptspalte > .feld { grid-column: 1; }
+    .zeilenraster .nebenspalte > .feld { grid-column: 2; }
   }
 
   /* Schmale Schirme: kompakter Kopf wie die mobile Ausgabe einer Zeitung --

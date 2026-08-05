@@ -11,13 +11,16 @@ import { errorTypes, outletDomains, outlets } from "./schema.js";
  * Weitere werden ueber das Adminformular gepflegt.
  */
 export const DEFAULT_ERROR_TYPES = [
-  { key: "zeichen_fehlt", label: "ein Zeichen fehlt", description: "" },
-  { key: "zeichen_zu_viel", label: "ein Zeichen zu viel", description: "" },
+  /* Bewusst ohne Anzahl im Namen: die Erkennung zaehlt selbst, ob eines oder
+     mehrere Zeichen fehlen bzw. zu viel sind. Die Schluessel bleiben die
+     alten, damit bestehende Datensaetze weiter darauf zeigen. */
+  { key: "zeichen_fehlt", label: "fehlende Zeichen", description: "Ein oder mehrere Zeichen fehlen (variable Anzahl)." },
+  { key: "zeichen_zu_viel", label: "überzählige Zeichen", description: "Ein oder mehrere Zeichen zu viel (variable Anzahl)." },
   { key: "buchstabendreher", label: "ein Buchstabendreher", description: "" },
-  { key: "komma_fehlt", label: "ein Komma fehlt", description: "" },
-  { key: "komma_zu_viel", label: "ein Komma zu viel", description: "" },
-  { key: "wort_fehlt", label: "ein Wort fehlt", description: "" },
-  { key: "wort_zu_viel", label: "ein Wort zu viel", description: "" },
+  { key: "komma_fehlt", label: "fehlende Satzzeichen", description: "Komma, Punkt oder anderes Satzzeichen — eines oder mehrere (variable Anzahl)." },
+  { key: "komma_zu_viel", label: "überzählige Satzzeichen", description: "Ein oder mehrere Satzzeichen zu viel (variable Anzahl)." },
+  { key: "wort_fehlt", label: "fehlende Wörter", description: "Ein oder mehrere Wörter fehlen (variable Anzahl)." },
+  { key: "wort_zu_viel", label: "überzählige Wörter", description: "Ein oder mehrere Wörter zu viel (variable Anzahl)." },
   { key: "falsche_wortwahl", label: "falsche Wortwahl", description: "" },
   { key: "satzbau", label: "insgesamt unverständlich, falscher Satzbau", description: "" },
   { key: "inhaltsfehler", label: "Inhaltsfehler", description: "Sachlich unzutreffende Aussage." },

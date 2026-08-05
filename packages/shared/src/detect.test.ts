@@ -32,6 +32,38 @@ describe("detectErrorTypeKey", () => {
     expect(detectErrorTypeKey("Der Hundd bellt.", "Der Hund bellt.")).toBe("zeichen_zu_viel");
   });
 
+  it("zählt mehrere fehlende Zeichen in dieselbe Kategorie", () => {
+    expect(detectErrorTypeKey("Das Hs ist alt.", "Das Haus ist alt.")).toBe("zeichen_fehlt");
+  });
+
+  it("zählt mehrere überzählige Zeichen in dieselbe Kategorie", () => {
+    expect(detectErrorTypeKey("Das Haauss ist alt.", "Das Haus ist alt.")).toBe("zeichen_zu_viel");
+  });
+
+  it("deutet ein fast völlig anderes Wort nicht als Zeichenfehler", () => {
+    expect(detectErrorTypeKey("Dann er es.", "Dann erklärte er es.")).not.toBe("zeichen_fehlt");
+  });
+
+  it("erkennt mehrere fehlende Wörter", () => {
+    expect(detectErrorTypeKey("Er kam an.", "Er kam gestern Abend an.")).toBe("wort_fehlt");
+  });
+
+  it("erkennt mehrere überzählige Wörter", () => {
+    expect(detectErrorTypeKey("Er kam gestern Abend an.", "Er kam an.")).toBe("wort_zu_viel");
+  });
+
+  it("zählt mehrere fehlende Satzzeichen zusammen", () => {
+    expect(detectErrorTypeKey("Er kam sah und siegte", "Er kam, sah und siegte!")).toBe(
+      "komma_fehlt",
+    );
+  });
+
+  it("zählt mehrere überzählige Satzzeichen zusammen", () => {
+    expect(detectErrorTypeKey("Er kam, sah, und siegte!!", "Er kam, sah und siegte!")).toBe(
+      "komma_zu_viel",
+    );
+  });
+
   it("erkennt einen Buchstabendreher", () => {
     expect(detectErrorTypeKey("Das Huas ist alt.", "Das Haus ist alt.")).toBe("buchstabendreher");
   });
