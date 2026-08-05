@@ -1,0 +1,17 @@
+{
+  "name": "@korrektur/backfill",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "korpus": "node --env-file=../../.env.local --import tsx src/korpus.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "imapflow": "^1.0.191"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

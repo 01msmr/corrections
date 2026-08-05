@@ -69,7 +69,7 @@ export const ErrorTypeList: FC<{
     {hinweis ? <p class="hinweis">{hinweis}</p> : null}
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
-    <h2>Kategorien</h2>
+    <h2 class="balken">Kategorien</h2>
     <table>
       <thead>
         <tr>
@@ -108,7 +108,7 @@ export const ErrorTypeList: FC<{
     </p>
     <script dangerouslySetInnerHTML={{ __html: DRAG_SCRIPT }} />
 
-    <h2>Neue Kategorie</h2>
+    <h2 class="balken">Neue Kategorie</h2>
     <form method="post" action="/admin/fehlerarten">
       <label for="key">
         <span>Schlüssel:</span> <span class="zaehler">nur a–z, 0–9 und _, danach unveränderlich</span>

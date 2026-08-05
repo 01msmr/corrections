@@ -15,6 +15,7 @@
     "typecheck": "pnpm -r typecheck",
     "db:generate": "pnpm --filter @korrektur/api db:generate",
     "db:seed": "pnpm --filter @korrektur/api db:seed",
+    "backfill:korpus": "pnpm --filter @korrektur/backfill korpus",
     "bundle": "esbuild packages/api/src/web.ts packages/api/src/worker.ts --bundle --platform=node --format=cjs --target=node22 --outdir=build --out-extension:.js=.js && node -e \"const fs=require('node:fs'); fs.mkdirSync('build/tmp',{recursive:true}); fs.writeFileSync('build/package.json', JSON.stringify({type:'commonjs'})+'\\n')\""
   },
   "devDependencies": {

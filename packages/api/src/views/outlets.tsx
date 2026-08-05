@@ -114,7 +114,7 @@ export const OutletList: FC<{
     {hinweis ? <p class="hinweis">{hinweis}</p> : null}
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
-    <h2>Medien</h2>
+    <h2 class="balken">Medien</h2>
     <table>
       <thead>
         <tr>
@@ -147,7 +147,7 @@ export const OutletList: FC<{
       </tbody>
     </table>
 
-    <h2>Neues Medium</h2>
+    <h2 class="balken">Neues Medium</h2>
     {vorgabeDomain ? (
       <p class="hinweis">
         Domain <strong>{vorgabeDomain}</strong> kommt aus einem Hinweis, für den noch
@@ -169,7 +169,7 @@ export const OutletEdit: FC<{ outlet: OutletRecord }> = ({ outlet }) => (
       <button type="submit">Speichern</button>
     </form>
 
-    <h2>Domains</h2>
+    <h2 class="balken">Domains</h2>
     <p>{outlet.domains.join(", ")}</p>
     <form method="post" action={`/admin/redaktionen/${outlet.id}/domains`}>
       <label for="domain">Weitere Domain:</label>
