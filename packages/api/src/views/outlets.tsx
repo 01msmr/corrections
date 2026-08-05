@@ -115,7 +115,7 @@ export const OutletList: FC<{
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
     <h2 class="balken">Medien</h2>
-    <table>
+    <table class="sortierbar">
       <thead>
         <tr>
           <th>Name</th>

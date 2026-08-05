@@ -7,8 +7,10 @@ import { Layout } from "./layout.js";
  * Die Bilanz zeigt zuerst, was gemeldet wurde, und erst dann, was daraus
  * folgte — denn die Reaktionsdaten entstehen später (§9). Wo die Fallzahl
  * für eine Quote nicht reicht, steht das ausdrücklich da: kein Prozentwert
- * ohne sein n, keine Quote unter MIN_N_FOR_RATE (§9.4). Medien stehen
- * alphabetisch, nie nach Anzahl sortiert (§2.2).
+ * ohne sein n, keine Quote unter MIN_N_FOR_RATE (§9.4). Medien kommen
+ * alphabetisch vom Server; umsortieren kann sie nur, wer im Browser einen
+ * Spaltenkopf anklickt — die Voreinstellung stellt also keine Rangfolge auf,
+ * und der Hinweis unter der Tabelle ordnet die Zahl ein (§2.2, §9.1).
  */
 
 const MONATE = [
@@ -169,10 +171,12 @@ export const BilanzSeite: FC<{ bilanz: Bilanz }> = ({ bilanz }) => {
 
           <h2 class="balken">Medien</h2>
           <p class="zaehler">
-            Alphabetisch. Die Zahl sagt, wo viel gelesen und gemeldet wurde — sie sagt
-            nichts darüber, wo mehr Fehler stehen.
+            Alphabetisch voreingestellt, über die Spaltenköpfe umsortierbar. Die Zahl
+            sagt, wo viel gelesen und gemeldet wurde — sie sagt nichts darüber, wo mehr
+            Fehler stehen. Nach Anzahl sortiert entsteht deshalb keine Rangfolge der
+            Sorgfalt, sondern eine der Lesegewohnheiten.
           </p>
-          <table>
+          <table class="sortierbar">
             <thead>
               <tr>
                 <th>Medium</th>

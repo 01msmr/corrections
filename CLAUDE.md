@@ -48,6 +48,9 @@ Ist der Altbestand drin, kann die Route entfallen: eine Zeile in `app.ts` (§11.
 - Neue Felder in öffentlichen Antworten nur über `PublicCorrection` / `PublicOutlet`.
   Bei Zweifel `FORBIDDEN_PUBLIC_FIELDS` erweitern.
 - Kein Ranking, keine Bestenliste, keine Ampelfarben auf Werten. Quoten nie ohne ihr n.
+  Tabellen kommen alphabetisch vom Server. Umsortieren per Spaltenkopf ist erlaubt
+  (bewusste Entscheidung vom 6.8.2026) — die Voreinstellung bleibt alphabetisch, und
+  unter der Medien-Tabelle steht, was die Zahl misst und was nicht.
 - Nie echte Mailinhalte, Adressen oder Tokens committen.
 
 ## Nicht anfassen

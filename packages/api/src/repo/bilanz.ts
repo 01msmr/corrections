@@ -99,8 +99,9 @@ export function ladeBilanz(db: Db, jetzt: number): Bilanz {
       SELECT severity, COUNT(*) AS anzahl FROM corrections GROUP BY severity ORDER BY severity ASC
     `);
 
-  /* Medien alphabetisch, nicht nach Anzahl: die Zahl misst das Leseverhalten
-     des Betreibers, eine Sortierung danach wäre ein Ranking (§2.2, §9.1). */
+  /* Medien alphabetisch: die Zahl misst das Leseverhalten des Betreibers,
+     eine Vorsortierung danach wäre ein Ranking (§2.2, §9.1). Umsortieren
+     kann die Ansicht, wer es ausdrücklich anklickt. */
   const medienListe = db.all<Verteilungswert>(sql`
       SELECT o.name AS name, COUNT(*) AS anzahl
       FROM corrections c JOIN outlets o ON o.id = c.outlet_id

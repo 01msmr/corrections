@@ -471,6 +471,15 @@ const STYLES = `
   tr.ziel-unten td { box-shadow: inset 0 -2px 0 var(--korrektur); }
   .griff { color: var(--rand); user-select: none; width: 1.5rem; }
 
+  /* Sortierbare Spaltenkoepfe: der Pfeil steht erst da, wenn nach dieser
+     Spalte sortiert wurde -- vorher zeigt nur der Zeiger, dass sich klicken
+     lohnt. Ohne JavaScript bleibt die Serverreihenfolge (alphabetisch). */
+  table.sortierbar th[role="button"] { cursor: pointer; user-select: none; }
+  table.sortierbar th[role="button"]:hover,
+  table.sortierbar th[role="button"]:focus-visible { color: var(--korrektur); }
+  table.sortierbar th[aria-sort="ascending"]::after { content: " ▲"; font-size: .8em; }
+  table.sortierbar th[aria-sort="descending"]::after { content: " ▼"; font-size: .8em; }
+
   @media (prefers-color-scheme: dark) {
     select {
       background-image: ${pfeil(PALETTE_DUNKEL.rand)};
@@ -617,6 +626,56 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
     zeile.addEventListener("click", (e) => {
       if (e.target.closest("a, button, form, .griff")) return;
       location.href = zeile.dataset.href;
+    });
+  }
+
+  /* Sortieren im Browser: die Serverantwort bleibt alphabetisch, umsortiert
+     wird nur die Ansicht. Zahlenspalten numerisch, Text nach deutscher
+     Sortierfolge; leere Zellen und Aktionsspalten bleiben aussen vor. */
+  for (const tabelle of document.querySelectorAll("table.sortierbar")) {
+    const kopf = tabelle.tHead && tabelle.tHead.rows[0];
+    const koerper = tabelle.tBodies[0];
+    if (!kopf || !koerper) continue;
+
+    Array.from(kopf.cells).forEach((zelle, spalte) => {
+      if (!zelle.textContent.trim()) return;
+      zelle.setAttribute("role", "button");
+      zelle.setAttribute("tabindex", "0");
+      zelle.setAttribute("aria-sort", "none");
+
+      const wert = (zeile) => {
+        const feld = zeile.cells[spalte];
+        if (!feld) return "";
+        return (feld.dataset.wert !== undefined ? feld.dataset.wert : feld.textContent).trim();
+      };
+
+      const sortieren = () => {
+        const aufsteigend = zelle.getAttribute("aria-sort") !== "ascending";
+        const zeilen = Array.from(koerper.rows);
+        const zahlig = zeilen.every((zeile) => {
+          const v = wert(zeile);
+          return v === "" || !Number.isNaN(Number(v.replace(",", ".")));
+        });
+        zeilen.sort((a, b) => {
+          const av = wert(a);
+          const bv = wert(b);
+          const vergleich = zahlig
+            ? Number(av.replace(",", ".") || 0) - Number(bv.replace(",", ".") || 0)
+            : av.localeCompare(bv, "de");
+          return aufsteigend ? vergleich : -vergleich;
+        });
+        for (const zeile of zeilen) koerper.appendChild(zeile);
+        for (const andere of kopf.cells) andere.setAttribute("aria-sort", "none");
+        zelle.setAttribute("aria-sort", aufsteigend ? "ascending" : "descending");
+      };
+
+      zelle.addEventListener("click", sortieren);
+      zelle.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          sortieren();
+        }
+      });
     });
   }`,
         }}
