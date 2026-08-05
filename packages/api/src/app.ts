@@ -25,6 +25,7 @@ export function createApp(options: AppOptions): Hono {
   app.route("/", health);
 
   app.use("/neu", adminAuth(options.env));
+  app.use("/neu/*", adminAuth(options.env));
   // Beide Muster: /admin/* deckt den Pfad ohne abschliessenden Schraegstrich nicht ab.
   app.use("/admin", adminAuth(options.env));
   app.use("/admin/*", adminAuth(options.env));

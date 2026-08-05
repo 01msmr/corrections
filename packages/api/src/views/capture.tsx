@@ -42,6 +42,41 @@ const FehlendeRedaktion: FC<{ host: string; zurueck: string }> = ({ host, zuruec
  * aria-hidden, weil die Beschriftung daneben dieselbe Aussage in Worten trifft:
  * vorgelesen waere das Zeichen eine Dopplung ohne Mehrwert.
  */
+/**
+ * Fragt die Kategorie-Erkennung ab, sobald beide Fassungen dastehen -- aber
+ * nur, solange die Auswahl nicht von Hand getroffen wurde: eine bewusste
+ * Entscheidung wird nie ueberschrieben.
+ */
+const ERKENNUNG_SCRIPT = `
+  const falsch = document.getElementById("quoteBefore");
+  const richtig = document.getElementById("suggestionAfter");
+  const auswahl = document.getElementById("errorTypeKey");
+  const hinweis = document.getElementById("kategorie-hinweis");
+  let manuell = false;
+  let zeitgeber = null;
+  auswahl.addEventListener("change", () => { manuell = true; hinweis.textContent = ""; });
+  const pruefen = () => {
+    if (manuell || !falsch.value.trim() || !richtig.value.trim()) return;
+    fetch("/neu/kategorie", {
+      method: "POST",
+      body: new URLSearchParams({ falsch: falsch.value, richtig: richtig.value }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((daten) => {
+        if (!daten || !daten.kategorie) { hinweis.textContent = ""; return; }
+        auswahl.value = daten.kategorie;
+        hinweis.textContent = "automatisch erkannt";
+      })
+      .catch(() => {});
+  };
+  for (const feld of [falsch, richtig]) {
+    feld.addEventListener("input", () => {
+      clearTimeout(zeitgeber);
+      zeitgeber = setTimeout(pruefen, 400);
+    });
+  }
+`;
+
 const Zeichen: FC<{ art: "url" | "titel" | "falsch" | "richtig" | "notiz"; titel: string }> = ({
   art,
   titel,
@@ -119,7 +154,10 @@ export const CaptureForm: FC<{
       {/* Nebenspalte: Einordnung und Randbemerkung — nötig, aber nicht die Arbeit. */}
       <aside class="nebenspalte">
         <div class="feld">
-          <label for="errorTypeKey">Kategorie:</label>
+          <label for="errorTypeKey">
+            <span>Kategorie:</span>
+            <span id="kategorie-hinweis" class="zaehler" aria-live="polite"></span>
+          </label>
           <select id="errorTypeKey" name="errorTypeKey" required>
             {errorTypes.map((type) => (
               <option value={type.key}>{type.label}</option>
@@ -160,6 +198,7 @@ export const CaptureForm: FC<{
         </div>
       </aside>
     </form>
+    <script dangerouslySetInnerHTML={{ __html: ERKENNUNG_SCRIPT }} />
   </Layout>
 );
 

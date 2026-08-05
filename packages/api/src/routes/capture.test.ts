@@ -79,6 +79,25 @@ describe("GET /neu", () => {
   });
 });
 
+describe("POST /neu/kategorie", () => {
+  it("schlägt die erkannte Kategorie vor", async () => {
+    const res = await captureRoutes(deps).request("/neu/kategorie", {
+      method: "POST",
+      body: new URLSearchParams({ falsch: "Der Hundd bellt.", richtig: "Der Hund bellt." }),
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ kategorie: "zeichen_zu_viel" });
+  });
+
+  it("liefert null, wenn nichts Sicheres erkennbar ist", async () => {
+    const res = await captureRoutes(deps).request("/neu/kategorie", {
+      method: "POST",
+      body: new URLSearchParams({ falsch: "Ganz anderer Text.", richtig: "Voellig neue Fassung hier." }),
+    });
+    expect(await res.json()).toEqual({ kategorie: null });
+  });
+});
+
 describe("POST /neu", () => {
   it("legt die Meldung an und bestätigt mit dem Referenz-Token", async () => {
     const res = await captureRoutes(deps).request("/neu", { method: "POST", body: form() });

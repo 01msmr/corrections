@@ -1,4 +1,4 @@
-import { canonicalizeUrl, newCorrectionSchema } from "@korrektur/shared";
+import { canonicalizeUrl, detectErrorTypeKey, newCorrectionSchema } from "@korrektur/shared";
 import { createId } from "@paralleldrive/cuid2";
 import { Hono } from "hono";
 import { listErrorTypes } from "../repo/errorTypes.js";
@@ -18,6 +18,20 @@ export function captureRoutes(deps: CreateDeps): Hono {
       />,
     ),
   );
+
+  /**
+   * Kategorie-Vorschlag fuer das Formular. Die Erkennung lebt in shared;
+   * hier wird nur geprueft, ob es den Schluessel (noch) gibt -- Kategorien
+   * sind ueber die Verwaltung loeschbar.
+   */
+  app.post("/neu/kategorie", async (c) => {
+    const body = await c.req.parseBody();
+    const falsch = typeof body["falsch"] === "string" ? body["falsch"] : "";
+    const richtig = typeof body["richtig"] === "string" ? body["richtig"] : "";
+    const erkannt = detectErrorTypeKey(falsch, richtig);
+    const vorhanden = erkannt !== null && listErrorTypes(deps.db).some((t) => t.key === erkannt);
+    return c.json({ kategorie: vorhanden ? erkannt : null });
+  });
 
   app.post("/neu", async (c) => {
     const body = await c.req.parseBody();
