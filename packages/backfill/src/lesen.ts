@@ -11,6 +11,8 @@ export interface Altmeldung extends VorlagenErgebnis {
   gesendetAm: Date | null;
   empfaenger: string | null;
   betreff: string | null;
+  /** Entschluesselter text/plain-Teil — fuer die Gegenpruefung in der Review. */
+  text: string;
 }
 
 export async function leseAltmeldung(eml: Uint8Array | string): Promise<Altmeldung> {
@@ -24,5 +26,6 @@ export async function leseAltmeldung(eml: Uint8Array | string): Promise<Altmeldu
     gesendetAm: datum && !Number.isNaN(datum.getTime()) ? datum : null,
     empfaenger: mail.to?.[0]?.address ?? null,
     betreff,
+    text: mail.text ?? "",
   };
 }

@@ -6,9 +6,12 @@
   "scripts": {
     "korpus": "node --env-file=../../.env.local --import tsx src/korpus.ts",
     "probe": "node --import tsx src/probe.ts",
+    "review": "node --import tsx src/review.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "hono": "^4.6.14",
     "imapflow": "^1.0.191",
     "postal-mime": "^2.7.5"
   },
