@@ -75,7 +75,7 @@ describe("App-Verdrahtung", () => {
     const res = await app().request("/");
     expect(res.status).toBe(200);
     const html = await res.text();
-    expect(html).toContain("Zur Sache");
+    expect(html).toContain("In eigener Sache");
     expect(html).toContain("Textfehler");
   });
 });

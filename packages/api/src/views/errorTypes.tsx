@@ -1,4 +1,42 @@
 import type { FC } from "hono/jsx";
+
+/**
+ * Sortieren durch Ziehen, ohne Bibliothek: die Zeilen ordnen sich waehrend des
+ * Ziehens um, beim Loslassen geht die Id-Liste an /reihenfolge. Faellt
+ * JavaScript aus, bleibt die Liste lesbar -- nur das Umsortieren entfaellt.
+ */
+const DRAG_SCRIPT = `
+  const tbody = document.getElementById("fehlerarten-liste");
+  const status = document.getElementById("sortier-status");
+  let gezogen = null;
+  for (const zeile of tbody.querySelectorAll("tr")) {
+    zeile.addEventListener("dragstart", () => {
+      gezogen = zeile;
+      zeile.classList.add("zieht");
+    });
+    zeile.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      if (!gezogen || gezogen === zeile) return;
+      const r = zeile.getBoundingClientRect();
+      zeile.parentNode.insertBefore(
+        gezogen,
+        e.clientY - r.top > r.height / 2 ? zeile.nextSibling : zeile,
+      );
+    });
+    zeile.addEventListener("dragend", () => {
+      zeile.classList.remove("zieht");
+      const ids = Array.from(tbody.querySelectorAll("tr"), (r) => r.dataset.id).join(",");
+      fetch("/admin/fehlerarten/reihenfolge", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "ids=" + ids,
+      }).then(
+        (res) => { status.textContent = res.ok ? "Reihenfolge gespeichert." : "Speichern fehlgeschlagen."; },
+        () => { status.textContent = "Speichern fehlgeschlagen."; },
+      );
+    });
+  }
+`;
 import type { ErrorTypeRecord } from "../repo/errorTypes.js";
 import { Layout } from "./layout.js";
 
@@ -14,16 +52,16 @@ export const ErrorTypeList: FC<{
     <table>
       <thead>
         <tr>
-          <th>Reihenfolge</th>
+          <th></th>
           <th>Bezeichnung</th>
           <th>Schlüssel</th>
           <th></th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="fehlerarten-liste">
         {types.map((type) => (
-          <tr>
-            <td>{type.sortOrder}</td>
+          <tr draggable="true" data-id={type.id}>
+            <td class="griff" aria-hidden="true">≡</td>
             <td>
               <a href={`/admin/fehlerarten/${type.id}`}>{type.label}</a>
             </td>
@@ -39,6 +77,10 @@ export const ErrorTypeList: FC<{
         ))}
       </tbody>
     </table>
+    <p id="sortier-status" class="zaehler" aria-live="polite">
+      Zum Umsortieren Zeilen mit der Maus ziehen.
+    </p>
+    <script dangerouslySetInnerHTML={{ __html: DRAG_SCRIPT }} />
 
     <h2>Neue Fehlerart</h2>
     <form method="post" action="/admin/fehlerarten">
@@ -52,9 +94,6 @@ export const ErrorTypeList: FC<{
 
       <label for="description">Beschreibung:</label>
       <textarea id="description" name="description"></textarea>
-
-      <label for="sortOrder">Reihenfolge:</label>
-      <input id="sortOrder" name="sortOrder" type="number" value="130" required />
 
       <button type="submit">Anlegen</button>
     </form>
@@ -73,9 +112,6 @@ export const ErrorTypeEdit: FC<{ type: ErrorTypeRecord }> = ({ type }) => (
 
       <label for="description">Beschreibung:</label>
       <textarea id="description" name="description">{type.description ?? ""}</textarea>
-
-      <label for="sortOrder">Reihenfolge:</label>
-      <input id="sortOrder" name="sortOrder" type="number" required value={String(type.sortOrder)} />
 
       <button type="submit">Speichern</button>
     </form>

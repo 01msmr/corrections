@@ -7,7 +7,7 @@ import { Layout } from "./layout.js";
  * Adresse. Erfassung und Verwaltung liegen dagegen hinter der Basic-Auth.
  */
 export const UeberSeite: FC = () => (
-  <Layout title="Zur Sache" aktiv="ueber">
+  <Layout title="In eigener Sache" aktiv="ueber">
     <div class="prosa">
       <p class="einstieg">
         Korrekturen sammelt Hinweise auf Textfehler in Online-Artikeln, schickt sie an die

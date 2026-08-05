@@ -1,10 +1,11 @@
-import { errorTypeInputSchema, errorTypeUpdateSchema } from "@korrektur/shared";
+import { errorTypeInputSchema, errorTypeOrderSchema, errorTypeUpdateSchema } from "@korrektur/shared";
 import { Hono } from "hono";
 import type { Db } from "../../db/client.js";
 import {
   createErrorType,
   listErrorTypes,
   removeErrorType,
+  reorderErrorTypes,
   updateErrorType,
 } from "../../repo/errorTypes.js";
 import { ErrorTypeEdit, ErrorTypeList } from "../../views/errorTypes.js";
@@ -43,6 +44,14 @@ export function errorTypeAdminRoutes(db: Db, now: () => number): Hono {
     return c.redirect(`${BASE}?hinweis=Angelegt`, 302);
   });
 
+  // Vor der :id-Route, sonst finge sie den Pfad als Id ab.
+  app.post(`${BASE}/reihenfolge`, async (c) => {
+    const parsed = errorTypeOrderSchema.safeParse(await c.req.parseBody());
+    if (!parsed.success) return c.text("Reihenfolge unlesbar", 400);
+    reorderErrorTypes(db, parsed.data.ids.split(","));
+    return c.body(null, 204);
+  });
+
   app.post(`${BASE}/:id`, async (c) => {
     const parsed = errorTypeUpdateSchema.safeParse(await c.req.parseBody());
     if (!parsed.success) {
@@ -61,7 +70,7 @@ export function errorTypeAdminRoutes(db: Db, now: () => number): Hono {
       outcome === "archived"
         ? "Fehlerart archiviert, weil Hinweise darauf verweisen"
         : outcome === "deleted"
-          ? "Fehlerart geloescht"
+          ? "Fehlerart gelöscht"
           : "Fehlerart nicht gefunden";
     return c.redirect(`${BASE}?hinweis=${encodeURIComponent(hinweis)}`, 302);
   });

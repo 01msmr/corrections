@@ -65,10 +65,23 @@ export const errorTypeInputSchema = z.object({
     .regex(/^[a-z0-9_]+$/, "Nur Kleinbuchstaben, Ziffern und Unterstrich"),
   label: z.string().trim().min(1).max(120),
   description: nullableTrimmed(500),
-  sortOrder: z.coerce.number().int().min(0).max(10_000),
 });
 
 export type ErrorTypeInputDto = z.infer<typeof errorTypeInputSchema>;
 
 /** Der Schlüssel fehlt bewusst: unveränderlich nach Anlage (§5.0). */
 export const errorTypeUpdateSchema = errorTypeInputSchema.omit({ key: true });
+
+/**
+ * Die Reihenfolge kommt als kommagetrennte Liste der Ids, wie die ziehbare
+ * Tabelle sie nach dem Loslassen einsammelt. Eine Sortiernummer gibt es fuer
+ * Nutzer nicht mehr -- sie war der Grund fuer Zwischenwerte wie 21,5.
+ */
+export const errorTypeOrderSchema = z.object({
+  ids: z
+    .string()
+    .trim()
+    .min(1)
+    .max(4000)
+    .regex(/^[a-z0-9]+(,[a-z0-9]+)*$/, "Reihenfolge unlesbar"),
+});

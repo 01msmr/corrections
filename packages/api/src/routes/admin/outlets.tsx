@@ -132,7 +132,7 @@ export function outletAdminRoutes(db: Db, now: () => number): Hono {
       outcome === "archived"
         ? "Redaktion archiviert, weil Hinweise darauf verweisen"
         : outcome === "deleted"
-          ? "Redaktion geloescht"
+          ? "Redaktion gelöscht"
           : "Redaktion nicht gefunden";
     return c.redirect(`${BASE}?hinweis=${encodeURIComponent(hinweis)}`, 302);
   });

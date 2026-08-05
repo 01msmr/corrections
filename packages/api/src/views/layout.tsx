@@ -19,9 +19,8 @@ const STYLES = `
     --rand: #6b7480;
     --linie: #dcddd8;
     --feld: #fffffe;
-    --knopf: #ebe8df;
-    --knopfrand: #9aa1aa;
-    --knopfrand-hover: #c3c8ce;
+    /* Markant, aber eine Stufe weicher als Volltonschwarz. */
+    --knopf: #2e333a;
     /* Courier New zuerst: die Schreibmaschinenschrift traegt das Motiv. Sie
        laeuft hell und braucht groessere Grade und fette Schnitte -- die Werte
        weiter unten sind darauf abgestimmt. */
@@ -31,7 +30,7 @@ const STYLES = `
   @media (prefers-color-scheme: dark) {
     :root {
       --papier: #16181b; --tinte: #e8e6e1; --korrektur: #f2756b; --vorschlag: #7bc39a;
-      --rand: #949ba6; --linie: #2e3237; --feld: #1d2024; --knopf: #33373c; --knopfrand: #6b727b; --knopfrand-hover: #454b53;
+      --rand: #949ba6; --linie: #2e3237; --feld: #1d2024; --knopf: #3a4047;
     }
   }
 
@@ -64,9 +63,13 @@ const STYLES = `
     border-bottom: 1px solid var(--linie);
   }
   .datumszeile .kopfinhalt {
-    justify-content: center; padding-top: .3rem; padding-bottom: .3rem;
-    font: .8rem/1.4 var(--mono); letter-spacing: .05em; color: var(--rand);
+    position: relative; display: block; text-align: center;
+    padding-top: .35rem; padding-bottom: .35rem;
   }
+  .untertitel { font: 700 .85rem/1.5 var(--mono); letter-spacing: .14em;
+    text-transform: uppercase; color: var(--tinte); }
+  .datum { position: absolute; right: 1.25rem; top: 50%; transform: translateY(-50%);
+    font: .78rem/1.4 var(--mono); letter-spacing: .04em; color: var(--rand); }
   /* Nur die Ressortleiste bleibt beim Scrollen stehen. Der Schatten kommt erst,
      wenn der Titel darueber aus dem Bild ist -- ueber eine Scroll-Zeitachse,
      also ohne Skript; wo der Browser sie nicht kennt, klebt die Leiste ohne
@@ -121,10 +124,9 @@ const STYLES = `
     border-bottom: 2px solid transparent; }
   nav a + a { border-left: 1px solid var(--linie); }
   nav a:hover, nav a:focus-visible { color: var(--tinte); border-bottom-color: var(--korrektur); }
-  /* Die aktuelle Seite traegt keine zusaetzliche Linie: Groesse und Tinte
-     zeichnen sie bereits aus, eine Unterlaengung waere ein zweites Mittel
-     fuer dieselbe Aussage. */
-  nav a[aria-current="page"] { color: var(--tinte); font-size: 1.3em; }
+  /* Die aktuelle Seite ist rot hinterlegt statt groesser gesetzt: die Leiste
+     behaelt so auf jeder Seite dieselbe Hoehe und springt beim Wechsel nicht. */
+  nav a[aria-current="page"] { background: var(--korrektur); color: var(--papier); }
 
   h1 { font: 700 1.9rem/1.25 var(--mono); margin: 0 0 1.25rem; letter-spacing: .01em; }
   h2 { font: 700 1.15rem/1.3 var(--mono); letter-spacing: .01em;
@@ -200,17 +202,18 @@ const STYLES = `
     display: flex; align-items: flex-end; justify-content: flex-end;
     margin-top: .5rem; padding: .8rem .7rem .7rem 1.2rem; cursor: pointer;
     font: 700 1.25rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase;
-    background: var(--knopf); color: var(--knopfrand);
+    background: var(--knopf); color: var(--papier);
     /* 8px statt 6px: der 2px-Rahmen liegt aussen, dadurch wirkt der Bogen bei
        gleichem Wert enger als bei den Feldern mit ihrem 1px-Rahmen. */
-    border: 2px solid var(--knopfrand); border-radius: 8px;
+    border: 2px solid var(--knopf); border-radius: 8px;
   }
-  button:hover, button:focus-visible { background: var(--feld);
-    border-color: var(--knopfrand-hover); color: var(--knopfrand-hover); }
+  button:hover, button:focus-visible { background: var(--korrektur);
+    border-color: var(--korrektur); color: var(--papier); }
   /* Beim Druecken nimmt der Knopf die Darstellung eines Formularfelds an --
      gleiche Farbe, gleicher Rahmen, gleicher Innenschatten, gleicher Radius.
      Er sinkt damit auf die Ebene der Felder statt darueber zu liegen. */
   button:active {
+    color: var(--rand);
     background: var(--feld);
     border: 1px solid var(--linie); border-radius: 6px;
     box-shadow: inset 0 2px 5px rgba(0, 0, 0, .18), inset 0 0 0 1px rgba(0, 0, 0, .03);
@@ -236,6 +239,9 @@ const STYLES = `
   th, td { text-align: left; padding: .55rem .5rem; border-bottom: 1px solid var(--linie);
     vertical-align: top; }
   form.inline { display: inline; }
+  tr[draggable="true"] { cursor: grab; }
+  tr.zieht { opacity: .45; }
+  .griff { color: var(--rand); user-select: none; width: 1.5rem; }
 
   @media (prefers-color-scheme: dark) {
     select {
@@ -268,6 +274,21 @@ const STYLES = `
   @media (prefers-color-scheme: dark) {
     input, textarea, select,
     button:active { box-shadow: inset 0 2px 6px rgba(0, 0, 0, .55); }
+    button { color: var(--tinte); }
+    button:hover, button:focus-visible { color: var(--papier); }
+  }
+
+  /* Schmale Schirme: kompakter Kopf wie die mobile Ausgabe einer Zeitung --
+     kleinerer Titel, das Datum rueckt unter den Untertitel, die Ressortleiste
+     wird zur seitlich scrollbaren Zeile. */
+  @media (max-width: 40rem) {
+    .markenzeile { padding: 1rem 0 .5rem; }
+    .marke { font-size: 1.45rem; }
+    .untertitel { font-size: .68rem; letter-spacing: .1em; }
+    .datum { position: static; transform: none; display: block; margin-top: .1rem; }
+    nav { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
+      -webkit-overflow-scrolling: touch; }
+    nav a { white-space: nowrap; font-size: .72rem; padding: .55rem .7rem .45rem; }
   }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -285,7 +306,7 @@ const BEREICH_TITEL: Record<Bereich, string> = {
   neu: "Neuer Hinweis",
   redaktionen: "Redaktionen",
   fehlerarten: "Fehlerarten",
-  ueber: "Zur Sache",
+  ueber: "In eigener Sache",
 };
 
 /** Formatierung nur in der Ansicht (Projektregel); die Zeile erneuert sich je Aufruf. */
@@ -322,7 +343,8 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
         </div>
         <div class="datumszeile">
           <div class="kopfinhalt">
-            <span>{datumszeile()} · Unabhängiges Blatt für Textpflege</span>
+            <span class="untertitel">Blatt zur Textpflege • Unabhängig • Überparteilich</span>
+            <span class="datum">{datumszeile()}</span>
           </div>
         </div>
       </header>
@@ -330,7 +352,7 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
         <div class="kopfinhalt">
           <nav>
             <a href="/" aria-current={aktiv === "ueber" ? "page" : undefined}>
-              Zur Sache
+              In eigener Sache
             </a>
             <a href="/neu" aria-current={aktiv === "neu" ? "page" : undefined}>
               Neuer Hinweis
