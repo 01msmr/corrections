@@ -309,6 +309,13 @@ const STYLES = `
   table button:hover, table button:focus-visible {
     background: var(--korrektur); border-color: var(--korrektur); color: var(--papier);
   }
+  /* Der allgemeine Druckzustand verwandelt Knoepfe in Feldform samt Radius --
+     fuer die rechteckigen Zeilenknoepfe gilt das nicht, sie bleiben beim
+     Druecken (und waehrend die Rueckfrage offen ist) in ihrer Form. */
+  table button:active {
+    background: var(--korrektur); color: var(--papier);
+    border: none; border-left: 1px solid var(--korrektur); border-radius: 0;
+  }
   /* Gezogen wird nur am Griff vor der Zeile; der Trennstrich der Zeile beginnt
      erst dahinter. */
   .griff[draggable="true"] { cursor: grab; border-bottom-color: transparent; }
