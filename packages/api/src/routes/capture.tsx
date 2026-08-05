@@ -1,4 +1,4 @@
-import { canonicalizeUrl, detectErrorTypeKey, newCorrectionSchema } from "@korrektur/shared";
+import { canonicalizeUrl, detectErrorTypeKey, detectSeverity, newCorrectionSchema } from "@korrektur/shared";
 import { createId } from "@paralleldrive/cuid2";
 import { Hono } from "hono";
 import { getErrorTypeByKey, listErrorTypes } from "../repo/errorTypes.js";
@@ -32,7 +32,10 @@ export function captureRoutes(deps: CreateDeps): Hono {
     const richtig = typeof body["richtig"] === "string" ? body["richtig"] : "";
     const erkannt = detectErrorTypeKey(falsch, richtig);
     const vorhanden = erkannt !== null && listErrorTypes(deps.db).some((t) => t.key === erkannt);
-    return c.json({ kategorie: vorhanden ? erkannt : null });
+    return c.json({
+      kategorie: vorhanden ? erkannt : null,
+      schwere: vorhanden ? detectSeverity(falsch, richtig, erkannt) : null,
+    });
   });
 
   /**

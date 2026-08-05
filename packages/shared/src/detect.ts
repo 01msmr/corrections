@@ -136,3 +136,63 @@ export function detectErrorTypeKey(falsch: string, richtig: string): DetectedErr
 
   return null;
 }
+
+/** Woerter, deren Fehlen oder Auftauchen die Aussage umkehrt. */
+const NEGATIONEN = new Set([
+  "nicht", "kein", "keine", "keinen", "keinem", "keiner", "nie", "niemals", "nichts",
+]);
+
+/** Gegensatzpaare: ein Tausch innerhalb eines Paars kehrt die Aussage um. */
+const GEGENSAETZE = [
+  ["mehr", "weniger"], ["über", "unter"], ["vor", "nach"], ["für", "gegen"],
+  ["mit", "ohne"], ["steigt", "sinkt"], ["steigt", "fällt"], ["steigen", "sinken"],
+  ["gewinnt", "verliert"], ["erlaubt", "verboten"], ["richtig", "falsch"],
+  ["ja", "nein"], ["alle", "keine"], ["immer", "nie"], ["links", "rechts"],
+];
+const GEGENSATZ_SCHLUESSEL = new Set(GEGENSAETZE.map((paar) => [...paar].sort().join("|")));
+
+function kern(wort: string): string {
+  return wort.toLowerCase().replace(/[.,;:!?»«"']+$/g, "").replace(/^[»«"']+/g, "");
+}
+
+/**
+ * Schwere zum erkannten Fall: 1 kosmetisch, 2 stoerend, 3 sinnentstellend.
+ * Grundlage ist die Kategorie; eine Negation oder ein Gegensatzpaar hebt auf
+ * sinnentstellend, weil die Aussage dann kippt statt nur zu holpern.
+ */
+export function detectSeverity(
+  falsch: string,
+  richtig: string,
+  kategorie: DetectedErrorTypeKey | null,
+): 1 | 2 | 3 | null {
+  if (kategorie === null) return null;
+
+  const diff = diffWords(normalizeText(falsch), normalizeText(richtig));
+  const inFalsch = geaenderteWoerter(diff.before).map((g) => kern(g.wort));
+  const inRichtig = geaenderteWoerter(diff.after).map((g) => kern(g.wort));
+
+  const kippt =
+    [...inFalsch, ...inRichtig].some((w) => NEGATIONEN.has(w)) ||
+    (inFalsch.length === 1 &&
+      inRichtig.length === 1 &&
+      GEGENSATZ_SCHLUESSEL.has([inFalsch[0] ?? "", inRichtig[0] ?? ""].sort().join("|")));
+  if (kippt) return 3;
+
+  switch (kategorie) {
+    case "komma_fehlt":
+    case "komma_zu_viel":
+    case "zeichen_fehlt":
+    case "zeichen_zu_viel":
+    case "buchstabendreher":
+      return 1;
+    case "wort_fehlt":
+    case "wort_zu_viel":
+    case "falsche_wortwahl":
+    case "satzbau":
+      return 2;
+    case "falsche_zahl":
+    case "falsches_datum":
+    case "falscher_name":
+      return 3;
+  }
+}

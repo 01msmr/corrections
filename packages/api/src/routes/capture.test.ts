@@ -86,7 +86,7 @@ describe("POST /neu/kategorie", () => {
       body: new URLSearchParams({ falsch: "Der Hundd bellt.", richtig: "Der Hund bellt." }),
     });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ kategorie: "zeichen_zu_viel" });
+    expect(await res.json()).toEqual({ kategorie: "zeichen_zu_viel", schwere: 1 });
   });
 
   it("liefert null, wenn nichts Sicheres erkennbar ist", async () => {
@@ -94,7 +94,7 @@ describe("POST /neu/kategorie", () => {
       method: "POST",
       body: new URLSearchParams({ falsch: "Ganz anderer Text.", richtig: "Voellig neue Fassung hier." }),
     });
-    expect(await res.json()).toEqual({ kategorie: null });
+    expect(await res.json()).toEqual({ kategorie: null, schwere: null });
   });
 });
 

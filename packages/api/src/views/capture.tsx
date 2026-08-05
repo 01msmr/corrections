@@ -51,21 +51,31 @@ const ERKENNUNG_SCRIPT = `
   const falsch = document.getElementById("quoteBefore");
   const richtig = document.getElementById("suggestionAfter");
   const auswahl = document.getElementById("errorTypeKey");
+  const schwere = document.getElementById("severity");
   const hinweis = document.getElementById("kategorie-hinweis");
   let manuell = false;
+  let schwereManuell = false;
   let zeitgeber = null;
   auswahl.addEventListener("change", () => { manuell = true; hinweis.textContent = ""; });
+  schwere.addEventListener("change", () => { schwereManuell = true; });
   const pruefen = () => {
-    if (manuell || !falsch.value.trim() || !richtig.value.trim()) return;
+    if (!falsch.value.trim() || !richtig.value.trim()) return;
     fetch("/neu/kategorie", {
       method: "POST",
       body: new URLSearchParams({ falsch: falsch.value, richtig: richtig.value }),
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((daten) => {
-        if (!daten || !daten.kategorie) { hinweis.textContent = ""; return; }
-        auswahl.value = daten.kategorie;
-        hinweis.textContent = "automatisch erkannt";
+        if (!daten) return;
+        if (!manuell) {
+          if (daten.kategorie) {
+            auswahl.value = daten.kategorie;
+            hinweis.textContent = "automatisch erkannt";
+          } else {
+            hinweis.textContent = "";
+          }
+        }
+        if (!schwereManuell && daten.schwere) schwere.value = String(daten.schwere);
       })
       .catch(() => {});
   };
@@ -168,11 +178,11 @@ export const CaptureForm: FC<{
         <div class="feld">
           <label for="severity">Schwere:</label>
           <select id="severity" name="severity">
-            <option value="1">gering</option>
+            <option value="1">kosmetisch</option>
             <option value="2" selected>
-              mittel
+              störend
             </option>
-            <option value="3">hoch</option>
+            <option value="3">sinnentstellend</option>
           </select>
         </div>
 

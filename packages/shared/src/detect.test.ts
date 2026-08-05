@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectErrorTypeKey } from "./detect.js";
+import { detectErrorTypeKey, detectSeverity } from "./detect.js";
 
 describe("detectErrorTypeKey", () => {
   it("erkennt ein fehlendes Komma", () => {
@@ -87,5 +87,35 @@ describe("detectErrorTypeKey", () => {
 
   it("ignoriert Typografie-Unterschiede", () => {
     expect(detectErrorTypeKey("Er sagte „nein“ dazu.", 'Er sagte "nein" dazu.')).toBeNull();
+  });
+
+});
+
+describe("detectSeverity", () => {
+  const schwere = (a: string, b: string) => detectSeverity(a, b, detectErrorTypeKey(a, b));
+
+  it("stuft Kommas und Dreher als kosmetisch ein", () => {
+    expect(schwere("Er kam, und ging.", "Er kam und ging.")).toBe(1);
+    expect(schwere("Das Huas ist alt.", "Das Haus ist alt.")).toBe(1);
+  });
+
+  it("stuft ein fehlendes Wort als stoerend ein", () => {
+    expect(schwere("Er kam zu spät.", "Er kam viel zu spät.")).toBe(2);
+  });
+
+  it("stuft Zahlen und Namen als sinnentstellend ein", () => {
+    expect(schwere("rund 4,2 Millionen", "rund 2,4 Millionen")).toBe(3);
+  });
+
+  it("hebt ein fehlendes nicht auf sinnentstellend", () => {
+    expect(schwere("Er war beteiligt.", "Er war nicht beteiligt.")).toBe(3);
+  });
+
+  it("hebt gegensaetzliche Wortwahl auf sinnentstellend", () => {
+    expect(schwere("Die Kurse steigen deutlich.", "Die Kurse sinken deutlich.")).toBe(3);
+  });
+
+  it("gibt ohne erkannte Kategorie keine Schwere", () => {
+    expect(detectSeverity("a", "voellig anderes b", null)).toBeNull();
   });
 });
