@@ -52,7 +52,7 @@ const STYLES = `
   /* Faellt die Ueberschrift weg, weil sie den Navigationspunkt wiederholt, muss
      ihr Raum ersetzt werden -- sonst beginnt das Formular direkt unter dem
      Balken. Seiten mit Ueberschrift bringen ihn selbst mit. */
-  .blatt.ohne-titel { padding-top: 2.25rem; }
+  .blatt.ohne-titel { padding-top: 1rem; }
   /* Die Startseite laeuft wie ein Blatt: ab Tabletbreite zwei gleich breite
      Spalten mit feiner Spaltenlinie, linksbuendig -- Blocksatz ohne
      Silbentrennung reisst Loecher. Vorspann und Rubriken spannen ueber beide
