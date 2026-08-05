@@ -100,3 +100,34 @@ Zwei Eigenheiten dieser Umgebung, die man kennen muss:
   Node-Prozesses nirgendwohin, was aus der Chroot erreichbar wäre. Fehler beim
   Versand sind deshalb nur über den Datensatz selbst zu diagnostizieren, nicht
   über `console.error`.
+
+## Ergänzungen (Stand 5. August 2026)
+
+Seit den Diagrammen oben dazugekommen:
+
+- **Öffentliche Startseite** unter `/` („In eigener Sache", Rubriken „In eigener
+  Sache" und „Aus der Werkstatt", zweispaltig). Die Wurzel leitet nicht mehr auf
+  das Formular; die Mail-Fußzeile verweist hierher.
+- **Formular-Endpunkte** hinter der Basic-Auth (`/neu/*`):
+  `POST /neu/vorschau` (Mail-Vorschau ohne Nebenwirkung, Platzhalter-Kennung
+  VORSCHAU, echter Versand erst über den Sendeknopf der Vorschau),
+  `POST /neu/kategorie` (automatische Kategorie- und Schwere-Erkennung,
+  `shared/detect.ts`), `POST /neu/ueberschrift` (holt den Artikeltitel, sobald
+  die URL im Formular steht), `POST /admin/fehlerarten/reihenfolge` (ziehbare
+  Sortierung, Zehnerschritte).
+- **Eine Palette für alles:** `PALETTE`/`PALETTE_DUNKEL` in
+  `packages/shared/src/constants.ts`. Oberfläche (CSS-Variablen und data-URIs in
+  `layout.tsx`) und Mail (Inline-Stile in `compose.ts`) fragen dieselben Werte
+  ab; ein Test pinnt fest, dass in der Mail nichts literal bleibt.
+- **Mail als Zeitungskommentar** (`compose.ts`): Titelzeile, Untertitel-Band,
+  Rubrik „Korrektur", Schlagzeile, Serifen-Fließtext, Fassungen als Blöcke mit
+  farbiger Kante in Courier — nur Inline-Stile und überall vorhandene Schriften.
+- **Wortwelt:** Ressorts „In eigener Sache · Neue Korrektur · Titel ·
+  Kategorien"; das Versandobjekt heißt Hinweis, sein Token Kennung; Schwere
+  kosmetisch/störend/sinnentstellend. Fehlerarten sind die flache Liste des
+  ursprünglichen Kurzbefehls plus Ergänzungen.
+- **Geplant, noch nicht gebaut:** die öffentliche Statistik-Seite „Bilanz"
+  (Route + Ansicht; Kennzahlen-Views und `repo/stats.ts` liegen bereit; Regeln:
+  Quoten nie ohne n, alphabetisch, kein Ranking). Offen außerdem: der
+  Worker-Cronjob in Plesk und der verwaiste alte Deploy-Schlüssel in
+  `authorized_keys`.
