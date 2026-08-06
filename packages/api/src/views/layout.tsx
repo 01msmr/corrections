@@ -123,7 +123,11 @@ const STYLES = `
     text-transform: uppercase; color: var(--papier); }
   .datum { position: absolute; right: 1.25rem; top: 50%; transform: translateY(-50%);
     font: .78rem/1.4 var(--mono); letter-spacing: .04em; color: var(--rand); }
-  .datumszeile .datum { color: var(--linie); }
+  /* Das Datum hellt beim Ueberfahren auf Papierweiss auf: schnell an (0.25s),
+     langsam wieder zurueck (2s) — es soll aufmerken, nicht blinken. Die
+     unterschiedlichen Dauern stehen deshalb an Grund- und Hover-Zustand. */
+  .datumszeile .datum { color: var(--linie); transition: color 2s ease-out; }
+  .datumszeile .datum:hover { color: var(--papier); transition-duration: .25s; }
   /* Untertitelband und Ressortleiste bleiben beim Scrollen gemeinsam stehen;
      nur der Titel scrollt weg wie bei einer Zeitung. Der Schatten kommt erst,
      wenn der Titel darueber aus dem Bild ist -- ueber eine Scroll-Zeitachse,
