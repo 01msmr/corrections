@@ -52,7 +52,7 @@ async function main(): Promise<void> {
     const schloss = await client.getMailboxLock(ordner, { readOnly: true });
     try {
       const postfach = client.mailbox;
-      if (postfach === false) throw new Error("Postfach liess sich nicht oeffnen");
+      if (postfach === false) throw new Error("Postfach ließ sich nicht öffnen");
       console.log(`Ordner "${ordner}": ${postfach.exists} Nachrichten, Ziel ${ZIEL}`);
       if (postfach.exists === 0) return;
 
@@ -66,7 +66,7 @@ async function main(): Promise<void> {
           continue;
         }
         if (!nachricht.source) {
-          console.warn(`UID ${nachricht.uid}: keine Quelle geliefert, uebersprungen`);
+          console.warn(`UID ${nachricht.uid}: keine Quelle geliefert, übersprungen`);
           continue;
         }
         writeFileSync(datei, nachricht.source);

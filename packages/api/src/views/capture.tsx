@@ -83,7 +83,7 @@ const ERKENNUNG_SCRIPT = `
           ueberschriftVorschlag = daten.ueberschrift.trim();
           setzeHinweis(ueberschriftHinweis, UEBERNOMMEN, true);
         } else {
-          setzeHinweis(ueberschriftHinweis, "liess sich nicht laden — wird beim Senden erneut versucht", false);
+          setzeHinweis(ueberschriftHinweis, "ließ sich nicht laden — wird beim Senden erneut versucht", false);
         }
       })
       .catch(() => { setzeHinweis(ueberschriftHinweis, "", false); });

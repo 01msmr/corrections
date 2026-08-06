@@ -216,7 +216,7 @@ describe("Adminoberfläche Redaktionen", () => {
     const outlet = createOutlet(db, { name: "X", primaryDomain: "x.de", publisher: null, country: null, notes: null, contactEmails: [] }, NOW);
     const res = await post(`/admin/redaktionen/${outlet.id}/domains`, { domain: "  ab  " });
     expect(res.status).toBe(302);
-    expect(res.headers.get("location")).toContain(encodeURIComponent("Domain ungueltig"));
+    expect(res.headers.get("location")).toContain(encodeURIComponent("Domain ungültig"));
     expect(listOutlets(db)[0]?.domains).toEqual(["x.de"]);
   });
 

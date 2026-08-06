@@ -119,7 +119,7 @@ export function outletAdminRoutes(db: Db, now: () => number): Hono {
     const raw = await c.req.parseBody();
     const parsed = domainSchema.safeParse(raw["domain"]);
     if (!parsed.success) {
-      const hinweis = "Domain ungueltig";
+      const hinweis = "Domain ungültig";
       return c.redirect(`${BASE}?hinweis=${encodeURIComponent(hinweis)}`, 302);
     }
     const ergebnis = addDomain(db, c.req.param("id"), parsed.data);

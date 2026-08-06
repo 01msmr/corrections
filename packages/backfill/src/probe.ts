@@ -31,10 +31,10 @@ async function main(): Promise<void> {
   }
 
   console.log(`${dateien.length} Mails gelesen`);
-  console.log(`sicher: ${zaehler.sicher}  pruefen: ${zaehler.pruefen}  verworfen: ${zaehler.verworfen}`);
+  console.log(`sicher: ${zaehler.sicher}  prüfen: ${zaehler.pruefen}  verworfen: ${zaehler.verworfen}`);
   console.log("fehlende Felder:", fehlend);
   const haeufigste = [...ungemappt.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15);
-  console.log("haeufigste ungemappte Labels:");
+  console.log("häufigste ungemappte Labels:");
   for (const [label, anzahl] of haeufigste) console.log(`  ${anzahl}× ${label}`);
 }
 

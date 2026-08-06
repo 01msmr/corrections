@@ -228,7 +228,7 @@ async function main(): Promise<void> {
   app.post("/entscheidung", async (c) => {
     const body = await c.req.parseBody();
     const datei = String(body["datei"] ?? "");
-    if (!datei || datei.includes("/") || datei.includes("..")) return c.text("ungueltig", 400);
+    if (!datei || datei.includes("/") || datei.includes("..")) return c.text("ungültig", 400);
     const aktion = body["aktion"] === "verwerfen" ? "verworfen" : "uebernommen";
     const meldung = await leseAltmeldung(readFileSync(path.join(KORPUS, datei)));
     const eintrag: Entscheidung = {
