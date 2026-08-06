@@ -154,6 +154,51 @@ describe("Adminoberfläche Redaktionen", () => {
     expect(listOutlets(db)[0]?.domains).toContain("magazin.x.de");
   });
 
+  it("entfernt eine Zusatzdomain, ohne Korrekturen anzutasten", async () => {
+    const outlet = createOutlet(db, { name: "X", primaryDomain: "x.de", publisher: null, country: null, notes: null, contactEmails: [] }, NOW);
+    await post(`/admin/redaktionen/${outlet.id}/domains`, { domain: "magazin.x.de" });
+
+    const errorTypeId = createId();
+    db.insert(errorTypes)
+      .values({ id: errorTypeId, key: "zahl", label: "Zahl", sortOrder: 10, createdAt: NOW })
+      .run();
+    db.insert(corrections)
+      .values({
+        id: createId(),
+        ref: "KDOM01",
+        idempotencyKey: "dom-1",
+        createdAt: NOW,
+        dispatchMode: "smtp",
+        articleUrl: "https://magazin.x.de/a",
+        articleUrlCanon: "https://magazin.x.de/a",
+        outletId: outlet.id,
+        errorTypeId,
+        severity: 2,
+        quoteBefore: "Zitat",
+        suggestionAfter: "Vorschlag",
+        recipientEmail: "leserbriefe@x.de",
+        source: "web",
+      })
+      .run();
+
+    const res = await post(`/admin/redaktionen/${outlet.id}/domains/entfernen`, {
+      domain: "magazin.x.de",
+    });
+    expect(res.status).toBe(302);
+    expect(listOutlets(db)[0]?.domains).toEqual(["x.de"]);
+    // Die erfasste Meldung bleibt unberührt beim Medium.
+    expect(db.select().from(corrections).all()).toHaveLength(1);
+    expect(db.select().from(corrections).all()[0]?.outletId).toBe(outlet.id);
+  });
+
+  it("verweigert das Entfernen der letzten Domain", async () => {
+    const outlet = createOutlet(db, { name: "X", primaryDomain: "x.de", publisher: null, country: null, notes: null, contactEmails: [] }, NOW);
+    const res = await post(`/admin/redaktionen/${outlet.id}/domains/entfernen`, { domain: "x.de" });
+    expect(res.status).toBe(302);
+    // Ohne Domain waere das Medium über keine URL mehr auffindbar.
+    expect(listOutlets(db)[0]?.domains).toEqual(["x.de"]);
+  });
+
   it("normalisiert eine weitere Domain wie das Anlageformular (www. entfernt, getrimmt)", async () => {
     // Ohne dieselbe Validierung wie outletInputSchema landet "www.zweitdomain.example"
     // roh in der Datenbank; canonicalizeUrl entfernt www. vor dem Lookup, sodass eine

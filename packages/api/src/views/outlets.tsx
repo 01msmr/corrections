@@ -170,7 +170,39 @@ export const OutletEdit: FC<{ outlet: OutletRecord }> = ({ outlet }) => (
     </form>
 
     <h2 class="balken">Domains</h2>
-    <p>{outlet.domains.join(", ")}</p>
+    <p class="zaehler">
+      Über diese Adressen werden neue Meldungen diesem Medium zugeordnet. Eine Domain
+      zu entfernen ändert nichts an bereits erfassten Korrekturen; die letzte Domain
+      bleibt stehen, sonst wäre das Medium über keine URL mehr auffindbar.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Domain</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {outlet.domains.map((domain) => (
+          <tr>
+            <td>{domain}</td>
+            <td class="aktion">
+              {outlet.domains.length > 1 ? (
+                <form
+                  class="inline"
+                  method="post"
+                  action={`/admin/redaktionen/${outlet.id}/domains/entfernen`}
+                  onsubmit={`return confirm('Domain „${domain}“ entfernen? Erfasste Korrekturen bleiben erhalten.')`}
+                >
+                  <input type="hidden" name="domain" value={domain} />
+                  <button type="submit">Entfernen</button>
+                </form>
+              ) : null}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
     <form method="post" action={`/admin/redaktionen/${outlet.id}/domains`}>
       <label for="domain">Weitere Domain:</label>
       <input id="domain" name="domain" required />

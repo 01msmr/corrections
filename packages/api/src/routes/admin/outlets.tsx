@@ -5,6 +5,7 @@ import {
   addDomain,
   createOutlet,
   listOutlets,
+  removeDomain,
   removeOutlet,
   updateOutlet,
 } from "../../repo/outlets.js";
@@ -133,6 +134,25 @@ export function outletAdminRoutes(db: Db, now: () => number): Hono {
     const hinweis = ergebnis.ok
       ? `Domain ergänzt${mitgewandert}`
       : "Domain gehört bereits zu einem anderen Medium";
+    return c.redirect(`${BASE}?hinweis=${encodeURIComponent(hinweis)}`, 302);
+  });
+
+  /**
+   * Entfernt eine Zusatzdomain. Betroffen ist nur die Zuordnung für künftige
+   * Meldungen — bereits erfasste Korrekturen bleiben unverändert bei ihrem
+   * Medium. Die letzte Domain lässt sich nicht entfernen, sonst wäre das
+   * Medium über keine URL mehr auffindbar.
+   */
+  app.post(`${BASE}/:id/domains/entfernen`, async (c) => {
+    const raw = await c.req.parseBody();
+    const parsed = domainSchema.safeParse(raw["domain"]);
+    if (!parsed.success) {
+      return c.redirect(`${BASE}?hinweis=${encodeURIComponent("Domain ungültig")}`, 302);
+    }
+    const ok = removeDomain(db, c.req.param("id"), parsed.data);
+    const hinweis = ok
+      ? "Domain entfernt — erfasste Korrekturen bleiben erhalten"
+      : "Die letzte Domain eines Mediums lässt sich nicht entfernen";
     return c.redirect(`${BASE}?hinweis=${encodeURIComponent(hinweis)}`, 302);
   });
 
