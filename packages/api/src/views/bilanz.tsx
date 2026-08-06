@@ -106,14 +106,14 @@ export const BilanzSeite: FC<{ bilanz: Bilanz }> = ({ bilanz }) => {
     <Layout title="Bilanz" aktiv="bilanz">
       {bilanz.meldungen === 0 ? (
         <p class="hinweis">
-          Noch keine Meldungen erfasst. Sobald Hinweise versendet sind, stehen hier die
-          Zahlen.
+          Noch nichts erfasst. Sobald die ersten Korrekturen versendet sind, stehen hier
+          die Zahlen.
         </p>
       ) : (
         <>
           <div class="eckdaten">
             <div class="kennzahl">
-              <span class="kennzahl-titel">Hinweise</span>
+              <span class="kennzahl-titel">Korrekturen</span>
               <span class="kennzahl-wert">{bilanz.meldungen}</span>
               <span class="kennzahl-fuss">an {bilanz.medien} Medien</span>
             </div>
@@ -121,7 +121,7 @@ export const BilanzSeite: FC<{ bilanz: Bilanz }> = ({ bilanz }) => {
               <span class="kennzahl-titel">Zeitraum</span>
               <span class="kennzahl-wert klein">{zeitraum}</span>
               <span class="kennzahl-fuss">
-                {bilanz.reifUndZustellbar} Hinweise älter als {MATURITY_DAYS} Tage
+                {bilanz.reifUndZustellbar} davon älter als {MATURITY_DAYS} Tage
               </span>
             </div>
           </div>
@@ -132,13 +132,13 @@ export const BilanzSeite: FC<{ bilanz: Bilanz }> = ({ bilanz }) => {
               titel="Korrekturquote"
               stand={bilanz.korrektur}
               leerGrund="noch kein Artikel nachgeprüft"
-              erlaeuterung="Anteil der Hinweise, nach denen der Artikel nachweislich berichtigt wurde — bestätigt von Hand, nicht automatisch. Ungeprüfte Artikel zählen nicht als „nicht korrigiert“."
+              erlaeuterung="Anteil der Korrekturen, nach denen der Artikel nachweislich berichtigt wurde — bestätigt von Hand, nicht automatisch. Ungeprüfte Artikel zählen nicht als „nicht korrigiert“."
             />
             <Quote
               titel="Antwortquote"
               stand={bilanz.antwort}
               leerGrund="noch kein Postfach-Abgleich gelaufen"
-              erlaeuterung="Anteil der per Mail versendeten Hinweise, auf die eine Redaktion geantwortet hat. Automatische Eingangsbestätigungen zählen nicht."
+              erlaeuterung="Anteil der versendeten Korrekturen, auf die eine Redaktion geantwortet hat. Automatische Eingangsbestätigungen zählen nicht."
             />
           </div>
           <p class="zaehler">
@@ -180,7 +180,7 @@ export const BilanzSeite: FC<{ bilanz: Bilanz }> = ({ bilanz }) => {
             <thead>
               <tr>
                 <th>Medium</th>
-                <th>Hinweise</th>
+                <th>Korrekturen</th>
               </tr>
             </thead>
             <tbody>
@@ -200,11 +200,11 @@ export const BilanzSeite: FC<{ bilanz: Bilanz }> = ({ bilanz }) => {
         <p>
           Die gemeldeten Artikel sind <strong>keine Stichprobe</strong>. Gelesen wird, was
           interessiert; gemeldet wird, was dabei auffällt. Wer bei einem Medium viele
-          Hinweise findet, liest dort vermutlich viel — über die Sorgfalt einer Redaktion
+          Fehler findet, liest dort vermutlich viel — über die Sorgfalt einer Redaktion
           sagt die blanke Anzahl nichts.
         </p>
         <p>
-          Ein Hinweis ohne Antwort heißt nicht, dass nichts geschah: Redaktionen
+          Eine Korrektur ohne Antwort heißt nicht, dass nichts geschah: Redaktionen
           korrigieren oft still. Deshalb ist die Korrekturquote die eigentliche Zahl und
           die Antwortquote nur eine Nebenauskunft.
         </p>

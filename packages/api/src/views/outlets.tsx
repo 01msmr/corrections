@@ -78,8 +78,7 @@ const Felder: FC<{
           mit Komma -- gespeichert wird weiterhin die Liste. */}
       <div class="feld">
         <label for="contactEmails">
-          <span>E-Mail-Adresse:</span>
-          <span class="zaehler">Empfänger der Hinweise</span>
+          <span>E-Mail-Adresse des Mediums:</span>
         </label>
         <input
           id="contactEmails"

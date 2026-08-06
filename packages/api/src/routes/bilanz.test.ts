@@ -55,7 +55,7 @@ describe("GET /bilanz", () => {
 
   it("meldet einen leeren Bestand, statt Nullen zu behaupten", async () => {
     const html = await (await bilanzRoutes(db, () => JETZT).request("/bilanz")).text();
-    expect(html).toContain("Noch keine Meldungen erfasst");
+    expect(html).toContain("Noch nichts erfasst");
     // Der Kennzahlen-Block bleibt ganz weg; "Korrekturquote" kommt im
     // Methodik-Text trotzdem vor, deshalb wird auf den Abschnitt geprueft.
     expect(html).not.toContain("Was daraus wurde");

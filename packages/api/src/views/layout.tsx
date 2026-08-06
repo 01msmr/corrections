@@ -480,8 +480,14 @@ const STYLES = `
   table.sortierbar th[role="button"] { cursor: pointer; user-select: none; }
   table.sortierbar th[role="button"]:hover,
   table.sortierbar th[role="button"]:focus-visible { color: var(--korrektur); }
-  table.sortierbar th[aria-sort="ascending"]::after { content: " ▲"; font-size: .8em; }
-  table.sortierbar th[aria-sort="descending"]::after { content: " ▼"; font-size: .8em; }
+  /* Der Platz fuer den Pfeil steht von Anfang an: sonst wuerde die Spalte beim
+     ersten Klick um seine Breite springen. Das leere Zeichen haelt ihn frei. */
+  table.sortierbar th[role="button"]::after {
+    content: "▲"; display: inline-block; width: 1em; margin-left: .2em;
+    font-size: .8em; visibility: hidden;
+  }
+  table.sortierbar th[aria-sort="ascending"]::after { content: "▲"; visibility: visible; }
+  table.sortierbar th[aria-sort="descending"]::after { content: "▼"; visibility: visible; }
 
   @media (prefers-color-scheme: dark) {
     select {

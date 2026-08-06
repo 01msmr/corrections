@@ -14,7 +14,9 @@ export const BackfillSeite: FC<{
   ergebnis?: ImportErgebnis | undefined;
   lesefehler?: string[] | undefined;
   fehler?: string | undefined;
-}> = ({ ergebnis, lesefehler, fehler }) => (
+  /** Medien, denen die benutzte Kontaktadresse nachgetragen wurde. */
+  adressen?: number | undefined;
+}> = ({ ergebnis, lesefehler, fehler, adressen }) => (
   <Layout title="Altbestand" aktiv="backfill">
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
@@ -38,6 +40,13 @@ export const BackfillSeite: FC<{
             <span class="kennzahl-fuss">in der Review verworfen</span>
           </div>
         </div>
+        {adressen ? (
+          <p class="zaehler">
+            {adressen === 1
+              ? "Einem Medium wurde die benutzte E-Mail-Adresse nachgetragen."
+              : `${adressen} Medien wurde die benutzte E-Mail-Adresse nachgetragen.`}
+          </p>
+        ) : null}
         {ergebnis.fehler.length > 0 || (lesefehler?.length ?? 0) > 0 ? (
           <>
             <h2 class="balken">Übergangen</h2>

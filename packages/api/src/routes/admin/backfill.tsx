@@ -1,6 +1,10 @@
 import { Hono } from "hono";
 import type { Db } from "../../db/client.js";
-import { importiereEntscheidungen, leseEntscheidungen } from "../../tools/backfillImport.js";
+import {
+  ergaenzeKontaktadressen,
+  importiereEntscheidungen,
+  leseEntscheidungen,
+} from "../../tools/backfillImport.js";
 import { BackfillSeite } from "../../views/backfill.js";
 
 /**
@@ -35,7 +39,9 @@ export function backfillAdminRoutes(db: Db, now: () => number): Hono {
     }
 
     const ergebnis = importiereEntscheidungen(db, eintraege, now());
-    return c.html(<BackfillSeite ergebnis={ergebnis} lesefehler={lesefehler} />);
+    /* Medien ohne Adresse bekommen die tatsaechlich benutzte nachgetragen. */
+    const adressen = ergaenzeKontaktadressen(db);
+    return c.html(<BackfillSeite ergebnis={ergebnis} lesefehler={lesefehler} adressen={adressen} />);
   });
 
   return app;

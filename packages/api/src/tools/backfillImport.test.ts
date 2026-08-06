@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createDb, runMigrations, type Db } from "../db/client.js";
 import { createId } from "@paralleldrive/cuid2";
+import { eq } from "drizzle-orm";
 import { corrections, errorTypes, outlets } from "../db/schema.js";
 import { seed } from "../db/seed.js";
-import { importiereEntscheidungen, type ReviewEntscheidung } from "./backfillImport.js";
+import {
+  ergaenzeKontaktadressen,
+  importiereEntscheidungen,
+  type ReviewEntscheidung,
+} from "./backfillImport.js";
 
 const NOW = 1_800_000_000;
 
@@ -96,6 +101,39 @@ describe("importiereEntscheidungen", () => {
     expect(unveraendert?.source).toBe("web");
     expect(unveraendert?.quoteBefore).toBe("aus dem Formular");
     expect(unveraendert?.ref).toBe("KWEB01");
+  });
+
+  it("traegt Medien ohne Adresse die haeufigste benutzte nach", () => {
+    // Zwei Meldungen an newstipps@, eine an webmaster@ — die haeufigste gewinnt.
+    const mail = (nr: number, adresse: string): ReviewEntscheidung => {
+      const eintrag = entscheidung({ datei: `${nr}.eml`, messageId: `<m${nr}@x.invalid>` });
+      eintrag.empfaenger = adresse;
+      if (eintrag.felder) eintrag.felder.artikelUrl = `https://beispiel-zeitung.de/a${nr}`;
+      return eintrag;
+    };
+    importiereEntscheidungen(
+      db,
+      [mail(1, "newstipps@beispiel-zeitung.de"), mail(2, "newstipps@beispiel-zeitung.de"), mail(3, "webmaster@beispiel-zeitung.de")],
+      NOW,
+    );
+
+    expect(ergaenzeKontaktadressen(db)).toBeGreaterThan(0);
+    const outlet = db.select().from(outlets).all().find((o) => o.primaryDomain === "beispiel-zeitung.de");
+    expect(outlet?.contactEmails).toEqual(["newstipps@beispiel-zeitung.de"]);
+  });
+
+  it("laesst eine gepflegte Adresse unangetastet", () => {
+    importiereEntscheidungen(db, [entscheidung()], NOW);
+    const outlet = db.select().from(outlets).all().find((o) => o.primaryDomain === "beispiel-zeitung.de");
+    if (!outlet) throw new Error("Outlet fehlt");
+    db.update(outlets)
+      .set({ contactEmails: ["von-hand@beispiel-zeitung.de"] })
+      .where(eq(outlets.id, outlet.id))
+      .run();
+
+    ergaenzeKontaktadressen(db);
+    const danach = db.select().from(outlets).all().find((o) => o.id === outlet.id);
+    expect(danach?.contactEmails).toEqual(["von-hand@beispiel-zeitung.de"]);
   });
 
   it("meldet fehlende Pflichtfelder statt zu raten", () => {

@@ -2,7 +2,11 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { createDb, runMigrations } from "../db/client.js";
 import { seed } from "../db/seed.js";
-import { importiereEntscheidungen, leseEntscheidungen } from "./backfillImport.js";
+import {
+  ergaenzeKontaktadressen,
+  importiereEntscheidungen,
+  leseEntscheidungen,
+} from "./backfillImport.js";
 
 /**
  * Einstieg fuer den Altbestand-Import — lokal ueber `pnpm backfill:import`,
@@ -49,6 +53,7 @@ function main(): void {
   seed(db);
 
   const ergebnis = importiereEntscheidungen(db, eintraege, Math.floor(Date.now() / 1000));
+  const adressen = ergaenzeKontaktadressen(db);
 
   /* Write-Ahead-Log in die .db schreiben: Wird die Datei anschliessend
      kopiert, sind die frischen Zeilen sonst nicht darin. */
@@ -59,6 +64,7 @@ function main(): void {
       `${ergebnis.nichtUebernommen} verworfen/uebergangen, ${ergebnis.fehler.length} Fehler`,
   );
   for (const fehler of ergebnis.fehler) console.warn(`  ${fehler}`);
+  if (adressen > 0) console.log(`Kontaktadressen ergänzt: ${adressen}`);
   console.log(`Datenbank: ${datenbank}`);
 }
 
