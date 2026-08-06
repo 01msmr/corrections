@@ -1,6 +1,6 @@
 import { regionForDomain } from "@korrektur/shared";
 import { createId } from "@paralleldrive/cuid2";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { corrections, outletDomains, outlets } from "../db/schema.js";
 import { removeOrArchive, type RemovalOutcome } from "./removal.js";
@@ -139,7 +139,13 @@ export function removeOutlet(db: Db, id: string): RemovalOutcome {
   });
 }
 
-export function addDomain(db: Db, outletId: string, domain: string): boolean {
+export interface DomainErgebnis {
+  ok: boolean;
+  /** Meldungen, die mit der Domain zum neuen Titel gewandert sind. */
+  uebernommeneKorrekturen: number;
+}
+
+export function addDomain(db: Db, outletId: string, domain: string): DomainErgebnis {
   const normalized = domain.toLowerCase();
   const taken = db
     .select()
@@ -148,24 +154,63 @@ export function addDomain(db: Db, outletId: string, domain: string): boolean {
     .get();
 
   if (taken) {
-    if (taken.outletId === outletId) return true;
+    if (taken.outletId === outletId) return { ok: true, uebernommeneKorrekturen: 0 };
 
     /* Haelt ein archiviertes Outlet die Domain, wird sie uebernommen: Das
        archivierte ist aus der Liste verschwunden und soll nichts Neues mehr
        zugeordnet bekommen -- es blockierte die Domain sonst unsichtbar.
-       Seine bisherigen Meldungen bleiben ihm zugeordnet (§2.1). */
+       Die Meldungen dieser Domain wandern mit. */
     const halter = db.select().from(outlets).where(eq(outlets.id, taken.outletId)).get();
-    if (!halter?.archived) return false;
+    if (!halter?.archived) return { ok: false, uebernommeneKorrekturen: 0 };
 
     db.update(outletDomains)
       .set({ outletId })
       .where(eq(outletDomains.id, taken.id))
       .run();
-    return true;
+    return { ok: true, uebernommeneKorrekturen: holeKorrekturenNach(db, outletId, normalized) };
   }
 
   db.insert(outletDomains).values({ id: createId(), outletId, domain: normalized }).run();
-  return true;
+  return { ok: true, uebernommeneKorrekturen: holeKorrekturenNach(db, outletId, normalized) };
+}
+
+/**
+ * Holt die Meldungen einer Domain zum neuen Titel: Wer die Domain fuehrt,
+ * fuehrt auch ihre Fundstellen — sonst haengt die Historie an einem
+ * archivierten Titel, den niemand mehr sieht.
+ *
+ * Bewusst nur von **archivierten** Titeln: Einem aktiven Titel wird nichts
+ * weggenommen; seine Domain kann ohnehin nicht uebernommen werden. Verglichen
+ * wird der Host der kanonischen Artikel-URL, damit Meldungen zu anderen
+ * Domains desselben Titels bleiben, wo sie sind.
+ */
+function holeKorrekturenNach(db: Db, zuOutlet: string, domain: string): number {
+  const archivierte = db
+    .select({ id: outlets.id })
+    .from(outlets)
+    .where(eq(outlets.archived, true))
+    .all()
+    .map((zeile) => zeile.id)
+    .filter((id) => id !== zuOutlet);
+  if (archivierte.length === 0) return 0;
+
+  const betroffen = db
+    .select({ id: corrections.id, outletId: corrections.outletId, canon: corrections.articleUrlCanon })
+    .from(corrections)
+    .where(inArray(corrections.outletId, archivierte))
+    .all()
+    .filter((zeile) => {
+      try {
+        return new URL(zeile.canon).hostname.toLowerCase() === domain;
+      } catch {
+        return false;
+      }
+    });
+
+  for (const zeile of betroffen) {
+    db.update(corrections).set({ outletId: zuOutlet }).where(eq(corrections.id, zeile.id)).run();
+  }
+  return betroffen.length;
 }
 
 export function removeDomain(db: Db, outletId: string, domain: string): boolean {

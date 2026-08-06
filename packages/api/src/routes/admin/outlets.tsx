@@ -121,8 +121,18 @@ export function outletAdminRoutes(db: Db, now: () => number): Hono {
       const hinweis = "Domain ungueltig";
       return c.redirect(`${BASE}?hinweis=${encodeURIComponent(hinweis)}`, 302);
     }
-    const ok = addDomain(db, c.req.param("id"), parsed.data);
-    const hinweis = ok ? "Domain ergaenzt" : "Domain gehoert bereits zu einer anderen Redaktion";
+    const ergebnis = addDomain(db, c.req.param("id"), parsed.data);
+    /* Wandern Meldungen mit, wird das genannt: Sonst bliebe unklar, wohin die
+       Historie der Domain gegangen ist. */
+    const mitgewandert =
+      ergebnis.uebernommeneKorrekturen === 1
+        ? ", eine Korrektur übernommen"
+        : ergebnis.uebernommeneKorrekturen > 1
+          ? `, ${ergebnis.uebernommeneKorrekturen} Korrekturen übernommen`
+          : "";
+    const hinweis = ergebnis.ok
+      ? `Domain ergänzt${mitgewandert}`
+      : "Domain gehört bereits zu einem anderen Medium";
     return c.redirect(`${BASE}?hinweis=${encodeURIComponent(hinweis)}`, 302);
   });
 
