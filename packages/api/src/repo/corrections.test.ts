@@ -6,7 +6,7 @@ import { seed } from "../db/seed.js";
 import { corrections } from "../db/schema.js";
 import { createJsonMailer, type Mailer } from "../dispatch/send.js";
 import type { FetchResult } from "../article/fetch.js";
-import { resolveOutletByHost, updateOutlet } from "./outlets.js";
+import { createOutlet } from "./outlets.js";
 import { createCorrection, getCorrectionByRef, type CreateDeps } from "./corrections.js";
 
 const NOW = 1_800_000_000;
@@ -40,20 +40,15 @@ beforeEach(() => {
   db = createDb(":memory:");
   runMigrations(db);
   seed(db);
-  // seed() legt "beispiel-zeitung.de" bereits ohne Kontaktadresse an (DEFAULT_OUTLETS
-  // in db/seed.ts); ein zweites createOutlet() fuer dieselbe Domain wuerde die
-  // Unique-Constraint auf outlet_domains.domain verletzen. Stattdessen wird die
-  // Kontaktadresse auf dem bereits vorhandenen Outlet nachgetragen.
-  const seeded = resolveOutletByHost(db, "beispiel-zeitung.de");
-  if (!seeded) throw new Error("Seed-Outlet fehlt");
-  updateOutlet(db, seeded.id, {
-    name: seeded.name,
-    primaryDomain: seeded.primaryDomain,
-    publisher: seeded.publisher,
-    country: seeded.country,
-    notes: seeded.notes,
+  // seed() saet nur Fehlerarten; das Testmedium samt Kontaktadresse entsteht hier.
+  createOutlet(db, {
+    name: "Beispiel-Zeitung",
+    primaryDomain: "beispiel-zeitung.de",
+    publisher: null,
+    country: null,
+    notes: null,
     contactEmails: ["leserbriefe@beispiel-zeitung.de"],
-  });
+  }, Math.floor(Date.now() / 1000));
 });
 
 describe("createCorrection", () => {

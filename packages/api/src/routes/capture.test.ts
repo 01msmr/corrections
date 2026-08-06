@@ -5,7 +5,7 @@ import { createDb, runMigrations, type Db } from "../db/client.js";
 import { corrections } from "../db/schema.js";
 import { seed } from "../db/seed.js";
 import { createJsonMailer } from "../dispatch/send.js";
-import { resolveOutletByHost, updateOutlet } from "../repo/outlets.js";
+import { createOutlet } from "../repo/outlets.js";
 import type { CreateDeps } from "../repo/corrections.js";
 import { captureRoutes } from "./capture.js";
 
@@ -19,20 +19,19 @@ beforeEach(() => {
   db = createDb(":memory:");
   runMigrations(db);
   seed(db);
-  // seed() legt "beispiel-zeitung.de" bereits ohne Kontaktadresse an (DEFAULT_OUTLETS
-  // in db/seed.ts); ein zweites createOutlet() fuer dieselbe Domain wuerde die
-  // Unique-Constraint auf outlet_domains.domain verletzen (siehe repo/corrections.test.ts).
-  // Stattdessen wird die Kontaktadresse auf dem vorhandenen Outlet nachgetragen.
-  const seeded = resolveOutletByHost(db, "beispiel-zeitung.de");
-  if (!seeded) throw new Error("Seed-Outlet fehlt");
-  updateOutlet(db, seeded.id, {
-    name: seeded.name,
-    primaryDomain: seeded.primaryDomain,
-    publisher: seeded.publisher,
-    country: seeded.country,
-    notes: seeded.notes,
-    contactEmails: ["leserbriefe@beispiel-zeitung.de"],
-  });
+  // seed() saet nur Fehlerarten; das Testmedium samt Kontaktadresse entsteht hier.
+  createOutlet(
+    db,
+    {
+      name: "Beispiel-Zeitung",
+      primaryDomain: "beispiel-zeitung.de",
+      publisher: null,
+      country: null,
+      notes: null,
+      contactEmails: ["leserbriefe@beispiel-zeitung.de"],
+    },
+    Math.floor(Date.now() / 1000),
+  );
   deps = {
     db,
     mailer: createJsonMailer("korrektur@example.tld"),

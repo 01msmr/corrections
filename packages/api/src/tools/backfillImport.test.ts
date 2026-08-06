@@ -4,6 +4,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { eq } from "drizzle-orm";
 import { corrections, errorTypes, outlets } from "../db/schema.js";
 import { seed } from "../db/seed.js";
+import { createOutlet } from "../repo/outlets.js";
 import {
   ergaenzeKontaktadressen,
   importiereEntscheidungen,
@@ -71,6 +72,12 @@ describe("importiereEntscheidungen", () => {
   it("laesst bestehende Meldungen anderer Herkunft unberuehrt", () => {
     // Eine Meldung, wie sie ueber das Formular entsteht — der Import darf sie
     // weder aendern noch loeschen (§11.5: er ergaenzt, er ersetzt nicht).
+    // seed() saet nur Fehlerarten; das Medium der Formular-Meldung entsteht hier.
+    const medium = createOutlet(
+      db,
+      { name: "Beispiel-Zeitung", primaryDomain: "beispiel-zeitung.de", publisher: null, country: null, notes: null, contactEmails: [] },
+      NOW,
+    );
     const bestand = createId();
     db.insert(corrections)
       .values({
@@ -81,7 +88,7 @@ describe("importiereEntscheidungen", () => {
         dispatchMode: "smtp",
         articleUrl: "https://beispiel-zeitung.de/live",
         articleUrlCanon: "https://beispiel-zeitung.de/live",
-        outletId: db.select().from(outlets).all()[0]?.id ?? "",
+        outletId: medium.id,
         errorTypeId: db.select().from(errorTypes).all()[0]?.id ?? "",
         severity: 2,
         quoteBefore: "aus dem Formular",

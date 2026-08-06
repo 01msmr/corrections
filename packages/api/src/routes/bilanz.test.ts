@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { createDb, runMigrations, type Db } from "../db/client.js";
 import { articleChecks, corrections, errorTypes, outlets } from "../db/schema.js";
 import { seed } from "../db/seed.js";
+import { createOutlet } from "../repo/outlets.js";
 import { bilanzRoutes } from "./bilanz.js";
 
 const JETZT = 1_800_000_000;
@@ -21,6 +22,18 @@ beforeEach(() => {
   db = createDb(":memory:");
   runMigrations(db);
   seed(db);
+  /* seed() saet nur Fehlerarten; die Tests brauchen bis zu drei Medien. */
+  for (const [name, domain] of [
+    ["Beispiel-Zeitung", "beispiel-zeitung.de"],
+    ["Muster-Magazin", "muster-magazin.de"],
+    ["Probe-Anzeiger", "probe-anzeiger.de"],
+  ] as const) {
+    createOutlet(
+      db,
+      { name, primaryDomain: domain, publisher: null, country: null, notes: null, contactEmails: [] },
+      ALT,
+    );
+  }
 });
 
 function meldung(anzahl: number): void {

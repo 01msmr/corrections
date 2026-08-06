@@ -1,7 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import { eq } from "drizzle-orm";
 import type { Db } from "./client.js";
-import { errorTypes, outletDomains, outlets } from "./schema.js";
+import { errorTypes } from "./schema.js";
 
 /**
  * Die Fehlerarten des urspruenglichen Kurzbefehls, ergaenzt um einige, die dort
@@ -39,12 +39,6 @@ export const DEFAULT_ERROR_TYPES = [
   { key: "sonstiges", label: "Sonstiges", description: "Passt in keine der übrigen Kategorien." },
 ] as const;
 
-const DEFAULT_OUTLETS = [
-  { name: "Beispiel-Zeitung", domain: "beispiel-zeitung.de", publisher: "Beispiel Verlag" },
-  { name: "Muster-Magazin", domain: "muster-magazin.de", publisher: "Muster Medien" },
-  { name: "Probe-Anzeiger", domain: "probe-anzeiger.de", publisher: "Probe Presse" },
-] as const;
-
 export function seed(db: Db): void {
   const now = Math.floor(Date.now() / 1000);
 
@@ -62,27 +56,4 @@ export function seed(db: Db): void {
       })
       .run();
   });
-
-  for (const entry of DEFAULT_OUTLETS) {
-    const existing = db
-      .select()
-      .from(outletDomains)
-      .where(eq(outletDomains.domain, entry.domain))
-      .get();
-    if (existing) continue;
-
-    const outletId = createId();
-    db.insert(outlets)
-      .values({
-        id: outletId,
-        name: entry.name,
-        primaryDomain: entry.domain,
-        publisher: entry.publisher,
-        country: "DE",
-        contactEmails: [],
-        createdAt: now,
-      })
-      .run();
-    db.insert(outletDomains).values({ id: createId(), outletId, domain: entry.domain }).run();
-  }
 }

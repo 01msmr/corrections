@@ -23,11 +23,11 @@ describe("seed", () => {
     expect(rows.map((r) => r.key)).toContain("komma_fehlt");
   });
 
-  it("legt drei Redaktionen mit je einer Domain an", () => {
+  it("legt keine Medien an — Stammdaten kommen aus medien.json, Tests bauen eigene", () => {
     const db = freshDb();
     seed(db);
-    expect(db.select().from(outlets).all()).toHaveLength(3);
-    expect(db.select().from(outletDomains).all()).toHaveLength(3);
+    expect(db.select().from(outlets).all()).toHaveLength(0);
+    expect(db.select().from(outletDomains).all()).toHaveLength(0);
   });
 
   it("ist mehrfach ausführbar, ohne zu duplizieren", () => {
@@ -35,7 +35,6 @@ describe("seed", () => {
     seed(db);
     seed(db);
     expect(db.select().from(errorTypes).all()).toHaveLength(DEFAULT_ERROR_TYPES.length);
-    expect(db.select().from(outlets).all()).toHaveLength(3);
   });
 
   it("vergibt eine stabile Sortierreihenfolge", () => {
