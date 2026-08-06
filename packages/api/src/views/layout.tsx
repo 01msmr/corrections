@@ -1,7 +1,7 @@
 import { PALETTE, PALETTE_DUNKEL } from "@korrektur/shared";
 import type { FC, PropsWithChildren } from "hono/jsx";
 
-/** Fuer Farben in data-URIs: "#a3323b" -> "%23a3323b". */
+/** Fuer Farben in data-URIs: "#rrggbb" -> "%23rrggbb". */
 const uri = (hex: string): string => hex.replace("#", "%23");
 
 /* Die beiden gezeichneten Sinnbilder, je Farbe genau einmal erzeugt: der
@@ -41,6 +41,7 @@ const STYLES = `
     --rand: ${PALETTE.rand};
     --linie: ${PALETTE.linie};
     --feld: ${PALETTE.feld};
+    --schatten: ${PALETTE.schatten};
     /* Schattenfarbe der Klotz-Kanten: hell laeuft sie in Tinte, dunkel als
        echter Schatten -- die helle Dunkel-Tinte wuerde die Kante beleuchten. */
     --klotzkante: var(--tinte);
@@ -57,7 +58,9 @@ const STYLES = `
       --korrektur: ${PALETTE_DUNKEL.korrektur}; --vorschlag: ${PALETTE_DUNKEL.vorschlag};
       --rand: ${PALETTE_DUNKEL.rand}; --linie: ${PALETTE_DUNKEL.linie};
       --feld: ${PALETTE_DUNKEL.feld};
-      --klotzkante: rgb(0 0 0);
+      --schatten: ${PALETTE_DUNKEL.schatten};
+      /* Dunkel liegt der Koerper im echten Schatten, nicht in Tinte. */
+      --klotzkante: rgb(var(--schatten));
     }
   }
 
@@ -124,8 +127,8 @@ const STYLES = `
   }
   .navzeile { background: var(--papier); }
   @keyframes kopfschatten {
-    from { box-shadow: 0 4px 12px -10px rgba(0, 0, 0, 0); }
-    to { box-shadow: 0 4px 14px -8px rgba(0, 0, 0, .3); }
+    from { box-shadow: 0 4px 12px -10px rgb(var(--schatten) / 0); }
+    to { box-shadow: 0 4px 14px -8px rgb(var(--schatten) / .3); }
   }
   .kopfinhalt {
     display: flex; flex-wrap: wrap; gap: .75rem 1.5rem;
@@ -327,13 +330,13 @@ const STYLES = `
        Kantentiefe darueber, die Kanten fuehren auf die Grundflaeche zurueck,
        aus der der weiche Schlagschatten faellt. */
     transform: translate(-5px, -5px);
-    box-shadow: ${klotzKanten(5)}, 9px 10px 10px -6px rgba(0, 0, 0, .35);
+    box-shadow: ${klotzKanten(5)}, 9px 10px 10px -6px rgb(var(--schatten) / .35);
   }
   /* Beim Zeigen hebt sich der Klotz weiter aus dem Blatt; die Grundflaeche
      bleibt im Raster verankert. */
   button:hover, button:focus-visible {
     transform: translate(-7px, -7px);
-    box-shadow: ${klotzKanten(7)}, 12px 13px 14px -7px rgba(0, 0, 0, .4);
+    box-shadow: ${klotzKanten(7)}, 12px 13px 14px -7px rgb(var(--schatten) / .4);
   }
   /* Beim Druecken kippt der Koerper ins Negativ: die Flaeche sinkt um die
      Kantentiefe unter die Grundflaeche. Die Aushoehlung zeigt dieselben
@@ -345,7 +348,7 @@ const STYLES = `
     /* Die Fuellung endet an der Innenkante des (transparenten) Rahmens: um
        die Vertiefung herum scheint das Blatt durch, kein grauer Saum. */
     background-clip: padding-box;
-    box-shadow: ${klotzKanten(5, true)}, inset 9px 10px 12px -5px rgba(0, 0, 0, .4);
+    box-shadow: ${klotzKanten(5, true)}, inset 9px 10px 12px -5px rgb(var(--schatten) / .4);
   }
   /* Das Zeilenschaltungszeichen sagt, dass der Knopf auch mit der Eingabetaste
      ausgeloest wird. aria-hidden, weil das fuer Vorlesesoftware ohnehin gilt. */
@@ -643,28 +646,34 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
       zelle.setAttribute("tabindex", "0");
       zelle.setAttribute("aria-sort", "none");
 
-      const wert = (zeile) => {
-        const feld = zeile.cells[spalte];
-        if (!feld) return "";
-        return (feld.dataset.wert !== undefined ? feld.dataset.wert : feld.textContent).trim();
-      };
-
       const sortieren = () => {
-        const aufsteigend = zelle.getAttribute("aria-sort") !== "ascending";
-        const zeilen = Array.from(koerper.rows);
-        const zahlig = zeilen.every((zeile) => {
-          const v = wert(zeile);
-          return v === "" || !Number.isNaN(Number(v.replace(",", ".")));
+        /* Jeden Zellwert genau einmal lesen und umwandeln, danach nur noch
+           die fertigen Paare vergleichen -- sonst liefe die Aufbereitung bei
+           jedem einzelnen Vergleich erneut. */
+        const paare = Array.from(koerper.rows, (zeile) => {
+          const feld = zeile.cells[spalte];
+          const roh = feld
+            ? (feld.dataset.wert !== undefined ? feld.dataset.wert : feld.textContent).trim()
+            : "";
+          const zahl = Number(roh.replace(",", "."));
+          return { zeile, text: roh, zahl, istZahl: roh !== "" && !Number.isNaN(zahl) };
         });
-        zeilen.sort((a, b) => {
-          const av = wert(a);
-          const bv = wert(b);
+        const zahlig = paare.every((paar) => paar.text === "" || paar.istZahl);
+
+        /* Erster Klick: bei Zahlen das Groesste nach oben, bei Text von A an.
+           Danach kehrt jeder weitere Klick die Richtung um. */
+        const zustand = zelle.getAttribute("aria-sort");
+        const aufsteigend = zustand === null || zustand === "none" ? !zahlig : zustand !== "ascending";
+        const richtung = aufsteigend ? 1 : -1;
+
+        paare.sort((a, b) => {
           const vergleich = zahlig
-            ? Number(av.replace(",", ".") || 0) - Number(bv.replace(",", ".") || 0)
-            : av.localeCompare(bv, "de");
-          return aufsteigend ? vergleich : -vergleich;
+            ? (a.istZahl ? a.zahl : 0) - (b.istZahl ? b.zahl : 0)
+            : a.text.localeCompare(b.text, "de");
+          return vergleich * richtung;
         });
-        for (const zeile of zeilen) koerper.appendChild(zeile);
+
+        for (const paar of paare) koerper.appendChild(paar.zeile);
         for (const andere of kopf.cells) andere.setAttribute("aria-sort", "none");
         zelle.setAttribute("aria-sort", aufsteigend ? "ascending" : "descending");
       };

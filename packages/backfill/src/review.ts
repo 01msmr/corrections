@@ -2,7 +2,7 @@ import { appendFileSync, existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
-import { benenneFehlerart, istZaehlbareFehlerart, ZAHLWOERTER } from "@korrektur/shared";
+import { benenneFehlerart, istZaehlbareFehlerart, PALETTE, ZAHLWOERTER } from "@korrektur/shared";
 import { Hono } from "hono";
 import { leseAltmeldung, type Altmeldung } from "./lesen.js";
 
@@ -127,22 +127,22 @@ function seite(eintrag: { datei: string; meldung: Altmeldung }, offen: number, g
 <style>
   body { font: 15px/1.5 system-ui, sans-serif; margin: 0; display: grid;
     grid-template-columns: 1fr 1fr; gap: 1.5rem; height: 100vh; box-sizing: border-box;
-    padding: 1rem 1.5rem; background: #f7f7f4; color: #1b1f23; }
+    padding: 1rem 1.5rem; background: ${PALETTE.papier}; color: ${PALETTE.tinte}; }
   h1 { font-size: 1rem; margin: 0 0 .5rem; grid-column: 1 / -1; }
-  h1 .konfidenz { color: #a3323b; font-weight: 700; }
-  pre { overflow: auto; margin: 0; padding: .75rem; background: #fffffe;
-    border: 1px solid #dcddd8; white-space: pre-wrap; font-size: .85rem; }
+  h1 .konfidenz { color: ${PALETTE.korrektur}; font-weight: 700; }
+  pre { overflow: auto; margin: 0; padding: .75rem; background: ${PALETTE.feld};
+    border: 1px solid ${PALETTE.linie}; white-space: pre-wrap; font-size: .85rem; }
   form { display: flex; flex-direction: column; gap: .6rem; overflow: auto; }
   label { display: flex; flex-direction: column; gap: .15rem; font-weight: 600; font-size: .8rem; }
   input, textarea, select { font: inherit; font-weight: 400; padding: .3rem .4rem;
-    border: 1px solid #6b7480; background: #fffffe; }
-  .roh { margin: 0; font-size: .8rem; color: #6b7480; }
+    border: 1px solid ${PALETTE.rand}; background: ${PALETTE.feld}; }
+  .roh { margin: 0; font-size: .8rem; color: ${PALETTE.rand}; }
   .knoepfe { display: flex; gap: .75rem; margin-top: .25rem; }
-  button { font: inherit; padding: .45rem 1rem; cursor: pointer; border: 2px solid #1b1f23;
-    background: #fffffe; }
-  button[value="uebernehmen"] { background: #2f6f4e; color: #fffffe; border-color: #2f6f4e; }
-  button[value="verwerfen"] { color: #a3323b; border-color: #a3323b; }
-  kbd { border: 1px solid #6b7480; border-radius: 3px; padding: 0 .3em; font-size: .75em; }
+  button { font: inherit; padding: .45rem 1rem; cursor: pointer; border: 2px solid ${PALETTE.tinte};
+    background: ${PALETTE.feld}; }
+  button[value="uebernehmen"] { background: ${PALETTE.vorschlag}; color: ${PALETTE.feld}; border-color: ${PALETTE.vorschlag}; }
+  button[value="verwerfen"] { color: ${PALETTE.korrektur}; border-color: ${PALETTE.korrektur}; }
+  kbd { border: 1px solid ${PALETTE.rand}; border-radius: 3px; padding: 0 .3em; font-size: .75em; }
   .kategoriezeile { display: flex; gap: .5rem; }
   .kategoriezeile input { width: 4.5rem; flex: none; }
   .kategoriezeile input[name="zeichen"] { width: 3.2rem; }

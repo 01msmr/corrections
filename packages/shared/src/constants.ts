@@ -22,19 +22,23 @@ export const ANCHOR_LENGTH = 48;
 export const PALETTE = {
   papier: "#f7f7f4",
   tinte: "#1b1f23",
-  korrektur: "#a3323b",
+  korrektur: "#bb2233",
   vorschlag: "#2f6f4e",
   rand: "#6b7480",
   linie: "#dcddd8",
   feld: "#fffffe",
+  /** Schattenfarbe als RGB-Komponenten, damit die Deckkraft an der
+   *  Verwendungsstelle bestimmt wird: `rgb(var(--schatten) / .35)`. */
+  schatten: "0 0 0",
 } as const;
 
 export const PALETTE_DUNKEL = {
   papier: "#16181b",
   tinte: "#e8e6e1",
-  korrektur: "#dd7e85",
+  korrektur: "#e07b86",
   vorschlag: "#7bc39a",
   rand: "#949ba6",
   linie: "#2e3237",
   feld: "#1d2024",
+  schatten: "0 0 0",
 } as const;
