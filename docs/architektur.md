@@ -131,3 +131,76 @@ Seit den Diagrammen oben dazugekommen:
   Quoten nie ohne n, alphabetisch, kein Ranking). Offen außerdem: der
   Worker-Cronjob in Plesk und der verwaiste alte Deploy-Schlüssel in
   `authorized_keys`.
+
+## Ergänzungen (Stand 6. August 2026)
+
+### Bilanz — die öffentliche Statistik steht
+
+`GET /bilanz` (öffentlich, fünftes Ressort). Zahlen kommen aus `repo/bilanz.ts`,
+die Ansicht aus `views/bilanz.tsx`:
+
+- **Eckdaten** (Korrekturen, Medien, Zeitraum), **beide Leitquoten**,
+  **Verteilung** nach Fehlerart und Schwere, **Zeitreihe je Monat**,
+  **Medien-Tabelle** und der Abschnitt „Was diese Zahlen nicht sagen".
+- **Zwei Regeln tragen die Ehrlichkeit der Seite:** Eine Korrektur ohne
+  Artikel-Prüfung zählt nicht in den Korrektur-Nenner (sie ist *ungeprüft*, nicht
+  *nicht korrigiert*), und ohne gelaufenen Postfach-Abgleich bleibt der
+  Antwort-Nenner leer. Sonst behauptete die Seite bei frischem Bestand „0 %" —
+  eine Aussage über uns, ausgegeben als Aussage über die Redaktionen.
+- Monate ohne Korrektur werden in der Zeitreihe mit Null gefüllt, damit die Achse
+  keinen gleichmäßigen Verlauf vortäuscht.
+- Tabellen lassen sich per Klick auf den Spaltenkopf umsortieren (Zahlenspalten
+  beim ersten Klick absteigend). Die Serverantwort bleibt alphabetisch, die
+  Voreinstellung stellt also keine Rangfolge auf.
+
+### Altbestand (P4) — Werkzeuge fertig, Import läuft
+
+Eigenes Paket `packages/backfill`, getrennt vom Serverpfad; gemeinsam mit dem
+Dauerbetrieb nur `packages/shared`.
+
+- `pnpm backfill:korpus` — Gesendet-Ordner einmalig read-only als `.eml` nach
+  `fixtures.local/korpus` (1328 Mails).
+- `pnpm backfill:review` — Review-Queue auf **:3223**, ein Bildschirm pro Meldung,
+  `Enter` übernehmen / `E` bearbeiten / `X` verwerfen. **Jederzeit unterbrechbar:**
+  jede Entscheidung geht sofort nach `fixtures.local/review-entscheidungen.jsonl`,
+  der Neustart überspringt Entschiedenes.
+- `pnpm backfill:import` bzw. **`/admin/backfill`** — spielt die Entscheidungen
+  ein (`source='backfill'`, idempotent über die Message-ID). Die Adminseite ist
+  nötig, weil die SSH-Chroot des Hosters **keine Node-Laufzeit** hat.
+- Der Vorlagen-Parser liest die Kurzbefehl-Mails konservativ: 85 % sicher, der
+  Rest zur Prüfung oder verworfen — geraten wird nie.
+
+### Fehlerarten mit Anzahl und Zeichen
+
+Eine Kategorie, freie Anzahl: `corrections.error_count` und `error_char`. Die
+Erkennung zählt mit (`detectErrorCount`, `detectErrorChar`), `benenneFehlerart`
+in `shared` fügt es sprachlich zusammen — „ein Zeichen fehlt", „zwei Wörter zu
+viel", „ein Komma zu viel". Zahlwörter bis zwölf, darüber Ziffern.
+
+### Medien-Stammdaten
+
+`packages/api/src/db/medien.json` — die Redaktionsnamen und Korrekturadressen aus
+dem Wörterbuch des Kurzbefehls (`RedNAME`/`RedMAIL`), beim Start übernommen
+(`tools/medienStammdaten.ts`): anlegen, was fehlt, aktualisieren, was abweicht.
+Sie schlägt aus Altmails abgeleitete Adressen, weil sie auch Medien ohne Meldung
+kennt und Adresswechsel bereits enthält.
+
+### Domains
+
+Ein archiviertes Medium gibt seine Domains frei — sonst blockierte es sie
+unsichtbar. Wandert eine Domain zu einem anderen Medium, folgen ihr die
+bisherigen Korrekturen (zugeordnet über den Host der kanonischen Artikel-URL);
+geholt wird nur von archivierten Medien. Zusatzdomains lassen sich entfernen,
+ohne dass Korrekturen verloren gehen; die letzte Domain bleibt stehen.
+
+### Farben
+
+Auszeichnungsfarbe ist Kirschrot `#bb2233` (dunkel `#e07b86`), Schwarz für
+Schatten als `PALETTE.schatten`. **Eine Lint-Regel verbietet Farbliterale**
+außerhalb von `constants.ts` — der Deploy bricht sonst ab.
+
+### Offen
+
+P3 (Antwort-Zuordnung per IMAP) und P5 (Artikel-Prüfungen per Cronjob) — solange
+sie fehlen, bleiben beide Quoten der Bilanz leer. Außerdem weiter offen: der
+Worker-Cronjob in Plesk und der verwaiste Deploy-Schlüssel in `authorized_keys`.
