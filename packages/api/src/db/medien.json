@@ -1,0 +1,9 @@
+{
+  "spiegel":         { "RedNAME": "SPIEGEL",         "RedMAIL": "redaktion@spiegel.de" },
+  "sueddeutsche":    { "RedNAME": "Süddeutsche",     "RedMAIL": "fehler@sz.de" },
+  "suedkurier":      { "RedNAME": "Südkurier",       "RedMAIL": "online-redaktion@suedkurier.de" },
+  "nw":              { "RedNAME": "NW",              "RedMAIL": "digitalredaktion@nw.de" },
+  "golem":           { "RedNAME": "golem",           "RedMAIL": "lektorat@golem.de" },
+  "heise":           { "RedNAME": "heise",           "RedMAIL": "newstipps@heise.de" },
+  "manager-magazin": { "RedNAME": "manager-magazin", "RedMAIL": "mm.digitaldesk@manager-magazin.de" }
+}

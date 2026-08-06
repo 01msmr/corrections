@@ -4,10 +4,12 @@ import { serve } from "@hono/node-server";
 import { createApp } from "./app.js";
 import { fetchArticle } from "./article/fetch.js";
 import { createDb, runMigrations } from "./db/client.js";
+import medien from "./db/medien.json" with { type: "json" };
 import { seed } from "./db/seed.js";
 import { applyViews } from "./db/views.js";
 import { createSmtpMailer } from "./dispatch/send.js";
 import { loadEnv } from "./env.js";
+import { uebernimmStammdaten } from "./tools/medienStammdaten.js";
 
 const env = loadEnv();
 
@@ -21,6 +23,10 @@ const db = createDb(env.DATABASE_PATH);
 runMigrations(db, env.MIGRATIONS_DIR);
 applyViews(db); // aus den Konstanten neu erzeugt, siehe Task 9
 seed(db);
+/* Redaktionsnamen und Korrekturadressen kommen aus medien.json — der Fassung
+   aus dem Kurzbefehl, die den Versand jahrelang getragen hat. Bei jedem Start
+   abgeglichen, damit eine Aenderung dort nur einen Deploy braucht. */
+uebernimmStammdaten(db, medien, Math.floor(Date.now() / 1000));
 
 const app = createApp({
   env,

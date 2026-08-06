@@ -118,11 +118,10 @@ export const BackfillSeite: FC<{
     <h2 class="balken">Medien aus dem Kurzbefehl</h2>
     <div class="prosa-schmal">
       <p>
-        Das Wörterbuch des Kurzbefehls als JSON — je Medium ein Eintrag mit
-        <code> RedNAME</code> und <code>RedMAIL</code>. Es ist die gepflegte Quelle für
-        Namen und Korrekturadressen und kennt auch Medien, zu denen noch keine Meldung
-        erfasst ist. Vorhandene Angaben werden damit überschrieben, weil der Kurzbefehl
-        aktueller ist als eine aus Altmails abgeleitete Adresse.
+        Die Stammdaten aus <code>db/medien.json</code> werden bei jedem Start
+        übernommen — hier nur nötig, wenn eine Änderung sofort greifen soll, ohne auf
+        den nächsten Deploy zu warten. Format: je Medium ein Eintrag mit
+        <code>RedNAME</code> und <code>RedMAIL</code>.
       </p>
     </div>
     <form method="post" action="/admin/backfill/medien" enctype="multipart/form-data">

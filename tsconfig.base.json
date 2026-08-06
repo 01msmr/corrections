@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    /* Stammdaten liegen als JSON im Quellbaum (packages/api/src/db/medien.json). */
+    "resolveJsonModule": true,
     "target": "ES2023",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",

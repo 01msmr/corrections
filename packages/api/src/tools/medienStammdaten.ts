@@ -14,8 +14,9 @@ import { outletDomains, outlets } from "../db/schema.js";
  * Erwartetes Format (JSON-Export des Wörterbuchs):
  *   { "spiegel": { "RedNAME": "SPIEGEL", "RedMAIL": "redaktion@spiegel.de" } }
  *
- * Die Datei liegt in `fixtures.local/` und damit außerhalb des Repositories
- * (§CLAUDE.md: keine echten Adressen committen).
+ * Die gepflegte Fassung liegt als `db/medien.json` im Quellbaum und wird beim
+ * Start übernommen; über die Adminseite lässt sich zusätzlich ein Wörterbuch
+ * hochladen, wenn eine Änderung ohne Deploy gebraucht wird.
  */
 
 export interface KurzbefehlEintrag {

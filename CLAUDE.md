@@ -51,7 +51,10 @@ Ist der Altbestand drin, kann die Route entfallen: eine Zeile in `app.ts` (§11.
   Tabellen kommen alphabetisch vom Server. Umsortieren per Spaltenkopf ist erlaubt
   (bewusste Entscheidung vom 6.8.2026) — die Voreinstellung bleibt alphabetisch, und
   unter der Medien-Tabelle steht, was die Zahl misst und was nicht.
-- Nie echte Mailinhalte, Adressen oder Tokens committen.
+- Nie echte Mailinhalte, personenbezogene Adressen oder Tokens committen. **Ausnahme:**
+  die Korrekturadressen der Redaktionen in `packages/api/src/db/medien.json` — sie stehen
+  in den Impressen, sind an keine Person gebunden und werden beim Start übernommen
+  (Entscheidung vom 6.8.2026). Postfächer von Personen gehören dort nicht hinein.
 
 ## Nicht anfassen
 - `tests/fixtures/**` (nur ergänzen)
