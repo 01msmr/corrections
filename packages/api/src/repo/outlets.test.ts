@@ -1,7 +1,8 @@
 import { createId } from "@paralleldrive/cuid2";
+import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createDb, runMigrations, type Db } from "../db/client.js";
-import { corrections, errorTypes } from "../db/schema.js";
+import { corrections, errorTypes, outlets } from "../db/schema.js";
 import {
   addDomain,
   createOutlet,
@@ -124,6 +125,58 @@ describe("Outlet-Pflege", () => {
     expect(removeOutlet(db, outlet.id)).toBe("archived");
     expect(listOutlets(db)).toHaveLength(0);
     expect(listOutlets(db, { includeArchived: true })).toHaveLength(1);
+  });
+
+  it("gibt die Domains eines archivierten Outlets frei", () => {
+    // Ein archiviertes Outlet ist aus der Liste verschwunden. Behielte es seine
+    // Domains, blockierte es sie unsichtbar: Der naechste Versuch, dieselbe
+    // Domain einem anderen Titel zu geben, scheiterte ohne erkennbaren Grund.
+    const magazin = createOutlet(db, baseInput("Magazin", "magazin.blatt.de"), NOW);
+    const haupt = createOutlet(db, baseInput("Hauptblatt", "blatt.de"), NOW);
+    const errorTypeId = createId();
+    db.insert(errorTypes)
+      .values({ id: errorTypeId, key: "zahl", label: "Zahl", sortOrder: 10, createdAt: NOW })
+      .run();
+    db.insert(corrections)
+      .values({
+        id: createId(),
+        ref: "K7QW3N",
+        idempotencyKey: "idem-2",
+        createdAt: NOW,
+        dispatchMode: "smtp",
+        articleUrl: "https://magazin.blatt.de/a",
+        articleUrlCanon: "https://magazin.blatt.de/a",
+        outletId: magazin.id,
+        errorTypeId,
+        severity: 2,
+        quoteBefore: "Zitat",
+        suggestionAfter: "Vorschlag",
+        recipientEmail: "leserbriefe@magazin.blatt.de",
+        source: "web",
+      })
+      .run();
+
+    expect(removeOutlet(db, magazin.id)).toBe("archived");
+    // Die Domain ist jetzt frei und laesst sich dem Hauptblatt geben.
+    expect(addDomain(db, haupt.id, "magazin.blatt.de")).toBe(true);
+    expect(resolveOutletByHost(db, "magazin.blatt.de")?.id).toBe(haupt.id);
+  });
+
+  it("uebernimmt eine Domain, die noch an einem archivierten Outlet haengt", () => {
+    // Bestandsfall: archiviert wurde, bevor die Freigabe eingebaut war.
+    const alt = createOutlet(db, baseInput("Alt", "alt.de"), NOW);
+    const neu = createOutlet(db, baseInput("Neu", "neu.de"), NOW);
+    db.update(outlets).set({ archived: true }).where(eq(outlets.id, alt.id)).run();
+
+    expect(addDomain(db, neu.id, "alt.de")).toBe(true);
+    expect(resolveOutletByHost(db, "alt.de")?.id).toBe(neu.id);
+  });
+
+  it("laesst eine Domain eines aktiven Outlets unangetastet", () => {
+    const a = createOutlet(db, baseInput("A", "aktiv-a.de"), NOW);
+    const b = createOutlet(db, baseInput("B", "aktiv-b.de"), NOW);
+    expect(addDomain(db, b.id, "aktiv-a.de")).toBe(false);
+    expect(resolveOutletByHost(db, "aktiv-a.de")?.id).toBe(a.id);
   });
 
   it("meldet missing bei unbekannter Kennung", () => {

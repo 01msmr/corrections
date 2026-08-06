@@ -126,6 +126,11 @@ export function removeOutlet(db: Db, id: string): RemovalOutcome {
       db.select().from(corrections).where(eq(corrections.outletId, id)).get() !== undefined,
     archive: () => {
       db.update(outlets).set({ archived: true }).where(eq(outlets.id, id)).run();
+      /* Domains freigeben: Ein archiviertes Outlet taucht in keiner Liste mehr
+         auf und soll keine neuen Meldungen mehr einsammeln. Behielte es seine
+         Domains, liessen sie sich keinem anderen Titel geben -- ohne dass
+         irgendwo sichtbar waere, warum. */
+      db.delete(outletDomains).where(eq(outletDomains.outletId, id)).run();
     },
     hardDelete: () => {
       db.delete(outletDomains).where(eq(outletDomains.outletId, id)).run();
@@ -141,7 +146,23 @@ export function addDomain(db: Db, outletId: string, domain: string): boolean {
     .from(outletDomains)
     .where(eq(outletDomains.domain, normalized))
     .get();
-  if (taken) return taken.outletId === outletId;
+
+  if (taken) {
+    if (taken.outletId === outletId) return true;
+
+    /* Haelt ein archiviertes Outlet die Domain, wird sie uebernommen: Das
+       archivierte ist aus der Liste verschwunden und soll nichts Neues mehr
+       zugeordnet bekommen -- es blockierte die Domain sonst unsichtbar.
+       Seine bisherigen Meldungen bleiben ihm zugeordnet (§2.1). */
+    const halter = db.select().from(outlets).where(eq(outlets.id, taken.outletId)).get();
+    if (!halter?.archived) return false;
+
+    db.update(outletDomains)
+      .set({ outletId })
+      .where(eq(outletDomains.id, taken.id))
+      .run();
+    return true;
+  }
 
   db.insert(outletDomains).values({ id: createId(), outletId, domain: normalized }).run();
   return true;
