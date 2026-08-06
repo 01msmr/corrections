@@ -204,7 +204,13 @@ const STYLES = `
        geringerem Schwarzanteil, sonst saenke er in den dunklen Grund. */
     color: var(--balkenschrift);
     background: var(--balkengrund);
-    border-radius: 4px; padding: .2rem .7rem; }
+    border-radius: 4px;
+    /* Optisch mittig statt rechnerisch: Zentriert wird zwischen Versaloberkante
+       und Grundlinie, denn so nimmt das Auge den Textkoerper wahr — ob zufaellig
+       ein „g" vorkommt, darf die Lage nicht verschieben. Die Zeilenbox reserviert
+       unten Platz fuer Unterlaengen, deshalb 0.68px mehr oben (.24 statt .2rem)
+       und ebenso weniger unten; die Balkenhoehe bleibt gleich. */
+    padding: .24rem .7rem .16rem; }
   /* Rubriken bleiben die groesste Sprechstufe: zentriert und gesperrt. */
   h2.rubrik { text-align: center; letter-spacing: .14em;
     text-transform: uppercase; font-size: 1.25rem; margin-top: 3rem; }
