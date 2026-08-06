@@ -103,23 +103,29 @@ describe("importiereEntscheidungen", () => {
     expect(unveraendert?.ref).toBe("KWEB01");
   });
 
-  it("traegt Medien ohne Adresse die haeufigste benutzte nach", () => {
-    // Zwei Meldungen an newstipps@, eine an webmaster@ — die haeufigste gewinnt.
-    const mail = (nr: number, adresse: string): ReviewEntscheidung => {
+  it("traegt Medien ohne Adresse die zuletzt benutzte nach", () => {
+    // Zweimal an die alte Adresse, danach einmal an die neue: Die juengste
+    // gewinnt, auch wenn die alte oefter vorkommt.
+    const mail = (nr: number, adresse: string, datum: string): ReviewEntscheidung => {
       const eintrag = entscheidung({ datei: `${nr}.eml`, messageId: `<m${nr}@x.invalid>` });
       eintrag.empfaenger = adresse;
+      eintrag.gesendetAm = datum;
       if (eintrag.felder) eintrag.felder.artikelUrl = `https://beispiel-zeitung.de/a${nr}`;
       return eintrag;
     };
     importiereEntscheidungen(
       db,
-      [mail(1, "newstipps@beispiel-zeitung.de"), mail(2, "newstipps@beispiel-zeitung.de"), mail(3, "webmaster@beispiel-zeitung.de")],
+      [
+        mail(1, "alt@beispiel-zeitung.de", "2024-01-05T10:00:00.000Z"),
+        mail(2, "alt@beispiel-zeitung.de", "2024-03-05T10:00:00.000Z"),
+        mail(3, "neu@beispiel-zeitung.de", "2025-11-05T10:00:00.000Z"),
+      ],
       NOW,
     );
 
     expect(ergaenzeKontaktadressen(db)).toBeGreaterThan(0);
     const outlet = db.select().from(outlets).all().find((o) => o.primaryDomain === "beispiel-zeitung.de");
-    expect(outlet?.contactEmails).toEqual(["newstipps@beispiel-zeitung.de"]);
+    expect(outlet?.contactEmails).toEqual(["neu@beispiel-zeitung.de"]);
   });
 
   it("laesst eine gepflegte Adresse unangetastet", () => {

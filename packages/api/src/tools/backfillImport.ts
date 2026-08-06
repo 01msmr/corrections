@@ -53,10 +53,16 @@ export interface ImportErgebnis {
 /**
  * Traegt Medien ohne Kontaktadresse die Adresse nach, an die tatsaechlich
  * gesendet wurde: Sie steht in jeder Altmeldung, weil der Kurzbefehl sie
- * beim Versand gesetzt hat. Genommen wird die haeufigste Adresse des
- * Mediums — bei heise.de etwa newstipps@ (fuenfmal) statt webmaster@
- * (einmal). Vorhandene Adressen bleiben unberuehrt; von Hand gepflegte
- * Angaben sind verlaesslicher als abgeleitete.
+ * beim Versand gesetzt hat.
+ *
+ * Genommen wird die **zuletzt benutzte**, nicht die haeufigste: Aendert eine
+ * Redaktion ihre Korrekturadresse, ist die juengste die gueltige — die alte
+ * bliebe sonst allein durch ihre Vorgeschichte im Vorteil. Beruecksichtigt
+ * wird nur der Hauptempfaenger; Kopie und Blindkopie stehen gar nicht erst
+ * im Datensatz (siehe backfill/lesen.ts, `mail.to[0]`).
+ *
+ * Vorhandene Adressen bleiben unberuehrt — von Hand gepflegte Angaben sind
+ * verlaesslicher als abgeleitete.
  */
 export function ergaenzeKontaktadressen(db: Db): number {
   const ohneAdresse = db
@@ -67,18 +73,19 @@ export function ergaenzeKontaktadressen(db: Db): number {
 
   let ergaenzt = 0;
   for (const outlet of ohneAdresse) {
-    const haeufigkeit = new Map<string, number>();
+    let juengste: { mail: string; zeitpunkt: number } | null = null;
     for (const zeile of db
-      .select({ mail: corrections.recipientEmail })
+      .select({ mail: corrections.recipientEmail, sentAt: corrections.sentAt, createdAt: corrections.createdAt })
       .from(corrections)
       .where(eq(corrections.outletId, outlet.id))
       .all()) {
-      if (zeile.mail) haeufigkeit.set(zeile.mail, (haeufigkeit.get(zeile.mail) ?? 0) + 1);
+      if (!zeile.mail) continue;
+      const zeitpunkt = zeile.sentAt ?? zeile.createdAt;
+      if (!juengste || zeitpunkt > juengste.zeitpunkt) juengste = { mail: zeile.mail, zeitpunkt };
     }
-    const beste = [...haeufigkeit.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
-    if (!beste) continue;
+    if (!juengste) continue;
 
-    db.update(outlets).set({ contactEmails: [beste[0]] }).where(eq(outlets.id, outlet.id)).run();
+    db.update(outlets).set({ contactEmails: [juengste.mail] }).where(eq(outlets.id, outlet.id)).run();
     ergaenzt += 1;
   }
   return ergaenzt;
