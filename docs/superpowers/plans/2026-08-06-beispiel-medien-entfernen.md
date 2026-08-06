@@ -73,7 +73,7 @@ Neu:
 
 - [ ] **Step 2: Test laufen lassen — muss fehlschlagen**
 
-Run: `pnpm --filter @korrektur/api exec vitest run src/db/seed.test.ts`
+Run: `pnpm exec vitest run packages/api/src/db/seed.test.ts  # vom Repo-Stamm: runMigrations loest relativ zum cwd auf`
 Expected: FAIL — „legt keine Medien an“ erwartet 0, bekommt 3.
 
 - [ ] **Step 3: `seed.ts` verschlanken**
@@ -86,7 +86,7 @@ In `packages/api/src/db/seed.ts`:
 
 - [ ] **Step 4: Seed-Tests laufen lassen — müssen bestehen**
 
-Run: `pnpm --filter @korrektur/api exec vitest run src/db/seed.test.ts`
+Run: `pnpm exec vitest run packages/api/src/db/seed.test.ts  # vom Repo-Stamm: runMigrations loest relativ zum cwd auf`
 Expected: PASS (4 Tests).
 
 - [ ] **Step 5: Gesamtsuite laufen lassen — zeigt die abhängigen Brüche**
@@ -321,7 +321,7 @@ Hinweis: `MIGRATIONS` ist relativ zum Repo-Stamm — Vitest läuft hier mit `cwd
 
 - [ ] **Step 4: Test laufen lassen — Stand prüfen**
 
-Run: `pnpm --filter @korrektur/api exec vitest run src/db/beispielMedienMigration.test.ts`
+Run: `pnpm exec vitest run packages/api/src/db/beispielMedienMigration.test.ts  # vom Repo-Stamm: runMigrations loest relativ zum cwd auf`
 Expected vor Step 1+2: FAIL („Migration beispiel-medien-entfernen fehlt“). Nach Step 1+2: PASS. (Wer strikt rot-grün arbeitet: Step 3 vor Step 1+2 ziehen — die Reihenfolge oben gruppiert nur die Drizzle-Schritte.)
 
 - [ ] **Step 5: Gesamtsuite, Typecheck, Lint**
