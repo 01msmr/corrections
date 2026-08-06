@@ -30,6 +30,9 @@ export const PALETTE = {
   /** Schattenfarbe als RGB-Komponenten, damit die Deckkraft an der
    *  Verwendungsstelle bestimmt wird: `rgb(var(--schatten) / .35)`. */
   schatten: "0 0 0",
+  /** Gegenstueck zu `schatten`: reines Weiss zum Mischen fester Grauwerte,
+   *  die sich nicht mit dem Modus drehen sollen. */
+  licht: "255 255 255",
 } as const;
 
 export const PALETTE_DUNKEL = {
@@ -41,4 +44,5 @@ export const PALETTE_DUNKEL = {
   linie: "#2e3237",
   feld: "#1d2024",
   schatten: "0 0 0",
+  licht: "255 255 255",
 } as const;

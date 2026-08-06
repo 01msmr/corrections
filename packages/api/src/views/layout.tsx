@@ -42,6 +42,12 @@ const STYLES = `
     --linie: ${PALETTE.linie};
     --feld: ${PALETTE.feld};
     --schatten: ${PALETTE.schatten};
+    --licht: ${PALETTE.licht};
+    /* Grund der Zwischenueberschriften: 66 % Schwarz, 34 % Weiss — in sRGB
+       gemischt, damit die Prozente die erwarteten Anteile sind (#333);
+       oklab mischt perzeptuell und geriete deutlich dunkler. */
+    --balkengrund: color-mix(in srgb, rgb(var(--schatten)) 66%, rgb(var(--licht)));
+    --balkenschrift: var(--papier);
     /* Schattenfarbe der Klotz-Kanten: hell laeuft sie in Tinte, dunkel als
        echter Schatten -- die helle Dunkel-Tinte wuerde die Kante beleuchten. */
     --klotzkante: var(--tinte);
@@ -59,6 +65,12 @@ const STYLES = `
       --rand: ${PALETTE_DUNKEL.rand}; --linie: ${PALETTE_DUNKEL.linie};
       --feld: ${PALETTE_DUNKEL.feld};
       --schatten: ${PALETTE_DUNKEL.schatten};
+      --licht: ${PALETTE_DUNKEL.licht};
+      /* Invertiert: derselbe Balken (#333) laege auf dem dunklen Blatt bei
+         Kontrast 1.4 und waere praktisch unsichtbar. Gleiche Anteile,
+         andere Richtung — 66 % Weiss statt 66 % Schwarz. */
+      --balkengrund: color-mix(in srgb, rgb(var(--licht)) 66%, rgb(var(--schatten)));
+      --balkenschrift: var(--papier);
       /* Dunkel liegt der Koerper im echten Schatten, nicht in Tinte. */
       --klotzkante: rgb(var(--schatten));
     }
@@ -174,13 +186,20 @@ const STYLES = `
   nav a[aria-current="page"] { background: var(--korrektur); color: var(--papier); }
 
   h1 { font: 700 1.9rem/1.25 var(--mono); margin: 0 0 1.25rem; letter-spacing: .01em; }
-  h2 { font: 700 1.15rem/1.3 var(--mono); letter-spacing: .01em;
+  /* 1.2rem statt 1.15: ab 18.66px fett gilt Text als gross, und dort genuegt
+     dem Balken ein Kontrast von 3 statt 4.5 — 0.8px, die die helle Schrift
+     auf dem grauen Grund regelkonform machen. */
+  h2 { font: 700 1.2rem/1.3 var(--mono); letter-spacing: .01em;
     color: var(--tinte); margin: 2.5rem 0 .75rem; }
   /* Abschnitts-Balken (Verwaltungslisten und Rubriken) ueber die volle
      Spaltenbreite: hell auf Karmin wie die aktive Ressortmarke, mit leiser
      Rundung. Fliesstext-Zwischentitel bleiben still in Tinte. */
   h2.balken, h2.rubrik {
-    color: var(--papier); background: var(--korrektur);
+    /* Neutrales Dunkelgrau statt Karmin: der Balken gliedert, er zeichnet
+       nicht aus. Gemischt aus Schwarz und Weiss — im Dunkelmodus mit
+       geringerem Schwarzanteil, sonst saenke er in den dunklen Grund. */
+    color: var(--balkenschrift);
+    background: var(--balkengrund);
     border-radius: 4px; padding: .2rem .7rem; }
   /* Rubriken bleiben die groesste Sprechstufe: zentriert und gesperrt. */
   h2.rubrik { text-align: center; letter-spacing: .14em;

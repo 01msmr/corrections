@@ -9,6 +9,12 @@ import { bilanzRoutes } from "./bilanz.js";
 const JETZT = 1_800_000_000;
 const ALT = JETZT - MATURITY_SECONDS - 86_400;
 
+/** Seiteninhalt ohne das eingebettete Stylesheet: dessen Kommentare und
+ *  Mischungsangaben („80 % Schwarz") gehören nicht zum sichtbaren Text. */
+function ohneStil(html: string): string {
+  return html.replace(/<style[\s\S]*?<\/style>/g, "");
+}
+
 let db: Db;
 
 beforeEach(() => {
@@ -70,7 +76,7 @@ describe("GET /bilanz", () => {
     expect(html).toContain("Was daraus wurde");
     expect(html).toContain("noch keine Aussage");
     // Bei n = 3 darf nirgends ein Prozentwert stehen.
-    expect(html).not.toMatch(/\d+ %/);
+    expect(ohneStil(html)).not.toMatch(/\d+ %/);
   });
 
   it("behauptet ohne Artikel-Pruefung keine Korrekturquote von 0 %", async () => {
@@ -78,7 +84,7 @@ describe("GET /bilanz", () => {
     const html = await (await bilanzRoutes(db, () => JETZT).request("/bilanz")).text();
     expect(html).toContain("noch kein Artikel nachgeprüft");
     expect(html).toContain("noch kein Postfach-Abgleich gelaufen");
-    expect(html).not.toMatch(/\d+ %/);
+    expect(ohneStil(html)).not.toMatch(/\d+ %/);
   });
 
   it("rechnet die Quote, sobald genug geprueft wurde, und nennt sie nie ohne ihr n", async () => {
