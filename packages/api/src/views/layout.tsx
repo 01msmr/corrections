@@ -181,20 +181,27 @@ const STYLES = `
   }
   nav { display: flex; gap: 0; flex-wrap: wrap; align-items: baseline;
     justify-content: center; width: 100%; }
-  /* Verwaltungsressorts ganz rechts; die normale Navi zentriert sich im
-     verbleibenden Raum (Auto-Margen links und rechts vom Trio). */
-  nav > a:first-child { margin-left: auto; }
+  /* Die normale Navi zentriert sich in der Spalte; die Verwaltungsressorts
+     haengen absolut am rechten Rand und beeinflussen die Mitte nicht. */
+  nav { position: relative; }
   /* Als Pille: hellgrauer Grund, aussen halbrund; overflow schneidet die
      Hover-Flaechen der Haelften auf die Rundung zu. */
-  .randressorts { display: flex; align-items: baseline; margin-left: auto;
-    background: var(--linie); border-radius: 999px; overflow: hidden;
-    align-self: center; }
+  .randressorts { display: flex; align-items: baseline;
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    background: var(--linie); border-radius: 999px; overflow: hidden; }
+  /* Auf mittleren Breiten faellt die Pille in den Fluss zurueck, sonst
+     schoebe sie sich ueber das zentrierte Trio. */
+  @media (max-width: 62rem) {
+    nav > a:first-child { margin-left: auto; }
+    .randressorts { position: static; transform: none; margin-left: auto;
+      align-self: center; }
+  }
   .randressorts a { border-bottom: none; color: var(--tinte);
     padding: .45rem .95rem; }
-  .randressorts a + a { border-left: 1px solid
-    color-mix(in srgb, var(--linie) 70%, rgb(var(--schatten))); }
+  /* Trennstrich im Seiten-Hintergrund: wirkt wie ein Spalt in der Pille. */
+  .randressorts a + a { border-left: 1px solid var(--papier); }
   .randressorts a:hover, .randressorts a:focus-visible {
-    background: color-mix(in srgb, var(--linie) 82%, rgb(var(--schatten)));
+    background: color-mix(in srgb, var(--linie) 90%, rgb(var(--schatten)));
     color: var(--tinte); }
   .randressorts a[aria-current="page"] {
     background: var(--balkengrund); color: var(--papier); }
