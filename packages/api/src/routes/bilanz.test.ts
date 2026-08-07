@@ -123,4 +123,12 @@ describe("GET /bilanz", () => {
     expect(html).toContain("Beispiel-Zeitung");
     expect(html).toContain("wo viel gelesen und gemeldet wurde");
   });
+
+  it("zeigt Medien-Segmente mit Tooltip und Erklaerzeile", async () => {
+    meldung(3);
+    const res = await bilanzRoutes(db, () => JETZT).request("/bilanz");
+    const html = await res.text();
+    expect(html).toContain('title="Beispiel-Zeitung — 3"');
+    expect(html).toContain("Reihenfolge alphabetisch");
+  });
 });

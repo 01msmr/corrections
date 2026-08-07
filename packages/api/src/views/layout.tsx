@@ -428,8 +428,17 @@ const STYLES = `
   .balkenzeile { display: grid; grid-template-columns: minmax(6rem, 12rem) 1fr 2.5rem;
     align-items: center; gap: .75rem; }
   .balkenname { font: .9rem/1.4 var(--sans); }
-  .balkenspur { display: block; height: .85rem; background: var(--linie); }
-  .balkenfuellung { display: block; height: 100%; background: var(--korrektur); }
+  .balkenspur { display: block; height: 1.05rem; background: var(--linie); }
+  .balkenfuellung { display: flex; height: 100%; background: var(--korrektur); }
+  /* Medien-Segmente: von links nach rechts ansteigend heller (gemischt aus der
+     Palette, keine eigenen Farbwerte), "uebrige" stets am hellsten. Dazwischen
+     eine duenne Trennlinie in Papierweiss. */
+  .balkenteil { display: block; height: 100%; background: var(--korrektur); }
+  .balkenteil:nth-child(2) { background: color-mix(in srgb, var(--korrektur) 82%, var(--papier)); }
+  .balkenteil:nth-child(3) { background: color-mix(in srgb, var(--korrektur) 64%, var(--papier)); }
+  .balkenteil:nth-child(n + 4) { background: color-mix(in srgb, var(--korrektur) 46%, var(--papier)); }
+  .balkenteil.uebrige { background: color-mix(in srgb, var(--korrektur) 28%, var(--papier)); }
+  .balkenteil + .balkenteil { border-left: 1px solid var(--papier); }
   .balkenwert { font: 700 .85rem/1.4 var(--mono); text-align: right; }
 
   /* Verlauf: senkrechte Balken auf gemeinsamer Grundlinie, seitlich

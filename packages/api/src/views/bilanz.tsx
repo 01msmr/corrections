@@ -1,6 +1,6 @@
 import { MATURITY_DAYS, MIN_N_FOR_RATE, rateOrNull, wilsonInterval } from "@korrektur/shared";
 import type { FC } from "hono/jsx";
-import type { Bilanz, Quotenstand, Verteilungswert } from "../repo/bilanz.js";
+import { UEBRIGE_NAME, type Bilanz, type Quotenstand, type Verteilungswert } from "../repo/bilanz.js";
 import { Layout } from "./layout.js";
 
 /**
@@ -74,7 +74,8 @@ const Quote: FC<{
   );
 };
 
-/** Waagerechte Balken; der längste Balken füllt die Breite. */
+/** Waagerechte Balken; der längste Balken füllt die Breite. Bringt ein Wert
+ *  `beteiligte` mit, teilt sich die Füllung in anteilige Segmente. */
 const Verteilung: FC<{ werte: Verteilungswert[] }> = ({ werte }) => {
   const groesster = werte.reduce((max, wert) => Math.max(max, wert.anzahl), 0);
   return (
@@ -86,7 +87,17 @@ const Verteilung: FC<{ werte: Verteilungswert[] }> = ({ werte }) => {
             <span
               class="balkenfuellung"
               style={`width: ${groesster > 0 ? (wert.anzahl / groesster) * 100 : 0}%`}
-            />
+            >
+              {(wert.beteiligte ?? []).map((teil) => (
+                <span
+                  class={teil.name === UEBRIGE_NAME ? "balkenteil uebrige" : "balkenteil"}
+                  style={`width: ${wert.anzahl > 0 ? (teil.anzahl / wert.anzahl) * 100 : 0}%`}
+                  role="img"
+                  title={`${teil.name} — ${teil.anzahl}`}
+                  aria-label={`${teil.name} — ${teil.anzahl}`}
+                />
+              ))}
+            </span>
           </span>
           <span class="balkenwert">{wert.anzahl}</span>
         </div>
@@ -151,6 +162,11 @@ export const BilanzSeite: FC<{ bilanz: Bilanz }> = ({ bilanz }) => {
 
           <h2 class="balken">Was auffällt</h2>
           <Verteilung werte={bilanz.fehlerarten} />
+          <p class="zaehler">
+            Die Abschnitte eines Balkens zeigen, welche Medien ihn ausmachen — die
+            Breite ist ihr Anteil, die Reihenfolge alphabetisch, Kleinbeträge sammeln
+            sich in „übrige“. Beim Zeigen nennt jeder Abschnitt Medium und Anzahl.
+          </p>
 
           <h2 class="balken">Wie schwer</h2>
           <Verteilung werte={bilanz.schwere} />
