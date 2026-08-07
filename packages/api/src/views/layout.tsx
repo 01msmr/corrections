@@ -200,7 +200,7 @@ const STYLES = `
   .randressorts a { border-bottom: none; color: var(--tinte);
     padding: calc(.45rem - 1px) calc(.95rem - 1px); }
   /* Trennstrich im Seiten-Hintergrund: wirkt wie ein Spalt in der Pille. */
-  .randressorts a + a { border-left: 1px solid var(--papier); }
+  .randressorts a + a { border-left: 2px solid var(--papier); }
   .randressorts a:hover, .randressorts a:focus-visible {
     background: color-mix(in srgb, var(--linie) 90%, rgb(var(--schatten)));
     color: var(--tinte); }
