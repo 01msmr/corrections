@@ -31,10 +31,14 @@ werden die Balken geringfügig höher (`.85rem` → `1.05rem`).
   (ESLint-Regel bleibt erfüllt).
 - Zwischen Segmenten eine **dünne Trennlinie in Papierweiß** (1px,
   `var(--papier)`), auch im Dunkelmodus korrekt, da über die Palette gelöst.
-- Je Segment `title` und `aria-label` „NAME — ANZAHL“. Im Segment steht der
-  Medienname (Nachtrag vom 7.8.2026): Courier fett klein, Papier auf den
-  dunklen Tönen, Tinte ab dem dritten; in zu schmalen Segmenten (unter
-  3.5rem, Container-Query) entfällt der Name — der Tooltip bleibt.
+- Je Segment `title` und `aria-label` „NAME — ANZAHL“. Im Segment steht
+  „NAME NN %“ (Nachträge vom 7.8.2026): Sans fett klein, immer in Papierweiß;
+  zu knappe Beschriftung läuft in eine Ellipse aus, unter 3.5rem
+  (Container-Query) entfällt sie ganz — der Tooltip bleibt. Das
+  Anteils-Prozent ist keine Quote: sein n steht als Gesamtzahl am Balkenende.
+- „übrige“ trägt keinen Namen, sondern eine enge Diagonal-Schraffur
+  (2px-Raster) aus vollem Karmin und 30-%-Karmin.
+- Keine Erklärzeile unter dem Diagramm (gestrichen am 7.8.2026).
 
 ## Umsetzungsskizze
 

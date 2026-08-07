@@ -16,6 +16,15 @@ function ohneStil(html: string): string {
   return html.replace(/<style[\s\S]*?<\/style>/g, "");
 }
 
+/** Nur der Abschnitt "Was daraus wurde" — dort leben die Quoten. */
+function quotenAbschnitt(html: string): string {
+  const ohne = ohneStil(html);
+  const von = ohne.indexOf("Was daraus wurde");
+  const bis = ohne.indexOf("Was auffällt");
+  if (von === -1 || bis === -1) throw new Error("Quoten-Abschnitt nicht gefunden");
+  return ohne.slice(von, bis);
+}
+
 let db: Db;
 
 beforeEach(() => {
@@ -88,8 +97,10 @@ describe("GET /bilanz", () => {
     const html = await (await bilanzRoutes(db, () => JETZT).request("/bilanz")).text();
     expect(html).toContain("Was daraus wurde");
     expect(html).toContain("noch keine Aussage");
-    // Bei n = 3 darf nirgends ein Prozentwert stehen.
-    expect(ohneStil(html)).not.toMatch(/\d+ %/);
+    // Bei n = 3 darf im Quoten-Abschnitt kein Prozentwert stehen. (Die
+    // Medien-Segmente unter "Was auffaellt" tragen Anteils-Prozente mit
+    // sichtbarem n am Balkenende — das sind keine Quoten.)
+    expect(quotenAbschnitt(html)).not.toMatch(/\d+ %/);
   });
 
   it("behauptet ohne Artikel-Pruefung keine Korrekturquote von 0 %", async () => {
@@ -97,7 +108,7 @@ describe("GET /bilanz", () => {
     const html = await (await bilanzRoutes(db, () => JETZT).request("/bilanz")).text();
     expect(html).toContain("noch kein Artikel nachgeprüft");
     expect(html).toContain("noch kein Postfach-Abgleich gelaufen");
-    expect(ohneStil(html)).not.toMatch(/\d+ %/);
+    expect(quotenAbschnitt(html)).not.toMatch(/\d+ %/);
   });
 
   it("rechnet die Quote, sobald genug geprueft wurde, und nennt sie nie ohne ihr n", async () => {
@@ -129,7 +140,6 @@ describe("GET /bilanz", () => {
     const res = await bilanzRoutes(db, () => JETZT).request("/bilanz");
     const html = await res.text();
     expect(html).toContain('title="Beispiel-Zeitung — 3"');
-    expect(html).toContain('<span class="balkenteilname">Beispiel-Zeitung</span>');
-    expect(html).toContain("Reihenfolge alphabetisch");
+    expect(html).toContain("Beispiel-Zeitung 100 %");
   });
 });

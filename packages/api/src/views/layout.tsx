@@ -438,12 +438,12 @@ const STYLES = `
   .balkenteil:nth-child(2) { background: color-mix(in srgb, var(--korrektur) 82%, var(--papier)); }
   .balkenteil:nth-child(3) { background: color-mix(in srgb, var(--korrektur) 64%, var(--papier)); }
   .balkenteil:nth-child(n + 4) { background: color-mix(in srgb, var(--korrektur) 46%, var(--papier)); }
-  .balkenteil.uebrige { background: color-mix(in srgb, var(--korrektur) 28%, var(--papier)); }
+  /* "uebrige" traegt keinen Namen — eine diagonale Schraffur genuegt. */
+  .balkenteil.uebrige { background: repeating-linear-gradient(-45deg,
+    var(--korrektur) 0 2px, color-mix(in srgb, var(--korrektur) 30%, var(--papier)) 2px 4px); }
   .balkenteil + .balkenteil { border-left: 1px solid var(--papier); }
-  /* Ab dem dritten (helleren) Ton liest sich Tinte besser als Papier. */
-  .balkenteil:nth-child(n + 3), .balkenteil.uebrige { color: var(--tinte); }
-  .balkenteilname { font: 700 .6rem/1 var(--mono); padding: 0 .3rem;
-    white-space: nowrap; overflow: hidden; }
+  .balkenteilname { font: 700 .7rem/1 var(--sans); padding: 0 .3rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* In zu schmalen Segmenten faellt der Name weg — der Tooltip bleibt. */
   @container (max-width: 3.5rem) { .balkenteilname { display: none; } }
   .balkenwert { font: 700 .85rem/1.4 var(--mono); text-align: right; }

@@ -96,7 +96,11 @@ const Verteilung: FC<{ werte: Verteilungswert[] }> = ({ werte }) => {
                   title={`${teil.name} — ${teil.anzahl}`}
                   aria-label={`${teil.name} — ${teil.anzahl}`}
                 >
-                  <span class="balkenteilname">{teil.name}</span>
+                  {teil.name !== UEBRIGE_NAME && (
+                    <span class="balkenteilname">
+                      {teil.name} {Math.round((teil.anzahl / wert.anzahl) * 100)} %
+                    </span>
+                  )}
                 </span>
               ))}
             </span>
@@ -164,11 +168,6 @@ export const BilanzSeite: FC<{ bilanz: Bilanz }> = ({ bilanz }) => {
 
           <h2 class="balken">Was auffällt</h2>
           <Verteilung werte={bilanz.fehlerarten} />
-          <p class="zaehler">
-            Die Abschnitte eines Balkens zeigen, welche Medien ihn ausmachen — die
-            Breite ist ihr Anteil, die Reihenfolge alphabetisch, Kleinbeträge sammeln
-            sich in „übrige“. Beim Zeigen nennt jeder Abschnitt Medium und Anzahl.
-          </p>
 
           <h2 class="balken">Wie schwer</h2>
           <Verteilung werte={bilanz.schwere} />
