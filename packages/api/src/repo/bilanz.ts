@@ -1,4 +1,4 @@
-import { MATURITY_SECONDS } from "@korrektur/shared";
+import { MATURITY_SECONDS, SEGMENT_MINDEST_ANTEIL, SEGMENT_MINDEST_ANZAHL } from "@korrektur/shared";
 import { sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 
@@ -10,9 +10,37 @@ import type { Db } from "../db/client.js";
  * Redaktion (§9.1).
  */
 
+export interface Beteiligter {
+  name: string;
+  anzahl: number;
+}
+
 export interface Verteilungswert {
   name: string;
   anzahl: number;
+  /** Nur bei den Fehlerarten: Medien-Anteile fuer die Segment-Darstellung. */
+  beteiligte?: Beteiligter[];
+}
+
+/** Sichtbarer Name des Sammelpostens — auch die Ansicht erkennt ihn daran. */
+export const UEBRIGE_NAME = "übrige";
+
+/**
+ * Medien-Segmente eines Balkens: eigenes Segment nur ab SEGMENT_MINDEST_ANTEIL
+ * am Balken UND SEGMENT_MINDEST_ANZAHL Stueck; der Rest sammelt sich in
+ * "uebrige". Alphabetisch, nicht nach Groesse — die Breite traegt die Menge,
+ * eine Reihenfolge nach Groesse waere ein kleines Ranking je Balken (§2.2).
+ * Qualifiziert sich kein Medium, bleibt der Balken einfarbig (leeres Array).
+ */
+export function segmentiere(gesamt: number, medien: Beteiligter[]): Beteiligter[] {
+  const schwelle = Math.max(gesamt * SEGMENT_MINDEST_ANTEIL, SEGMENT_MINDEST_ANZAHL);
+  const eigene = medien
+    .filter((medium) => medium.anzahl >= schwelle)
+    .sort((a, b) => a.name.localeCompare(b.name, "de"));
+  if (eigene.length === 0) return [];
+
+  const rest = gesamt - eigene.reduce((summe, medium) => summe + medium.anzahl, 0);
+  return rest > 0 ? [...eigene, { name: UEBRIGE_NAME, anzahl: rest }] : eigene;
 }
 
 export interface Monatswert {
@@ -95,6 +123,21 @@ export function ladeBilanz(db: Db, jetzt: number): Bilanz {
       ORDER BY anzahl DESC, name ASC
     `);
 
+  /* Je Fehlerart die Medien-Anteile fuer die Segment-Darstellung. */
+  const fehlerartenMedien = db.all<{ name: string; medium: string; anzahl: number }>(sql`
+      SELECT e.label AS name, o.name AS medium, COUNT(*) AS anzahl
+      FROM corrections c
+        JOIN error_types e ON e.id = c.error_type_id
+        JOIN outlets o ON o.id = c.outlet_id
+      GROUP BY e.label, o.name
+    `);
+  const medienJeFehlerart = new Map<string, Beteiligter[]>();
+  for (const zeile of fehlerartenMedien) {
+    const liste = medienJeFehlerart.get(zeile.name) ?? [];
+    liste.push({ name: zeile.medium, anzahl: zeile.anzahl });
+    medienJeFehlerart.set(zeile.name, liste);
+  }
+
   const schwereRoh = db.all<{ severity: number; anzahl: number }>(sql`
       SELECT severity, COUNT(*) AS anzahl FROM corrections GROUP BY severity ORDER BY severity ASC
     `);
@@ -128,7 +171,10 @@ export function ladeBilanz(db: Db, jetzt: number): Bilanz {
       zaehler: basis?.beantwortet ?? 0,
       nenner: abgleichLief ? (basis?.smtp ?? 0) : 0,
     },
-    fehlerarten,
+    fehlerarten: fehlerarten.map((wert) => ({
+      ...wert,
+      beteiligte: segmentiere(wert.anzahl, medienJeFehlerart.get(wert.name) ?? []),
+    })),
     schwere: schwereRoh.map((zeile) => ({
       name: SCHWERE_NAMEN[zeile.severity] ?? String(zeile.severity),
       anzahl: zeile.anzahl,

@@ -5,6 +5,11 @@ export const MATURITY_SECONDS = MATURITY_DAYS * 24 * 60 * 60;
 /** Unterhalb dieser Fallzahl wird keine Quote angezeigt, nur Rohzahlen (§9.4). */
 export const MIN_N_FOR_RATE = 10;
 
+/** Medien-Segmente in "Was auffaellt": eigenes Segment nur ab diesem Anteil am Balken … */
+export const SEGMENT_MINDEST_ANTEIL = 0.15;
+/** … und nur ab dieser absoluten Anzahl — kleine Balken bleiben einfarbig. */
+export const SEGMENT_MINDEST_ANZAHL = 3;
+
 /** z-Wert für das 95-%-Wilson-Intervall (§9.4). */
 export const CONFIDENCE_Z = 1.959964;
 

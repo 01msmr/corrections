@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { createDb, runMigrations, type Db } from "../db/client.js";
 import { articleChecks, corrections, errorTypes, imapCursor, outlets, responseEvents } from "../db/schema.js";
 import { seed } from "../db/seed.js";
-import { ladeBilanz } from "./bilanz.js";
+import { ladeBilanz, segmentiere, UEBRIGE_NAME } from "./bilanz.js";
 import { createOutlet } from "./outlets.js";
 
 const JETZT = 1_800_000_000;
@@ -210,5 +210,43 @@ describe("ladeBilanz", () => {
       { name: "kosmetisch", anzahl: 1 },
       { name: "sinnentstellend", anzahl: 1 },
     ]);
+  });
+});
+
+describe("segmentiere", () => {
+  const medien = (paare: [string, number][]) => paare.map(([name, anzahl]) => ({ name, anzahl }));
+
+  it("bildet Segmente ab 15 % und 3 Stueck, alphabetisch, Rest als uebrige", () => {
+    // n=20: Schwelle ist max(3, 3) = 3
+    const teile = segmentiere(20, medien([["taz", 8], ["FAZ", 5], ["Zeit", 2], ["Welt", 5]]));
+    // de-Collation ordnet nach Basisbuchstaben: FAZ < taz < Welt (Gross/Klein egal).
+    expect(teile.map((t) => t.name)).toEqual(["FAZ", "taz", "Welt", UEBRIGE_NAME]);
+    expect(teile.map((t) => t.anzahl)).toEqual([5, 8, 5, 2]);
+  });
+
+  it("verlangt beide Schwellen: 2 von 4 sind 50 %, aber unter 3 Stueck", () => {
+    expect(segmentiere(4, medien([["taz", 2], ["FAZ", 2]]))).toEqual([]);
+  });
+
+  it("laesst uebrige weg, wenn alle Medien qualifiziert sind", () => {
+    const teile = segmentiere(10, medien([["taz", 7], ["FAZ", 3]]));
+    expect(teile.map((t) => t.name)).toEqual(["FAZ", "taz"]);
+  });
+
+  it("bleibt bei kleinem n leer statt scheingenau", () => {
+    expect(segmentiere(1, medien([["taz", 1]]))).toEqual([]);
+  });
+});
+
+describe("beteiligte in ladeBilanz", () => {
+  it("haengt Segmente an die Fehlerarten, nicht an die Schwere", () => {
+    const [erstes] = ersteMedien(1);
+    if (!erstes) throw new Error("Testmedien fehlen");
+    for (let i = 0; i < 3; i++) meldung({ outletId: erstes });
+    const bilanz = ladeBilanz(db, JETZT);
+    const fehlerart = bilanz.fehlerarten[0];
+    // Beispiel-Zeitung traegt alle 3 — ein Segment, kein "uebrige".
+    expect(fehlerart?.beteiligte).toEqual([{ name: "Beispiel-Zeitung", anzahl: 3 }]);
+    expect(bilanz.schwere[0]?.beteiligte).toBeUndefined();
   });
 });
