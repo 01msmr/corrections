@@ -433,12 +433,19 @@ const STYLES = `
   /* Medien-Segmente: von links nach rechts ansteigend heller (gemischt aus der
      Palette, keine eigenen Farbwerte), "uebrige" stets am hellsten. Dazwischen
      eine duenne Trennlinie in Papierweiss. */
-  .balkenteil { display: block; height: 100%; background: var(--korrektur); }
+  .balkenteil { display: flex; align-items: center; height: 100%; background: var(--korrektur);
+    color: var(--papier); container-type: inline-size; overflow: hidden; }
   .balkenteil:nth-child(2) { background: color-mix(in srgb, var(--korrektur) 82%, var(--papier)); }
   .balkenteil:nth-child(3) { background: color-mix(in srgb, var(--korrektur) 64%, var(--papier)); }
   .balkenteil:nth-child(n + 4) { background: color-mix(in srgb, var(--korrektur) 46%, var(--papier)); }
   .balkenteil.uebrige { background: color-mix(in srgb, var(--korrektur) 28%, var(--papier)); }
   .balkenteil + .balkenteil { border-left: 1px solid var(--papier); }
+  /* Ab dem dritten (helleren) Ton liest sich Tinte besser als Papier. */
+  .balkenteil:nth-child(n + 3), .balkenteil.uebrige { color: var(--tinte); }
+  .balkenteilname { font: 700 .6rem/1 var(--mono); padding: 0 .3rem;
+    white-space: nowrap; overflow: hidden; }
+  /* In zu schmalen Segmenten faellt der Name weg — der Tooltip bleibt. */
+  @container (max-width: 3.5rem) { .balkenteilname { display: none; } }
   .balkenwert { font: 700 .85rem/1.4 var(--mono); text-align: right; }
 
   /* Verlauf: senkrechte Balken auf gemeinsamer Grundlinie, seitlich

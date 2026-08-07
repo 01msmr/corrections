@@ -129,6 +129,7 @@ describe("GET /bilanz", () => {
     const res = await bilanzRoutes(db, () => JETZT).request("/bilanz");
     const html = await res.text();
     expect(html).toContain('title="Beispiel-Zeitung — 3"');
+    expect(html).toContain('<span class="balkenteilname">Beispiel-Zeitung</span>');
     expect(html).toContain("Reihenfolge alphabetisch");
   });
 });

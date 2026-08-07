@@ -95,7 +95,9 @@ const Verteilung: FC<{ werte: Verteilungswert[] }> = ({ werte }) => {
                   role="img"
                   title={`${teil.name} — ${teil.anzahl}`}
                   aria-label={`${teil.name} — ${teil.anzahl}`}
-                />
+                >
+                  <span class="balkenteilname">{teil.name}</span>
+                </span>
               ))}
             </span>
           </span>

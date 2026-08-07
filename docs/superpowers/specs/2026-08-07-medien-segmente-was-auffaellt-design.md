@@ -31,8 +31,10 @@ werden die Balken geringfügig höher (`.85rem` → `1.05rem`).
   (ESLint-Regel bleibt erfüllt).
 - Zwischen Segmenten eine **dünne Trennlinie in Papierweiß** (1px,
   `var(--papier)`), auch im Dunkelmodus korrekt, da über die Palette gelöst.
-- Je Segment `title` und `aria-label` „NAME — ANZAHL“; keine Beschriftung im
-  Segment selbst (zu schmal).
+- Je Segment `title` und `aria-label` „NAME — ANZAHL“. Im Segment steht der
+  Medienname (Nachtrag vom 7.8.2026): Courier fett klein, Papier auf den
+  dunklen Tönen, Tinte ab dem dritten; in zu schmalen Segmenten (unter
+  3.5rem, Container-Query) entfällt der Name — der Tooltip bleibt.
 
 ## Umsetzungsskizze
 
