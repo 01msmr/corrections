@@ -681,14 +681,14 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
         <div class="navzeile">
           <div class="kopfinhalt">
             <nav>
-            <a href="/" aria-current={aktiv === "ueber" ? "page" : undefined} draggable={false}>
-              In eigener Sache
-            </a>
             <a href="/neu" aria-current={aktiv === "neu" ? "page" : undefined} draggable={false}>
               Neue Korrektur
             </a>
             <a href="/bilanz" aria-current={aktiv === "bilanz" ? "page" : undefined} draggable={false}>
               Bilanz
+            </a>
+            <a href="/" aria-current={aktiv === "ueber" ? "page" : undefined} draggable={false}>
+              In eigener Sache
             </a>
             {/* Verwaltungsressorts: rechtsbuendig am Rand der Inhaltsspalte,
                 Hover nur im Grau der Zwischenueberschriften. */}
