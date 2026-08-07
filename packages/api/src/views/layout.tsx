@@ -439,9 +439,10 @@ const STYLES = `
   .balkenteil:nth-child(3) { background: color-mix(in srgb, var(--korrektur) 64%, var(--papier)); }
   .balkenteil:nth-child(n + 4) { background: color-mix(in srgb, var(--korrektur) 46%, var(--papier)); }
   /* "uebrige" traegt keinen Namen — eine diagonale Schraffur genuegt. */
-  /* Klassische Schraffur: duenne Karminlinien auf Papier, 45 Grad. */
-  .balkenteil.uebrige { background: repeating-linear-gradient(-45deg,
-    var(--korrektur) 0 1.5px, var(--papier) 1.5px 6px); }
+  /* Schraffur: 1,5px/1,5px im 135-Grad-Winkel, Karmin 60 % auf 30 %. */
+  .balkenteil.uebrige { background: repeating-linear-gradient(135deg,
+    color-mix(in srgb, var(--korrektur) 60%, var(--papier)) 0 1.5px,
+    color-mix(in srgb, var(--korrektur) 30%, var(--papier)) 1.5px 3px); }
   .balkenteil + .balkenteil { border-left: 1px solid var(--papier); }
   .balkenteilname { font: 700 .7rem/1 var(--sans); padding: 0 .3rem;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
