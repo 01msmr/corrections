@@ -439,9 +439,9 @@ const STYLES = `
   .balkenteil:nth-child(3) { background: color-mix(in srgb, var(--korrektur) 64%, var(--papier)); }
   .balkenteil:nth-child(n + 4) { background: color-mix(in srgb, var(--korrektur) 46%, var(--papier)); }
   /* "uebrige" traegt keinen Namen — eine diagonale Schraffur genuegt. */
+  /* Klassische Schraffur: duenne Karminlinien auf Papier, 45 Grad. */
   .balkenteil.uebrige { background: repeating-linear-gradient(-45deg,
-    color-mix(in srgb, var(--korrektur) 60%, var(--papier)) 0 2px,
-    color-mix(in srgb, var(--korrektur) 20%, var(--papier)) 2px 4px); }
+    var(--korrektur) 0 1.5px, var(--papier) 1.5px 6px); }
   .balkenteil + .balkenteil { border-left: 1px solid var(--papier); }
   .balkenteilname { font: 700 .7rem/1 var(--sans); padding: 0 .3rem;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -523,6 +523,8 @@ const STYLES = `
   /* Sortierbare Spaltenkoepfe: der Pfeil steht erst da, wenn nach dieser
      Spalte sortiert wurde -- vorher zeigt nur der Zeiger, dass sich klicken
      lohnt. Ohne JavaScript bleibt die Serverreihenfolge (alphabetisch). */
+  /* Bilanz-Medienliste: Namen und Zahlen fett (Wunsch vom 7.8.2026). */
+  table.medienliste td { font-weight: 700; }
   table.sortierbar th[role="button"] { cursor: pointer; user-select: none; }
   table.sortierbar th[role="button"]:hover,
   table.sortierbar th[role="button"]:focus-visible { color: var(--korrektur); }

@@ -193,7 +193,7 @@ export const BilanzSeite: FC<{ bilanz: Bilanz }> = ({ bilanz }) => {
             Fehler stehen. Nach Anzahl sortiert entsteht deshalb keine Rangfolge der
             Sorgfalt, sondern eine der Lesegewohnheiten.
           </p>
-          <table class="sortierbar">
+          <table class="sortierbar medienliste">
             <thead>
               <tr>
                 <th>Medium</th>
