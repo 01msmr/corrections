@@ -452,7 +452,9 @@ const STYLES = `
   .balkenzeile { display: grid; grid-template-columns: minmax(6rem, 12rem) 1fr 2.5rem;
     align-items: center; gap: .75rem; }
   .balkenname { font: .9rem/1.4 var(--sans); }
-  .balkenspur { display: block; height: 1.05rem; background: var(--linie); }
+  /* Spur deutlich heller als das Linien-Grau: 60 % davon auf Papier. */
+  .balkenspur { display: block; height: 1.05rem;
+    background: color-mix(in srgb, var(--linie) 60%, var(--papier)); }
   .balkenfuellung { display: flex; height: 100%; background: var(--korrektur); }
   /* Medien-Segmente: von links nach rechts ansteigend heller (gemischt aus der
      Palette, keine eigenen Farbwerte), "uebrige" stets am hellsten. Dazwischen
