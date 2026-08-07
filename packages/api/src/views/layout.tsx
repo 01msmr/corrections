@@ -188,7 +188,8 @@ const STYLES = `
      Hover-Flaechen der Haelften auf die Rundung zu. */
   .randressorts { display: flex; align-items: baseline;
     position: absolute; right: 0; top: 50%; transform: translateY(-50%);
-    background: var(--linie); border-radius: 999px; overflow: hidden; }
+    background: var(--linie); border-radius: 999px; overflow: hidden;
+    margin: 1px; }
   /* Auf mittleren Breiten faellt die Pille in den Fluss zurueck, sonst
      schoebe sie sich ueber das zentrierte Trio. */
   @media (max-width: 62rem) {
@@ -197,7 +198,7 @@ const STYLES = `
       align-self: center; }
   }
   .randressorts a { border-bottom: none; color: var(--tinte);
-    padding: .45rem .95rem; }
+    padding: calc(.45rem - 1px) calc(.95rem - 1px); }
   /* Trennstrich im Seiten-Hintergrund: wirkt wie ein Spalt in der Pille. */
   .randressorts a + a { border-left: 1px solid var(--papier); }
   .randressorts a:hover, .randressorts a:focus-visible {
