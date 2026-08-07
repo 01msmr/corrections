@@ -181,6 +181,23 @@ const STYLES = `
   }
   nav { display: flex; gap: 0; flex-wrap: wrap; align-items: baseline;
     justify-content: center; width: 100%; }
+  /* Verwaltungsressorts ganz rechts; die normale Navi zentriert sich im
+     verbleibenden Raum (Auto-Margen links und rechts vom Trio). */
+  nav > a:first-child { margin-left: auto; }
+  /* Als Pille: hellgrauer Grund, aussen halbrund; overflow schneidet die
+     Hover-Flaechen der Haelften auf die Rundung zu. */
+  .randressorts { display: flex; align-items: baseline; margin-left: auto;
+    background: var(--linie); border-radius: 999px; overflow: hidden;
+    align-self: center; }
+  .randressorts a { border-bottom: none; color: var(--tinte);
+    padding: .45rem .95rem; }
+  .randressorts a + a { border-left: 1px solid
+    color-mix(in srgb, var(--linie) 70%, rgb(var(--schatten))); }
+  .randressorts a:hover, .randressorts a:focus-visible {
+    background: color-mix(in srgb, var(--linie) 82%, rgb(var(--schatten)));
+    color: var(--tinte); }
+  .randressorts a[aria-current="page"] {
+    background: var(--balkengrund); color: var(--papier); }
   nav a { font: 700 .95rem/1 var(--mono); letter-spacing: .03em;
     color: var(--rand); text-decoration: none; padding: .6rem .95rem .5rem;
     border-bottom: 2px solid transparent; }
@@ -589,6 +606,9 @@ const STYLES = `
     nav { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
       -webkit-overflow-scrolling: touch; }
     nav a { white-space: nowrap; font-size: .72rem; padding: .55rem .7rem .45rem; }
+    /* In der Scrollzeile reihen sich alle Ressorts wieder ein. */
+    nav > a:first-child { margin-left: 0; }
+    .randressorts { display: contents; }
   }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -660,15 +680,19 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
             <a href="/neu" aria-current={aktiv === "neu" ? "page" : undefined} draggable={false}>
               Neue Korrektur
             </a>
-            <a href="/admin/redaktionen" aria-current={aktiv === "redaktionen" ? "page" : undefined} draggable={false}>
-              Medien
-            </a>
-            <a href="/admin/fehlerarten" aria-current={aktiv === "fehlerarten" ? "page" : undefined} draggable={false}>
-              Kategorien
-            </a>
             <a href="/bilanz" aria-current={aktiv === "bilanz" ? "page" : undefined} draggable={false}>
               Bilanz
             </a>
+            {/* Verwaltungsressorts: rechtsbuendig am Rand der Inhaltsspalte,
+                Hover nur im Grau der Zwischenueberschriften. */}
+            <span class="randressorts">
+              <a href="/admin/redaktionen" aria-current={aktiv === "redaktionen" ? "page" : undefined} draggable={false}>
+                Medien
+              </a>
+              <a href="/admin/fehlerarten" aria-current={aktiv === "fehlerarten" ? "page" : undefined} draggable={false}>
+                Kategorien
+              </a>
+            </span>
             </nav>
           </div>
         </div>
