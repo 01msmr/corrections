@@ -439,10 +439,10 @@ const STYLES = `
   .balkenteil:nth-child(3) { background: color-mix(in srgb, var(--korrektur) 64%, var(--papier)); }
   .balkenteil:nth-child(n + 4) { background: color-mix(in srgb, var(--korrektur) 46%, var(--papier)); }
   /* "uebrige" traegt keinen Namen — eine diagonale Schraffur genuegt. */
-  /* Schraffur: 1,5px/1,5px im 135-Grad-Winkel, Karmin 60 % auf 30 %. */
-  .balkenteil.uebrige { background: repeating-linear-gradient(135deg,
-    color-mix(in srgb, var(--korrektur) 60%, var(--papier)) 0 1.5px,
-    color-mix(in srgb, var(--korrektur) 30%, var(--papier)) 1.5px 3px); }
+  /* Schraffur: 2px/2px im 150-Grad-Winkel, Karmin 50 % auf 25 %. */
+  .balkenteil.uebrige { background: repeating-linear-gradient(150deg,
+    color-mix(in srgb, var(--korrektur) 50%, var(--papier)) 0 2px,
+    color-mix(in srgb, var(--korrektur) 25%, var(--papier)) 2px 4px); }
   .balkenteil + .balkenteil { border-left: 1px solid var(--papier); }
   .balkenteilname { font: 700 .7rem/1 var(--sans); padding: 0 .3rem;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
