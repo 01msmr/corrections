@@ -5,6 +5,10 @@ export const MATURITY_SECONDS = MATURITY_DAYS * 24 * 60 * 60;
 /** Unterhalb dieser Fallzahl wird keine Quote angezeigt, nur Rohzahlen (§9.4). */
 export const MIN_N_FOR_RATE = 10;
 
+/** Weiche Kategorien: teils Auslegungssache, deshalb blendet die Bilanz sie
+ *  in der Voreinstellung aus (Umschalter ?alle=1). Erweiterbar. */
+export const WEICHE_FEHLERARTEN = ["schlechter_satzbau"] as const;
+
 /** Medien-Segmente in "Was auffaellt": eigenes Segment nur ab diesem Anteil am Balken … */
 export const SEGMENT_MINDEST_ANTEIL = 0.15;
 /** … und nur ab dieser absoluten Anzahl — kleine Balken bleiben einfarbig. */

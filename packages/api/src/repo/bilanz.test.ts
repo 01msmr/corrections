@@ -250,3 +250,27 @@ describe("beteiligte in ladeBilanz", () => {
     expect(bilanz.schwere[0]?.beteiligte).toBeUndefined();
   });
 });
+
+describe("weiche Kategorien", () => {
+  /** Eine Meldung der weichen Kategorie "schlechter Satzbau". */
+  function weicheMeldung(): void {
+    const zeile = db.select().from(errorTypes).all().find((t) => t.key === "schlechter_satzbau");
+    if (!zeile) throw new Error("Fehlerart schlechter_satzbau fehlt");
+    meldung({ errorTypeId: zeile.id });
+  }
+
+  it("laesst weiche Kategorien in der Vorgabe aus allen Zahlen heraus", () => {
+    meldung();
+    weicheMeldung();
+    weicheMeldung();
+
+    const ohne = ladeBilanz(db, JETZT);
+    expect(ohne.meldungen).toBe(1);
+    expect(ohne.fehlerarten.map((f) => f.name)).not.toContain("schlechter Satzbau");
+    expect(ohne.medienListe[0]?.anzahl).toBe(1);
+
+    const mit = ladeBilanz(db, JETZT, { mitWeichen: true });
+    expect(mit.meldungen).toBe(3);
+    expect(mit.fehlerarten.map((f) => f.name)).toContain("schlechter Satzbau");
+  });
+});

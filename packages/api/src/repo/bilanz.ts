@@ -1,4 +1,4 @@
-import { MATURITY_SECONDS, SEGMENT_MINDEST_ANTEIL, SEGMENT_MINDEST_ANZAHL } from "@korrektur/shared";
+import { MATURITY_SECONDS, SEGMENT_MINDEST_ANTEIL, SEGMENT_MINDEST_ANZAHL, WEICHE_FEHLERARTEN } from "@korrektur/shared";
 import { sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 
@@ -76,8 +76,19 @@ const SCHWERE_NAMEN: Record<number, string> = {
   3: "sinnentstellend",
 };
 
-export function ladeBilanz(db: Db, jetzt: number): Bilanz {
+export function ladeBilanz(
+  db: Db,
+  jetzt: number,
+  optionen: { mitWeichen?: boolean } = {},
+): Bilanz {
   const reifeGrenze = jetzt - MATURITY_SECONDS;
+  /* Weiche Kategorien (teils Auslegungssache) bleiben in der Voreinstellung
+     aus ALLEN Zahlen der Seite heraus -- eine Seite, eine Zaehlweise. Das
+     Fragment laeuft als AND-Bedingung in jede Abfrage. */
+  const weicheListe = WEICHE_FEHLERARTEN.map((key) => `'${key}'`).join(", ");
+  const ohneWeiche = optionen.mitWeichen
+    ? sql``
+    : sql.raw(`AND error_type_id NOT IN (SELECT id FROM error_types WHERE key IN (${weicheListe}))`);
 
   const eckdaten = db
     .get<{ meldungen: number; medien: number; von: number | null; bis: number | null }>(sql`
@@ -86,6 +97,7 @@ export function ladeBilanz(db: Db, jetzt: number): Bilanz {
              MIN(sent_at) AS von,
              MAX(sent_at) AS bis
       FROM corrections
+      WHERE 1=1 ${ohneWeiche}
     `);
 
   /*
@@ -111,7 +123,7 @@ export function ladeBilanz(db: Db, jetzt: number): Bilanz {
           SELECT 1 FROM response_events r WHERE r.correction_id = corrections.id AND r.kind = 'reply'
         ) THEN 1 ELSE 0 END) AS beantwortet
       FROM corrections
-      WHERE dispatch_status = 'sent' AND sent_at IS NOT NULL AND sent_at <= ${reifeGrenze}
+      WHERE dispatch_status = 'sent' AND sent_at IS NOT NULL AND sent_at <= ${reifeGrenze} ${ohneWeiche}
     `);
 
   const abgleichLief = (db.get<{ anzahl: number }>(sql`SELECT COUNT(*) AS anzahl FROM imap_cursor`)?.anzahl ?? 0) > 0;
@@ -119,6 +131,7 @@ export function ladeBilanz(db: Db, jetzt: number): Bilanz {
   const fehlerarten = db.all<Verteilungswert>(sql`
       SELECT e.label AS name, COUNT(*) AS anzahl
       FROM corrections c JOIN error_types e ON e.id = c.error_type_id
+      WHERE 1=1 ${ohneWeiche}
       GROUP BY e.label
       ORDER BY anzahl DESC, name ASC
     `);
@@ -129,6 +142,7 @@ export function ladeBilanz(db: Db, jetzt: number): Bilanz {
       FROM corrections c
         JOIN error_types e ON e.id = c.error_type_id
         JOIN outlets o ON o.id = c.outlet_id
+      WHERE 1=1 ${ohneWeiche}
       GROUP BY e.label, o.name
     `);
   const medienJeFehlerart = new Map<string, Beteiligter[]>();
@@ -139,7 +153,7 @@ export function ladeBilanz(db: Db, jetzt: number): Bilanz {
   }
 
   const schwereRoh = db.all<{ severity: number; anzahl: number }>(sql`
-      SELECT severity, COUNT(*) AS anzahl FROM corrections GROUP BY severity ORDER BY severity ASC
+      SELECT severity, COUNT(*) AS anzahl FROM corrections WHERE 1=1 ${ohneWeiche} GROUP BY severity ORDER BY severity ASC
     `);
 
   /* Medien alphabetisch: die Zahl misst das Leseverhalten des Betreibers,
@@ -148,6 +162,7 @@ export function ladeBilanz(db: Db, jetzt: number): Bilanz {
   const medienListe = db.all<Verteilungswert>(sql`
       SELECT o.name AS name, COUNT(*) AS anzahl
       FROM corrections c JOIN outlets o ON o.id = c.outlet_id
+      WHERE 1=1 ${ohneWeiche}
       GROUP BY o.name
       ORDER BY o.name COLLATE NOCASE ASC
     `);
@@ -155,7 +170,7 @@ export function ladeBilanz(db: Db, jetzt: number): Bilanz {
   const verlaufRoh = db.all<Monatswert>(sql`
       SELECT strftime('%Y-%m', sent_at, 'unixepoch') AS monat, COUNT(*) AS anzahl
       FROM corrections
-      WHERE sent_at IS NOT NULL
+      WHERE sent_at IS NOT NULL ${ohneWeiche}
       GROUP BY monat
       ORDER BY monat ASC
     `);

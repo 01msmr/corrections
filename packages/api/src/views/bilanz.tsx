@@ -112,10 +112,20 @@ const Verteilung: FC<{ werte: Verteilungswert[] }> = ({ werte }) => {
   );
 };
 
-export const BilanzSeite: FC<{ bilanz: Bilanz; betreiber?: boolean }> = ({
+export const BilanzSeite: FC<{
+  bilanz: Bilanz;
+  betreiber?: boolean;
+  /** Zaehlweise des Umschalters: true = auch weiche Kategorien. */
+  mitWeichen?: boolean;
+  /** Sichtbare Namen der weichen Kategorien, fuer die Umschalt-Zeile. */
+  weicheLabels?: string[];
+}> = ({
   bilanz,
   betreiber = false,
+  mitWeichen = false,
+  weicheLabels = [],
 }) => {
+  const weicheNamen = weicheLabels.map((label) => `„${label}“`).join(", ");
   const hoechsterMonat = bilanz.verlauf.reduce((max, wert) => Math.max(max, wert.anzahl), 0);
   const zeitraum =
     bilanz.von !== null && bilanz.bis !== null
@@ -124,6 +134,20 @@ export const BilanzSeite: FC<{ bilanz: Bilanz; betreiber?: boolean }> = ({
 
   return (
     <Layout title="Bilanz" aktiv="bilanz" betreiber={betreiber}>
+      {/* Zaehlweise gilt fuer die ganze Seite — eine Seite, eine Zaehlung. */}
+      <p class="zaehler">
+        {mitWeichen ? (
+          <>
+            Zählweise: alle Kategorien, auch weiche ({weicheNamen}).{" "}
+            <a href="/bilanz">Ohne weiche zählen (Voreinstellung)</a>
+          </>
+        ) : (
+          <>
+            Zählweise: ohne weiche Kategorien — ausgeblendet: {weicheNamen}.{" "}
+            <a href="/bilanz?alle=1">Alle zählen</a>
+          </>
+        )}
+      </p>
       {bilanz.meldungen === 0 ? (
         <p class="hinweis">
           Noch nichts erfasst. Sobald die ersten Korrekturen versendet sind, stehen hier

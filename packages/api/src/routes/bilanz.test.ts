@@ -143,3 +143,57 @@ describe("GET /bilanz", () => {
     expect(html).toContain("Beispiel-Zeitung 100 %");
   });
 });
+
+describe("Umschalter weiche Kategorien", () => {
+  function weicheMeldung(): void {
+    const zeile = db.select().from(errorTypes).all().find((t) => t.key === "schlechter_satzbau");
+    if (!zeile) throw new Error("Fehlerart schlechter_satzbau fehlt");
+    const outletId = db.select().from(outlets).all()[0]?.id;
+    const id = createId();
+    if (!outletId) throw new Error("Testmedien fehlen");
+    db.insert(corrections)
+      .values({
+        id,
+        ref: `KW${id.slice(0, 4).toUpperCase()}`,
+        idempotencyKey: id,
+        createdAt: ALT,
+        dispatchMode: "smtp",
+        articleUrl: "https://beispiel-zeitung.de/w",
+        articleUrlCanon: "https://beispiel-zeitung.de/w",
+        outletId,
+        errorTypeId: zeile.id,
+        severity: 2,
+        quoteBefore: "holprig",
+        suggestionAfter: "glatt",
+        recipientEmail: "korrektur@beispiel-zeitung.de",
+        dispatchStatus: "sent",
+        sentAt: ALT,
+        source: "backfill",
+      })
+      .run();
+  }
+
+  /** Nur der Abschnitt "Was auffällt" — der Methodik-Text unten nennt
+   *  „schlechter Satzbau“ immer, unabhängig vom Umschalter. */
+  function auffaelltAbschnitt(html: string): string {
+    const ohne = ohneStil(html);
+    const von = ohne.indexOf("Was auffällt");
+    const bis = ohne.indexOf("Wie schwer");
+    if (von === -1 || bis === -1) throw new Error("Abschnitt nicht gefunden");
+    return ohne.slice(von, bis);
+  }
+
+  it("blendet weiche Kategorien in der Vorgabe aus und per ?alle=1 ein", async () => {
+    meldung(1);
+    weicheMeldung();
+    const routen = bilanzRoutes(db, () => JETZT);
+
+    const ohne = ohneStil(await (await routen.request("/bilanz")).text());
+    expect(auffaelltAbschnitt(ohne)).not.toContain("schlechter Satzbau");
+    expect(ohne).toContain("ausgeblendet");
+    expect(ohne).toContain("alle=1");
+
+    const mit = ohneStil(await (await routen.request("/bilanz?alle=1")).text());
+    expect(auffaelltAbschnitt(mit)).toContain("schlechter Satzbau");
+  });
+});
