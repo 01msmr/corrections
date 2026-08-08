@@ -139,8 +139,9 @@ describe("GET /bilanz", () => {
     meldung(3);
     const res = await bilanzRoutes(db, () => JETZT).request("/bilanz");
     const html = await res.text();
-    expect(html).toContain('title="Beispiel-Zeitung — 3"');
-    expect(html).toContain("Beispiel-Zeitung 100 %");
+    expect(html).toContain("Beispiel-Zeitung — 3 · Anteil an allen Meldungen:");
+    expect(html).toContain("Beispiel-Zeitung");
+    expect(html).toContain('<span class="teilzahl">3</span>');
   });
 });
 

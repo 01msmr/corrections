@@ -74,9 +74,31 @@ const Quote: FC<{
   );
 };
 
+/**
+ * Text am Segment: Anzahl, und daneben der Anteil des Mediums an allen
+ * Meldungen als Massstab. Der Leser vergleicht selbst — wir behaupten keine
+ * Ueber- oder Unterrepraesentation.
+ */
+function beschriftung(
+  name: string,
+  anzahl: number,
+  grundanteil: Map<string, number> | undefined,
+): string {
+  const anteil = grundanteil?.get(name);
+  return anteil === undefined
+    ? `${name} — ${anzahl}`
+    : `${name} — ${anzahl} · Anteil an allen Meldungen: ${Math.round(anteil * 100)} %`;
+}
+
 /** Waagerechte Balken; der längste Balken füllt die Breite. Bringt ein Wert
  *  `beteiligte` mit, teilt sich die Füllung in anteilige Segmente. */
-const Verteilung: FC<{ werte: Verteilungswert[] }> = ({ werte }) => {
+const Verteilung: FC<{
+  werte: Verteilungswert[];
+  /** Anteil eines Mediums an ALLEN Meldungen — als Vergleichsmassstab im
+   *  Tooltip. Wir verrechnen ihn nicht: die Fallzahlen je Balken sind zu
+   *  klein, eine Normierung machte Zufall zur Aussage (§2.2). */
+  grundanteil?: Map<string, number>;
+}> = ({ werte, grundanteil }) => {
   const groesster = werte.reduce((max, wert) => Math.max(max, wert.anzahl), 0);
   return (
     <div class="verteilung">
@@ -84,6 +106,7 @@ const Verteilung: FC<{ werte: Verteilungswert[] }> = ({ werte }) => {
         <div class="balkenzeile">
           <span class="balkenname">{wert.name}</span>
           <span class="balkenspur">
+            <span class="balkenwert">{wert.anzahl}</span>
             <span
               class="balkenfuellung"
               style={`width: ${groesster > 0 ? (wert.anzahl / groesster) * 100 : 0}%`}
@@ -93,19 +116,19 @@ const Verteilung: FC<{ werte: Verteilungswert[] }> = ({ werte }) => {
                   class={teil.name === UEBRIGE_NAME ? "balkenteil uebrige" : "balkenteil"}
                   style={`width: ${wert.anzahl > 0 ? (teil.anzahl / wert.anzahl) * 100 : 0}%`}
                   role="img"
-                  title={`${teil.name} — ${teil.anzahl}`}
-                  aria-label={`${teil.name} — ${teil.anzahl}`}
+                  title={beschriftung(teil.name, teil.anzahl, grundanteil)}
+                  aria-label={beschriftung(teil.name, teil.anzahl, grundanteil)}
                 >
                   {teil.name !== UEBRIGE_NAME && (
                     <span class="balkenteilname">
-                      {teil.name} {Math.round((teil.anzahl / wert.anzahl) * 100)} %
+                      {teil.name}
+                      <span class="teilzahl">{teil.anzahl}</span>
                     </span>
                   )}
                 </span>
               ))}
             </span>
           </span>
-          <span class="balkenwert">{wert.anzahl}</span>
         </div>
       ))}
     </div>
@@ -149,6 +172,14 @@ export const BilanzSeite: FC<{
   weicheLabels = [],
 }) => {
   const weicheNamen = weicheLabels.map((label) => `„${label}“`).join(", ");
+  /* Vergleichsmassstab fuer die Segment-Beschriftung, aus derselben
+     Zaehlweise wie die Balken. */
+  const grundanteil = new Map(
+    bilanz.medienListe.map((eintrag) => [
+      eintrag.name,
+      bilanz.meldungen > 0 ? eintrag.anzahl / bilanz.meldungen : 0,
+    ]),
+  );
   const hoechsterMonat = bilanz.verlauf.reduce((max, wert) => Math.max(max, wert.anzahl), 0);
   const zeitraum =
     bilanz.von !== null && bilanz.bis !== null
@@ -203,7 +234,7 @@ export const BilanzSeite: FC<{
           </p>
 
           <h2 class="balken">Was auffällt<Zaehlweise mitWeichen={mitWeichen} weicheNamen={weicheNamen} /></h2>
-          <Verteilung werte={bilanz.fehlerarten} />
+          <Verteilung werte={bilanz.fehlerarten} grundanteil={grundanteil} />
 
           <h2 class="balken">Wie schwer<Zaehlweise mitWeichen={mitWeichen} weicheNamen={weicheNamen} /></h2>
           <Verteilung werte={bilanz.schwere} />
