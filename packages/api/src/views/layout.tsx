@@ -238,6 +238,12 @@ const STYLES = `
   .trefferSatz mark { background: color-mix(in srgb, var(--korrektur) 18%, var(--papier));
     color: var(--tinte); font-weight: 700; }
 
+  /* QR-Code des Kurzbefehls: klein, mit Papierrand, damit Kameras ihn auch
+     auf dunklem Grund lesen. */
+  .qr-zeile { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .qr { width: 8.5rem; height: 8.5rem; flex: none;
+    background: var(--papier); padding: .35rem; border: 1px solid var(--linie); border-radius: 3px; }
+
   h1 { font: 700 1.9rem/1.25 var(--mono); margin: 0 0 1.25rem; letter-spacing: .01em; }
   /* 1.2rem statt 1.15: ab 18.66px fett gilt Text als gross, und dort genuegt
      dem Balken ein Kontrast von 3 statt 4.5 — 0.8px, die die helle Schrift

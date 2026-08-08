@@ -1,5 +1,9 @@
 # Bookmarklet und Kurzbefehl
 
+> **Kürzester Weg:** Auf der Seite „In eigener Sache" stehen zwei Knöpfe, die den
+> jeweiligen JavaScript-Code fertig in die Zwischenablage legen — gebaut aus der
+> gerade aufgerufenen Adresse. Dieses Dokument erklärt, was dahintersteckt.
+
 Beide Wege öffnen das Erfassungsformular mit vorbefüllter Artikel-URL und
 Fundstelle: `GET /neu?url=…&text=…` (Betreiber, hinter Basic Auth). Für den
 öffentlichen Besucherweg gilt dasselbe Muster mit `/hinweis` statt `/neu`.
@@ -17,6 +21,11 @@ javascript:(()=>{const t=String(getSelection()).trim().slice(0,200);location.hre
 - Die berichtigte Fassung startet im Formular als Kopie der Fundstelle.
 
 ## Kurzbefehl (iOS/iPadOS, Teilen-Menü in Safari)
+
+**Fertig zum Übernehmen:** <https://www.icloud.com/shortcuts/84f1ff381c1140b1b07711738869d1b7>
+— damit entfallen die Schritte unten. Sie stehen hier, damit nachvollziehbar
+bleibt, was der Kurzbefehl tut, und damit er sich mit eigener Adresse nachbauen
+lässt.
 
 Kurzbefehl-Details: „Im Share Sheet anzeigen“, Eingabetyp **Safari-Webseiten**.
 

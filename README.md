@@ -41,6 +41,62 @@ Artikel korrigiert, und wenn ja, bei welchen Fehlerarten wie zuverlässig?
    und der Artikel wird in Abständen erneut abgerufen, um zu prüfen, ob sich die
    verankerte Stelle verändert hat.
 
+## Erfassen per Lesezeichen oder Kurzbefehl
+
+Beide Wege öffnen das Formular mit Artikeladresse und markierter Fundstelle
+vorausgefüllt. **Den fertigen JavaScript-Code gibt es auf der Seite „In eigener
+Sache" per Knopfdruck in die Zwischenablage** — er wird dort aus der gerade
+aufgerufenen Adresse gebaut und zeigt für Angemeldete auf `/neu`, für alle
+anderen auf `/hinweis`.
+
+Die Vorbefüllung reist als **base64url im Parameter `b`** (JSON `{u, t}`), nicht
+als `?url=…&text=…`. Grund: Die Aktion „URL öffnen" der iOS-Kurzbefehle löst
+Prozent-Kodierung wieder auf und schneidet die Adresse dann am ersten Leerzeichen
+der Auswahl ab — die Fundstelle kam als einzelnes Wort an. Das Alphabet von
+base64url (`A–Z a–z 0–9 - _`) übersteht diese Runde unbeschadet. Die alten
+Parameter `url` und `text` werden weiterhin gelesen.
+
+**Lesezeichen (Desktop).** Text im Artikel markieren, Lesezeichen anklicken.
+Manche Browser öffnen Lesezeichen in einem neuen, leeren Tab — dort hat das
+Skript keinen Artikel mehr vor sich und überträgt nichts. In Vivaldi hilft ein
+Spitzname (etwa `kor`), den man in der Adresszeile eintippt; alternativ die
+Einstellung „Lesezeichen in neuem Tab öffnen" abschalten.
+
+**Kurzbefehl (iOS).** Fertig zum Übernehmen: <https://www.icloud.com/shortcuts/84f1ff381c1140b1b07711738869d1b7>.
+Wer ihn selbst bauen will — zwei Aktionen genügen: *JavaScript auf Webseite ausführen*
+(mit dem kopierten Code) und *URL öffnen* mit dem JavaScript-Ergebnis. In den
+Kurzbefehl-Details muss „Im Share Sheet anzeigen" aktiv sein, und unter
+Einstellungen → Apps → Kurzbefehle → Erweitert das Ausführen von Skripten
+erlaubt. Ohne beides bleibt die Empfangen-Aktion auf „von Nirgendwo" stehen
+bzw. die Skriptaktion wird abgelehnt.
+
+Ausführlicher, mit dem Code zum Nachlesen: [`docs/bookmarklet-und-kurzbefehl.md`](docs/bookmarklet-und-kurzbefehl.md).
+
+## Automatische Fehlersuche
+
+Im Formular durchsucht ein Knopf den ganzen Artikel nach Rechtschreib-,
+Grammatik- und Zeichensetzungsfehlern; jeder Treffer zeigt die Änderung und den
+Satz, in dem sie steckt, mit markierter Fundstelle. Ein Klick übernimmt ihn in
+die Felder. Geprüft wird über **[LanguageTool](https://languagetool.org)**;
+die Adresse steht in `LANGUAGETOOL_URL` (Vorgabe: die öffentliche API), sodass
+eine eigene Instanz später ein Konfigurationseintrag ist und keine Codeänderung.
+
+Zwei Dinge sind bewusst so gebaut:
+
+- **Nur auf Klick, nie beim Tippen** — die öffentliche API untersagt
+  automatisierte Anfragen. Für den öffentlichen Weg `/hinweis` gilt zusätzlich
+  ein Tageskontingent (zwei Prüfungen je Person, ab 20 am Tag nur noch eine).
+  Gezählt wird ein Hash aus Tagessalz und IP; die IP wird nie gespeichert, und
+  mit dem Salz verschwindet am Tagesende die Rückrechenbarkeit.
+- **Ein Ausfall ist kein Fehler** — ist der Dienst nicht erreichbar, arbeitet
+  das Formular unverändert weiter, nur ohne Vorschläge.
+
+Warum kein eigenes Wörterbuch: gemessen belegte ein deutsches Hunspell-Wörterbuch
+im Arbeitsspeicher 87–304 MB, kannte keine Komposita (`Kontaktdaten`,
+`Mietwagen` galten als unbekannt) und erkannte den eingebauten Buchstabendreher
+nicht. Die Begründung samt Messwerten steht in
+[`docs/superpowers/specs/2026-08-08-automatische-fehlerfindung-design.md`](docs/superpowers/specs/2026-08-08-automatische-fehlerfindung-design.md).
+
 ## Warum es Kontext-Anker gibt
 
 Ein reiner Textvergleich kann nur sagen „Zitat noch da" oder „Zitat weg" — und
