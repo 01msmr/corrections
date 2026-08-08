@@ -1,7 +1,7 @@
 import { istZaehlbareFehlerart, QUOTE_MAX_LENGTH } from "@korrektur/shared";
 import type { FC } from "hono/jsx";
 import type { ErrorTypeRecord } from "../repo/errorTypes.js";
-import { Layout } from "./layout.js";
+import { EnvelopeOpenTextIcon, FilePenIcon, Layout } from "./layout.js";
 import { vergleicheFassungen } from "./vergleich.js";
 
 /**
@@ -48,7 +48,7 @@ const FehlendeRedaktion: FC<{ host: string; zurueck: string }> = ({ host, zuruec
  * nur, solange die Auswahl nicht von Hand getroffen wurde: eine bewusste
  * Entscheidung wird nie ueberschrieben.
  */
-const ERKENNUNG_SCRIPT = `
+const erkennungScript = (basis: string) => `
   const setzeHinweis = (el, text, erkannt) => {
     el.textContent = text;
     el.classList.toggle("erkannt", Boolean(erkannt));
@@ -72,7 +72,7 @@ const ERKENNUNG_SCRIPT = `
   const ueberschriftHolen = () => {
     if (ueberschriftManuell || !url.value.trim()) return;
     setzeHinweis(ueberschriftHinweis, "wird geholt …", false);
-    fetch("/neu/ueberschrift", {
+    fetch("${basis}/ueberschrift", {
       method: "POST",
       body: new URLSearchParams({ url: url.value }),
     })
@@ -130,7 +130,7 @@ const ERKENNUNG_SCRIPT = `
   schwere.addEventListener("change", () => { schwereManuell = true; });
   const pruefen = () => {
     if (!falsch.value.trim() || !richtig.value.trim()) return;
-    fetch("/neu/kategorie", {
+    fetch("${basis}/kategorie", {
       method: "POST",
       body: new URLSearchParams({ falsch: falsch.value, richtig: richtig.value }),
     })
@@ -175,14 +175,16 @@ export const CaptureForm: FC<{
   quote: string;
   fehler?: string | undefined;
   fehlendeRedaktion?: { host: string; zurueck: string } | undefined;
-}> = ({ errorTypes, idempotencyKey, url, quote, fehler, fehlendeRedaktion }) => (
-  <Layout title="Neue Korrektur" aktiv="neu" betreiber>
+  /** "/neu" (Betreiber) oder "/hinweis" (Besucher) — steuert Action und Helfer-Endpunkte. */
+  basis?: "/neu" | "/hinweis";
+}> = ({ errorTypes, idempotencyKey, url, quote, fehler, fehlendeRedaktion, basis = "/neu" }) => (
+  <Layout title="Neue Korrektur" aktiv="neu" betreiber={basis === "/neu"}>
     {fehlendeRedaktion ? (
       <FehlendeRedaktion host={fehlendeRedaktion.host} zurueck={fehlendeRedaktion.zurueck} />
     ) : fehler ? (
       <p class="hinweis">{fehler}</p>
     ) : null}
-    <form class="arbeitsflaeche" method="post" action="/neu/vorschau">
+    <form class="arbeitsflaeche" method="post" action={`${basis}/vorschau`}>
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
 
       {/* Hauptspalte: der Artikel und die eigentliche Korrektur. */}
@@ -304,7 +306,7 @@ export const CaptureForm: FC<{
         </div>
       </aside>
     </form>
-    <script dangerouslySetInnerHTML={{ __html: ERKENNUNG_SCRIPT }} />
+    <script dangerouslySetInnerHTML={{ __html: erkennungScript(basis) }} />
   </Layout>
 );
 
@@ -314,13 +316,15 @@ export const CapturePreview: FC<{
   mailHtml: string;
   /** Alle Formularwerte, unveraendert als versteckte Felder weitergereicht. */
   werte: Record<string, string>;
-}> = ({ an, subject, mailHtml, werte }) => {
+  /** Besucher-Modus: statt Senden-Knopf oeffnet dieser Link das Mail-Programm. */
+  mailtoHref?: string | undefined;
+}> = ({ an, subject, mailHtml, werte, mailtoHref }) => {
   /* Die Fahne entsteht serverseitig aus den durchgereichten Fassungen; sie
      erscheint nur, wenn die beiden sich tatsaechlich unterscheiden. */
   const fahne = vergleicheFassungen(werte["quoteBefore"] ?? "", werte["suggestionAfter"] ?? "");
   const veraendert = fahne.some((stueck) => stueck.art !== "gleich");
   return (
-  <Layout title="Vorschau" aktiv="neu" betreiber>
+  <Layout title="Vorschau" aktiv="neu" betreiber={!mailtoHref}>
     <div class="mailkopf">
       <div>
         <span class="zaehler">An:</span> {an}
@@ -348,12 +352,20 @@ export const CapturePreview: FC<{
     ) : null}
     {/* Inhalt stammt aus composeMail; alle Nutzereingaben sind dort maskiert. */}
     <div class="mailvorschau" dangerouslySetInnerHTML={{ __html: mailHtml }} />
-    <form method="post" action="/neu">
-      {Object.entries(werte).map(([name, wert]) => (
-        <input type="hidden" name={name} value={wert} />
-      ))}
-      <button type="submit">✉️ Korrektur senden</button>
-    </form>
+    {mailtoHref ? (
+      /* Besucher senden mit dem eigenen Mail-Programm — Betreff und Text
+         sind fertig vorbefuellt, die Sendemethode ist der einzige Unterschied. */
+      <p>
+        <a class="sendeknopf" href={mailtoHref}><EnvelopeOpenTextIcon /> Im Mail-Programm öffnen und senden</a>
+      </p>
+    ) : (
+      <form method="post" action="/neu">
+        {Object.entries(werte).map(([name, wert]) => (
+          <input type="hidden" name={name} value={wert} />
+        ))}
+        <button type="submit"><FilePenIcon /> Korrektur senden</button>
+      </form>
+    )}
     <p>
       <a href="javascript:history.back()">Zurück zum Formular</a>
       <span class="zaehler"> — die Eingaben bleiben erhalten.</span>
@@ -364,7 +376,10 @@ export const CapturePreview: FC<{
       dangerouslySetInnerHTML={{
         __html: `
   let sendet = false;
-  document.querySelector('form[action="/neu"]').addEventListener("submit", () => { sendet = true; });
+  const sendeform = document.querySelector('form[action="/neu"]');
+  if (sendeform) sendeform.addEventListener("submit", () => { sendet = true; });
+  const mailtoKnopf = document.querySelector(".sendeknopf");
+  if (mailtoKnopf) mailtoKnopf.addEventListener("click", () => { sendet = true; });
   window.addEventListener("beforeunload", (e) => { if (!sendet) e.preventDefault(); });`,
       }}
     />

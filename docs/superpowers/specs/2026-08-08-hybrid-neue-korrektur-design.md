@@ -43,7 +43,32 @@ vorbereiteten Korrekturhinweis mailen können.
    `/bilanz` ohne Cookie zeigt mailto mit Gerüst und kein `/neu`, mit Cookie
    den Formular-Link.
 
+## Nachtrag vom 8.8.2026: Besucher bekommen das Formular, nicht ein Gerüst
+
+Der nackte Gerüst-mailto verlagerte die Arbeit auf den Besucher — verworfen.
+Stattdessen: **öffentlicher Pfad `/hinweis/*`** mit demselben Formular; nur
+die Sendemethode unterscheidet sich.
+
+- `GET /hinweis` — `CaptureForm` mit `basis`-Prop (Formular-Action und
+  JS-Helfer zeigen auf `/hinweis/…`).
+- `POST /hinweis/ueberschrift`, `POST /hinweis/kategorie` — dieselben
+  Helfer-Handler, öffentlich.
+- `POST /hinweis/vorschau` — identische Komposition und Vorschau; Abschluss
+  ist ein **mailto-Link** „Im Mail-Programm öffnen“ mit Betreff und dem
+  fertigen Klartext aus `composeMail`. Kein Datenbank-Schreiben, kein SMTP.
+- **Empfänger: die Korrekturadresse des Mediums** zum Artikel-Host
+  (Entscheidung vom 8.8.); Fallback `MAIL_FROM`, wenn kein Medium mit
+  Adresse bekannt ist. Diese Besucher-Korrekturen erscheinen nicht in der
+  Bilanz — der Tracker sieht sie nie (bewusst in Kauf genommen).
+- `composeMail` erhält `ref: string | null`: ohne Kennung entfallen Token im
+  Betreff und der „Kennung stehen lassen“-Satz — für Mails, die niemand
+  zuordnet.
+- Navigation: Besucher-Link zeigt auf `/hinweis` (Icon envelope-open-text);
+  der Gerüst-mailto samt `setzeHinweisMailto` entfällt ersatzlos.
+
 ## Nicht Teil dieser Änderung
 
-- Kein öffentliches Erfassungsformular, keine neue Adresse, keine Änderung
-  an Auth oder Formular selbst.
+- Keine neue Adresse, keine Änderung an Auth für `/neu` und `/admin`.
+- Geplant, aber bewusst nicht hier: automatische Fehler**erkennung** mit
+  Markierung der Fundstelle im Text (Mail-Beispiele des Betreibers) sowie
+  der Bilanz-Umschalter für weiche Fehlerarten — beides eigene Vorhaben.

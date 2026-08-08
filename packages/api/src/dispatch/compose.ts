@@ -1,7 +1,8 @@
 import { diffWords, PALETTE, type DiffSegment } from "@korrektur/shared";
 
 export interface ComposeInput {
-  ref: string;
+  /** Kennung im Betreff; null bei Besucher-Hinweisen — niemand ordnet Antworten zu. */
+  ref: string | null;
   /** Fuer die Anrede „Liebe <Name>-Redaktion“. */
   outletName: string;
   articleUrl: string;
@@ -70,13 +71,16 @@ function renderSegments(segments: DiffSegment[], color: string): string {
 function metaLine(input: ComposeInput): string {
   // url steht zuletzt und ist prozentkodiert: ein Semikolon in der Query ist
   // syntaktisch erlaubt und wuerde die Feldtrennung sonst zerreissen.
-  return `v=2; ref=${input.ref}; typ=${input.errorTypeKey}; sev=${input.severity}; url=${encodeURIComponent(input.articleUrlCanon)}`;
+  // Ohne Kennung (Besucher-Hinweis) entfaellt das ref-Feld.
+  const refTeil = input.ref ? `ref=${input.ref}; ` : "";
+  return `v=2; ${refTeil}typ=${input.errorTypeKey}; sev=${input.severity}; url=${encodeURIComponent(input.articleUrlCanon)}`;
 }
 
 function buildSubject(input: ComposeInput): string {
   // Der Token muss immer ans Ende passen, unabhaengig von der Laenge der
-  // Ueberschrift — deshalb wird gegen ein Budget gekuerzt.
-  const tokenPart = ` [${input.ref}]`;
+  // Ueberschrift — deshalb wird gegen ein Budget gekuerzt. Ohne Kennung
+  // (Besucher-Hinweis: niemand ordnet Antworten zu) entfaellt er.
+  const tokenPart = input.ref ? ` [${input.ref}]` : "";
   if (!input.headline) return `${SUBJECT_PREFIX}${tokenPart}`;
   const budget = SUBJECT_MAX - SUBJECT_PREFIX.length - 2 - tokenPart.length;
   return `${SUBJECT_PREFIX}: ${truncate(input.headline, budget)}${tokenPart}`;
@@ -119,8 +123,9 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
 
   lines.push(
     "Eine Rückmeldung wäre wunderbar.",
-    "Lassen Sie die Kennung am Ende des Betreffs bitte stehen, damit Ihre",
-    "Antwort zugeordnet werden kann.",
+    ...(input.ref
+      ? ["Lassen Sie die Kennung am Ende des Betreffs bitte stehen, damit Ihre", "Antwort zugeordnet werden kann."]
+      : []),
     "",
     "Mit freundlichen Grüßen",
     "",
@@ -177,7 +182,7 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
     zitat(renderSegments(diff.after, COLOR_AFTER), COLOR_AFTER),
     linie,
     commentHtml,
-    `<p style="${absatz}">Eine Rückmeldung wäre wunderbar.<br>Lassen Sie die Kennung am Ende des Betreffs bitte stehen, damit Ihre Antwort zugeordnet werden kann.</p>`,
+    `<p style="${absatz}">Eine Rückmeldung wäre wunderbar.${input.ref ? "<br>Lassen Sie die Kennung am Ende des Betreffs bitte stehen, damit Ihre Antwort zugeordnet werden kann." : ""}</p>`,
     `<p style="${absatz}">Mit freundlichen Grüßen</p>`,
     `<p style="margin:0 0 6px;color:${PALETTE.rand};font-size:13px;${serif.replace(PALETTE.tinte, PALETTE.rand)}">--<br>Diese Textkorrektur wurde über die Web-Anwendung <a href="${escapeHtml(input.baseUrl)}" style="color:${PALETTE.rand}">${escapeHtml(input.baseUrl)}</a> erstellt und ist ohne Unterschrift gültig.</p>`,
     // Der Block steht in beiden Teilen: welchen ein Mailprogramm beim Antworten

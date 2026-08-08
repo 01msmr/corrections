@@ -93,15 +93,47 @@ describe("Hybrid-Ressort Neue Korrektur", () => {
     expect(erlaubt.headers.get("set-cookie")).toContain("betreiber=1");
   });
 
-  it("zeigt Besuchern das mailto-Geruest, Betreibern den Formular-Link", async () => {
+  it("verlinkt Besucher auf /hinweis, Betreiber auf /neu", async () => {
     const a = app();
     const besucher = await (await a.request("/bilanz")).text();
-    expect(besucher).toContain(`mailto:${ENV.MAIL_FROM}?subject=Korrekturhinweis`);
-    expect(besucher).toContain(encodeURIComponent("Artikel-URL:"));
+    expect(besucher).toContain('href="/hinweis"');
     expect(besucher).not.toContain('href="/neu"');
     const betreiber = await (
       await a.request("/bilanz", { headers: { cookie: "betreiber=1" } })
     ).text();
     expect(betreiber).toContain('href="/neu"');
+  });
+
+  it("laesst das Besucher-Formular ohne Anmeldung durch", async () => {
+    const a = app();
+    expect((await a.request("/hinweis")).status).toBe(200);
+    const html = await (await a.request("/hinweis")).text();
+    expect(html).toContain('action="/hinweis/vorschau"');
+  });
+
+  it("liefert Besuchern eine Vorschau mit mailto statt Senden-Knopf und schreibt nichts", async () => {
+    const a = app();
+    const form = new URLSearchParams({
+      idempotencyKey: "egal-aber-lang-genug",
+      articleUrl: "https://beispiel-zeitung.de/politik/artikel-1",
+      quoteBefore: "ein Fehler",
+      suggestionAfter: "kein Fehler",
+      errorTypeKey: "komma_fehlt",
+      severity: "2",
+    });
+    const res = await a.request("/hinweis/vorschau", {
+      method: "POST",
+      body: form,
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+    });
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    // Kein Medium zur Domain hinterlegt: der Hinweis faellt auf MAIL_FROM zurueck.
+    expect(html).toContain(`mailto:${ENV.MAIL_FROM}?subject=`);
+    expect(html).toContain("Im Mail-Programm öffnen");
+    expect(html).not.toContain("Korrektur senden");
+    // Ohne Kennung: kein "Kennung stehen lassen"-Satz und kein [VORSCHAU]-Token.
+    expect(html).not.toContain("Lassen Sie die Kennung");
+    expect(html).not.toContain("[VORSCHAU]");
   });
 });

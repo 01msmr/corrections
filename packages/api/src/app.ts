@@ -11,7 +11,6 @@ import { bilanzRoutes } from "./routes/bilanz.js";
 import { captureRoutes } from "./routes/capture.js";
 import { health } from "./routes/health.js";
 import { ueberRoutes } from "./routes/ueber.js";
-import { setzeHinweisMailto } from "./views/layout.js";
 
 export interface AppOptions {
   env: Env;
@@ -24,9 +23,6 @@ export interface AppOptions {
 export function createApp(options: AppOptions): Hono {
   const now = options.now ?? (() => Math.floor(Date.now() / 1000));
   const app = new Hono();
-
-  /* Das Besucher-mailto kennt seine Adresse erst zur Laufzeit. */
-  setzeHinweisMailto(options.env.MAIL_FROM);
 
   app.route("/", health);
 
@@ -46,6 +42,8 @@ export function createApp(options: AppOptions): Hono {
       fetchArticle: options.fetchArticle,
       now,
       baseUrl: options.env.PUBLIC_BASE_URL,
+      /* Empfaenger-Fallback des Besucherwegs /hinweis. */
+      mailFrom: options.env.MAIL_FROM,
     }),
   );
   app.route("/", outletAdminRoutes(options.db, now));
