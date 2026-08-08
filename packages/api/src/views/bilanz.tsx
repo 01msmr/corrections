@@ -112,6 +112,29 @@ const Verteilung: FC<{ werte: Verteilungswert[] }> = ({ werte }) => {
   );
 };
 
+/**
+ * Zaehlweise-Umschalter als zweiteilige Pille, rechts oben im Balken der
+ * Graphen. Serverseitig ueber ?alle=1 — kein JavaScript, kein Flackern.
+ * Die aktive Haelfte ist nicht anklickbar; sie zeigt nur den Stand.
+ */
+const Zaehlweise: FC<{ mitWeichen: boolean; weicheNamen: string }> = ({
+  mitWeichen,
+  weicheNamen,
+}) => (
+  <span class="zaehlweise" title={`Weiche Kategorien: ${weicheNamen}`}>
+    {mitWeichen ? (
+      <a href="/bilanz">ohne weiche</a>
+    ) : (
+      <span aria-current="true">ohne weiche</span>
+    )}
+    {mitWeichen ? (
+      <span aria-current="true">alle</span>
+    ) : (
+      <a href="/bilanz?alle=1">alle</a>
+    )}
+  </span>
+);
+
 export const BilanzSeite: FC<{
   bilanz: Bilanz;
   betreiber?: boolean;
@@ -134,20 +157,6 @@ export const BilanzSeite: FC<{
 
   return (
     <Layout title="Bilanz" aktiv="bilanz" betreiber={betreiber}>
-      {/* Zaehlweise gilt fuer die ganze Seite — eine Seite, eine Zaehlung. */}
-      <p class="zaehler">
-        {mitWeichen ? (
-          <>
-            Zählweise: alle Kategorien, auch weiche ({weicheNamen}).{" "}
-            <a href="/bilanz">Ohne weiche zählen (Voreinstellung)</a>
-          </>
-        ) : (
-          <>
-            Zählweise: ohne weiche Kategorien — ausgeblendet: {weicheNamen}.{" "}
-            <a href="/bilanz?alle=1">Alle zählen</a>
-          </>
-        )}
-      </p>
       {bilanz.meldungen === 0 ? (
         <p class="hinweis">
           Noch nichts erfasst. Sobald die ersten Korrekturen versendet sind, stehen hier
@@ -193,13 +202,13 @@ export const BilanzSeite: FC<{
             Redaktionen.
           </p>
 
-          <h2 class="balken">Was auffällt</h2>
+          <h2 class="balken">Was auffällt<Zaehlweise mitWeichen={mitWeichen} weicheNamen={weicheNamen} /></h2>
           <Verteilung werte={bilanz.fehlerarten} />
 
-          <h2 class="balken">Wie schwer</h2>
+          <h2 class="balken">Wie schwer<Zaehlweise mitWeichen={mitWeichen} weicheNamen={weicheNamen} /></h2>
           <Verteilung werte={bilanz.schwere} />
 
-          <h2 class="balken">Verlauf</h2>
+          <h2 class="balken">Verlauf<Zaehlweise mitWeichen={mitWeichen} weicheNamen={weicheNamen} /></h2>
           <div class="verlauf">
             {bilanz.verlauf.map((wert) => (
               <div class="verlaufsspalte" title={`${wert.anzahl} im ${wert.monat}`}>

@@ -173,14 +173,11 @@ describe("Umschalter weiche Kategorien", () => {
       .run();
   }
 
-  /** Nur der Abschnitt "Was auffällt" — der Methodik-Text unten nennt
-   *  „schlechter Satzbau“ immer, unabhängig vom Umschalter. */
-  function auffaelltAbschnitt(html: string): string {
-    const ohne = ohneStil(html);
-    const von = ohne.indexOf("Was auffällt");
-    const bis = ohne.indexOf("Wie schwer");
-    if (von === -1 || bis === -1) throw new Error("Abschnitt nicht gefunden");
-    return ohne.slice(von, bis);
+  /** Beschriftung eines Balkens — nur daran haengt, ob eine Kategorie
+   *  gezaehlt wurde. Der Methodik-Text unten und der Titel der Umschalt-Pille
+   *  nennen „schlechter Satzbau“ immer, unabhängig vom Umschalter. */
+  function balkenBeschriftungen(html: string): string[] {
+    return [...html.matchAll(/<span class="balkenname">([^<]*)<\/span>/g)].map((t) => t[1] ?? "");
   }
 
   it("blendet weiche Kategorien in der Vorgabe aus und per ?alle=1 ein", async () => {
@@ -189,11 +186,12 @@ describe("Umschalter weiche Kategorien", () => {
     const routen = bilanzRoutes(db, () => JETZT);
 
     const ohne = ohneStil(await (await routen.request("/bilanz")).text());
-    expect(auffaelltAbschnitt(ohne)).not.toContain("schlechter Satzbau");
-    expect(ohne).toContain("ausgeblendet");
+    expect(balkenBeschriftungen(ohne)).not.toContain("schlechter Satzbau");
+    expect(ohne).toContain("ohne weiche");
+    expect(ohne).toContain("Weiche Kategorien: „schlechter Satzbau“");
     expect(ohne).toContain("alle=1");
 
     const mit = ohneStil(await (await routen.request("/bilanz?alle=1")).text());
-    expect(auffaelltAbschnitt(mit)).toContain("schlechter Satzbau");
+    expect(balkenBeschriftungen(mit)).toContain("schlechter Satzbau");
   });
 });

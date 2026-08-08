@@ -237,6 +237,20 @@ const STYLES = `
        unten Platz fuer Unterlaengen, deshalb 0.68px mehr oben (.24 statt .2rem)
        und ebenso weniger unten; die Balkenhoehe bleibt gleich. */
     padding: .24rem .7rem .16rem; }
+  /* Die Zaehlweise sitzt rechts oben im Balken: zweiteilige Pille wie in der
+     Ressortleiste, nur kleiner und auf den dunklen Grund abgestimmt. Die
+     aktive Haelfte ist kein Link — sie zeigt den Stand, sie schaltet nicht. */
+  h2.balken { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .zaehlweise { display: inline-flex; border-radius: 999px; overflow: hidden;
+    background: color-mix(in srgb, var(--balkengrund) 70%, var(--papier));
+    font: 700 .62rem/1 var(--sans); letter-spacing: .02em; flex: none; }
+  .zaehlweise > * { padding: .28rem .6rem; text-decoration: none;
+    color: color-mix(in srgb, var(--balkenschrift) 70%, var(--balkengrund)); }
+  .zaehlweise > * + * { border-left: 2px solid var(--balkengrund); }
+  .zaehlweise a:hover, .zaehlweise a:focus-visible {
+    background: color-mix(in srgb, var(--balkengrund) 45%, var(--papier));
+    color: var(--balkenschrift); }
+  .zaehlweise [aria-current] { background: var(--papier); color: var(--tinte); }
   /* Rubriken bleiben die groesste Sprechstufe: zentriert und gesperrt. */
   h2.rubrik { text-align: center; letter-spacing: .14em;
     text-transform: uppercase; font-size: 1.25rem; margin-top: 3rem; }
