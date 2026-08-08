@@ -24,16 +24,21 @@ Nur zwei Aktionen — die komplette URL entsteht im JavaScript, damit keine
 Shortcuts-Kodierung dazwischenfunkt (Zeilenumbrüche und Sonderzeichen in der
 Auswahl zerrissen sonst die Query):
 
+Wichtig: Die „URL öffnen“-Aktion der Kurzbefehle löst Prozent-Kodierung
+wieder auf und reißt die Query am ersten Leerzeichen ab. Deshalb reist die
+Vorbefüllung als **base64url** im Parameter `?b=` — dessen Alphabet
+(`A–Z a–z 0–9 - _`) übersteht jede Dekodier-Runde.
+
 1. **JavaScript auf Webseite ausführen**
 
    ```javascript
    const auswahl = String(getSelection()).trim().slice(0, 200);
-   completion(
-     "https://korrekturen.msmr.co/neu?url=" +
-       encodeURIComponent(location.href) +
-       "&text=" +
-       encodeURIComponent(auswahl),
-   );
+   const nutzlast = JSON.stringify({ u: location.href, t: auswahl });
+   const b64 = btoa(unescape(encodeURIComponent(nutzlast)))
+     .replace(/\+/g, "-")
+     .replace(/\//g, "_")
+     .replace(/=+$/, "");
+   completion("https://korrekturen.msmr.co/neu?b=" + b64);
    ```
 
 2. **URL öffnen** — Eingabe: „JavaScript-Ergebnis“
