@@ -215,6 +215,28 @@ const STYLES = `
      behaelt so auf jeder Seite dieselbe Hoehe und springt beim Wechsel nicht. */
   nav a[aria-current="page"] { background: var(--korrektur); color: var(--papier); }
 
+  /* Fehlersuche im Formular: Treffer als anklickbare Zeilen, jede mit der
+     Wortaenderung und dem Satz, in dem sie steckt. Stilbefunde stehen
+     nachrangig darunter und laufen blasser. */
+  .pruefung { display: block; }
+  .pruefung .quelle { margin: .4rem 0 0; }
+  .treffer { display: flex; flex-direction: column; gap: .3rem; margin-top: .5rem; }
+  .treffer:empty { margin-top: 0; }
+  .treffer-zeile { display: block; width: 100%; text-align: left; cursor: pointer;
+    margin: 0; padding: .4rem .6rem; border: 1px solid var(--linie); border-radius: 3px;
+    background: var(--feld); color: var(--tinte); font: inherit;
+    /* Kein Bleisatz-Klotz: das sind Zeilenknoepfe in einer Liste. */
+    transform: none; box-shadow: none; }
+  .treffer-zeile:hover, .treffer-zeile:focus-visible {
+    transform: none; box-shadow: none; border-color: var(--korrektur); }
+  .treffer-zeile.stil { opacity: .72; }
+  .trefferWechsel { display: block; font: 700 .85rem/1.4 var(--mono); }
+  .trefferWechsel del { color: var(--korrektur); text-decoration-thickness: 2px; margin-right: .5em; }
+  .trefferWechsel ins { color: var(--vorschlag); text-decoration: none; }
+  .trefferSatz { display: block; font-size: .8rem; color: var(--rand); margin-top: .15rem; }
+  .trefferSatz mark { background: color-mix(in srgb, var(--korrektur) 18%, var(--papier));
+    color: var(--tinte); font-weight: 700; }
+
   h1 { font: 700 1.9rem/1.25 var(--mono); margin: 0 0 1.25rem; letter-spacing: .01em; }
   /* 1.2rem statt 1.15: ab 18.66px fett gilt Text als gross, und dort genuegt
      dem Balken ein Kontrast von 3 statt 4.5 — 0.8px, die die helle Schrift
@@ -767,6 +789,35 @@ export const Layout: FC<
       <script
         dangerouslySetInnerHTML={{
           __html: `
+  /* Umschalter, die nur einen Seitenteil betreffen (Zaehlweise der Bilanz):
+     Der Inhalt wird nachgeladen und an Ort und Stelle ersetzt, statt die
+     Seite neu zu laden — sonst spraenge der Blick bei jedem Umschalten
+     zurueck an den Seitenanfang. Ohne JavaScript bleibt der Link ein
+     gewoehnlicher Link und funktioniert unveraendert. */
+  const teilTausch = (wurzel) => {
+    for (const link of wurzel.querySelectorAll("a[data-teil]")) {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        const stand = window.scrollY;
+        fetch(link.href, { headers: { accept: "text/html" } })
+          .then((res) => (res.ok ? res.text() : null))
+          .then((html) => {
+            if (!html) { location.href = link.href; return; }
+            const neu = new DOMParser().parseFromString(html, "text/html").querySelector(".blatt");
+            const alt = document.querySelector(".blatt");
+            if (!neu || !alt) { location.href = link.href; return; }
+            alt.replaceWith(neu);
+            history.replaceState(null, "", link.href);
+            window.scrollTo({ top: stand });
+            teilTausch(neu);
+            tabellenSortierbar(neu);
+          })
+          .catch(() => { location.href = link.href; });
+      });
+    }
+  };
+  teilTausch(document);
+
   for (const zeile of document.querySelectorAll("tr[data-href]")) {
     zeile.addEventListener("click", (e) => {
       if (e.target.closest("a, button, form, .griff")) return;
@@ -777,7 +828,8 @@ export const Layout: FC<
   /* Sortieren im Browser: die Serverantwort bleibt alphabetisch, umsortiert
      wird nur die Ansicht. Zahlenspalten numerisch, Text nach deutscher
      Sortierfolge; leere Zellen und Aktionsspalten bleiben aussen vor. */
-  for (const tabelle of document.querySelectorAll("table.sortierbar")) {
+  function tabellenSortierbar(wurzel) {
+  for (const tabelle of wurzel.querySelectorAll("table.sortierbar")) {
     const kopf = tabelle.tHead && tabelle.tHead.rows[0];
     const koerper = tabelle.tBodies[0];
     if (!kopf || !koerper) continue;
@@ -828,7 +880,9 @@ export const Layout: FC<
         }
       });
     });
-  }`,
+  }
+  }
+  tabellenSortierbar(document);`,
         }}
       />
     </body>

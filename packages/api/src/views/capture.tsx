@@ -159,6 +159,89 @@ const erkennungScript = (basis: string) => `
       zeitgeber = setTimeout(pruefen, 400);
     });
   }
+  /* Fehlersuche im Artikel. Sie laeuft nur auf Klick — die oeffentliche
+     LanguageTool-API untersagt automatische Anfragen (Spec 2026-08-08).
+     Ein Klick auf einen Treffer fuellt die beiden Fassungen; die Kategorie
+     kommt aus der bestehenden Erkennung, nicht aus dem Dienst. */
+  const pruefKnopf = document.getElementById("pruefen");
+  const pruefHinweis = document.getElementById("pruef-hinweis");
+  const trefferListe = document.getElementById("pruef-treffer");
+
+  const satzMitMarkierung = (fund) => {
+    const vor = document.createTextNode(fund.satz.slice(0, fund.start));
+    const stelle = document.createElement("mark");
+    stelle.textContent = fund.satz.slice(fund.start, fund.start + fund.laenge);
+    const nach = document.createTextNode(fund.satz.slice(fund.start + fund.laenge));
+    const satz = document.createElement("span");
+    satz.className = "trefferSatz";
+    satz.append(vor, stelle, nach);
+    return satz;
+  };
+
+  const zeigeTreffer = (funde) => {
+    trefferListe.textContent = "";
+    if (funde.length === 0) return;
+    let letzteArt = null;
+    for (const fund of funde) {
+      if (fund.art === "stil" && letzteArt !== "stil") {
+        const trenner = document.createElement("p");
+        trenner.className = "zaehler";
+        trenner.textContent = "Stilfragen — Auslegungssache, deshalb nachrangig:";
+        trefferListe.append(trenner);
+      }
+      letzteArt = fund.art;
+      const knopf = document.createElement("button");
+      knopf.type = "button";
+      knopf.className = fund.art === "stil" ? "treffer-zeile stil" : "treffer-zeile";
+      knopf.title = fund.hinweis;
+      const wechsel = document.createElement("span");
+      wechsel.className = "trefferWechsel";
+      wechsel.append(Object.assign(document.createElement("del"), { textContent: fund.falsch }));
+      wechsel.append(Object.assign(document.createElement("ins"), { textContent: fund.richtig }));
+      knopf.append(wechsel, satzMitMarkierung(fund));
+      knopf.addEventListener("click", () => {
+        falsch.value = fund.falsch;
+        richtigManuell = true;
+        richtig.value = fund.richtig;
+        manuell = false;
+        pruefen();
+        falsch.scrollIntoView({ block: "center" });
+      });
+      trefferListe.append(knopf);
+    }
+  };
+
+  pruefKnopf.addEventListener("click", () => {
+    if (!url.value.trim()) {
+      setzeHinweis(pruefHinweis, "Erst die Artikel-URL eintragen.", false);
+      return;
+    }
+    pruefKnopf.disabled = true;
+    setzeHinweis(pruefHinweis, "wird durchgesehen …", false);
+    fetch("${basis}/pruefen", {
+      method: "POST",
+      body: new URLSearchParams({ url: url.value }),
+    })
+      .then((res) => (res.status === 429 ? "kontingent" : res.ok ? res.json() : null))
+      .then((daten) => {
+        if (daten === "kontingent") {
+          setzeHinweis(pruefHinweis, "Für heute sind die Prüfungen aufgebraucht.", false);
+          return;
+        }
+        const funde = daten && Array.isArray(daten.funde) ? daten.funde : [];
+        zeigeTreffer(funde);
+        setzeHinweis(
+          pruefHinweis,
+          funde.length === 0
+            ? "nichts gefunden — was nicht heißt, dass nichts drin steht"
+            : funde.length + " Stelle" + (funde.length === 1 ? "" : "n") + " zum Ansehen",
+          funde.length > 0,
+        );
+      })
+      .catch(() => { setzeHinweis(pruefHinweis, "Prüfung nicht erreichbar.", false); })
+      .finally(() => { pruefKnopf.disabled = false; });
+  });
+
   /* Vorbefuellte Felder (Bookmarklet/Kurzbefehl: ?url=…&text=…) loesen kein
      input-Ereignis aus — Ueberschrift und Kategorie deshalb einmal beim
      Laden anstossen. */
@@ -202,6 +285,23 @@ export const CaptureForm: FC<{
             </span>
           </label>
           <input id="articleUrl" name="articleUrl" type="url" required value={url} />
+        </div>
+
+        {/* Fehlersuche im Artikel: laeuft nur auf Klick (Spec 2026-08-08) —
+            die oeffentliche LanguageTool-API untersagt automatische Anfragen. */}
+        <div class="feld pruefung">
+          <button type="button" id="pruefen" class="zeilenknopf">
+            Artikel auf Fehler durchsehen
+          </button>
+          <span id="pruef-hinweis" class="zaehler" aria-live="polite" />
+          <div id="pruef-treffer" class="treffer" />
+          <p class="zaehler quelle">
+            Rechtschreib- und Grammatikprüfung von{" "}
+            <a href="https://languagetool.org" target="_blank" rel="noopener">
+              LanguageTool
+            </a>
+            . Vorschläge, keine Urteile — was stimmt, entscheidest du.
+          </p>
         </div>
 
         <div class="feld">

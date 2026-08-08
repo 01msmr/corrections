@@ -146,14 +146,14 @@ const Zaehlweise: FC<{ mitWeichen: boolean; weicheNamen: string }> = ({
 }) => (
   <span class="zaehlweise" title={`Weiche Kategorien: ${weicheNamen}`}>
     {mitWeichen ? (
-      <a href="/bilanz">ohne weiche</a>
+      <a href="/bilanz" data-teil="zaehlweise">ohne weiche</a>
     ) : (
       <span aria-current="true">ohne weiche</span>
     )}
     {mitWeichen ? (
       <span aria-current="true">alle</span>
     ) : (
-      <a href="/bilanz?alle=1">alle</a>
+      <a href="/bilanz?alle=1" data-teil="zaehlweise">alle</a>
     )}
   </span>
 );
