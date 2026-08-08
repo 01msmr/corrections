@@ -20,6 +20,11 @@ const envSchema = z.object({
   IMAP_USER: z.string().min(1).optional(),
   IMAP_PASSWORD: z.string().min(1).optional(),
   IMAP_TRASH: z.string().min(1).default("Trash"),
+  /* Rechtschreib- und Grammatikpruefung. Vorgabe ist die oeffentliche API;
+     eine eigene Instanz (LGPL, Docker) traegt man hier ein, ohne Code zu
+     aendern. */
+  LANGUAGETOOL_URL: z.string().url().default("https://api.languagetool.org/v2/check"),
+  LANGUAGETOOL_SPRACHE: z.string().min(2).default("de-DE"),
 });
 
 export type Env = z.infer<typeof envSchema>;
