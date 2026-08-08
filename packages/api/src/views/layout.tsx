@@ -468,13 +468,14 @@ const STYLES = `
   /* Waagerechte Balken: Name links, Spur, Zahl rechts auf fester Breite,
      damit die Ziffern untereinander stehen. */
   .verteilung { display: flex; flex-direction: column; gap: .3rem; margin-bottom: 1.5rem; }
-  .balkenzeile { display: grid; grid-template-columns: minmax(6rem, 12rem) 1fr;
+  /* Summe vor der Spur, schlicht: der Blick liest Kategorie, Menge, Verteilung. */
+  .balkenzeile { display: grid; grid-template-columns: minmax(6rem, 12rem) 2.5rem 1fr;
     align-items: center; gap: .75rem; }
   .balkenname { font: .9rem/1.4 var(--sans); }
   /* Spur deutlich heller als das Linien-Grau: 60 % davon auf Papier. */
   /* 1.5-fache Hoehe (1.05 -> 1.58rem): die Segmente und ihre Beschriftung
      brauchen Luft, seit die Menge als Marke im Balken sitzt. */
-  .balkenspur { display: block; position: relative; height: 1.58rem;
+  .balkenspur { display: block; height: 1.58rem;
     background: color-mix(in srgb, var(--linie) 60%, var(--papier)); }
   .balkenfuellung { display: flex; height: 100%; background: var(--korrektur); }
   /* Medien-Segmente: von links nach rechts ansteigend heller (gemischt aus der
@@ -502,15 +503,7 @@ const STYLES = `
     color: var(--tinte); font-size: .62rem; flex: none; }
   /* In zu schmalen Segmenten faellt der Name weg — der Tooltip bleibt. */
   @container (max-width: 3.5rem) { .balkenteilname { display: none; } }
-  /* Die Menge sitzt als Marke am Balkenanfang: rund bis zwei Stellen
-     (min-width = height), darueber waechst sie zur Pille. */
-  .balkenwert { position: absolute; left: .18rem; top: 50%; transform: translateY(-50%);
-    z-index: 1; display: inline-flex; align-items: center; justify-content: center;
-    min-width: 1.28rem; height: 1.28rem; padding: 0 .32rem; border-radius: 999px;
-    background: var(--papier); color: var(--tinte);
-    font: 700 .68rem/1 var(--mono); }
-  /* Damit die Marke die erste Segment-Beschriftung nicht verdeckt. */
-  .balkenteil:first-child .balkenteilname { padding-left: 1.75rem; }
+  .balkenwert { font: 700 .85rem/1.4 var(--mono); text-align: right; }
 
   /* Verlauf: senkrechte Balken auf gemeinsamer Grundlinie, seitlich
      scrollbar -- eine Zeitreihe waechst mit den Monaten. */

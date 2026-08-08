@@ -105,8 +105,8 @@ const Verteilung: FC<{
       {werte.map((wert) => (
         <div class="balkenzeile">
           <span class="balkenname">{wert.name}</span>
+          <span class="balkenwert">{wert.anzahl}</span>
           <span class="balkenspur">
-            <span class="balkenwert">{wert.anzahl}</span>
             <span
               class="balkenfuellung"
               style={`width: ${groesster > 0 ? (wert.anzahl / groesster) * 100 : 0}%`}
