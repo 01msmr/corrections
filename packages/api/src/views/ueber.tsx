@@ -42,7 +42,7 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
       </p>
       <p>
         <button type="button" id="kopiere-lesezeichen" class="zeilenknopf">
-          JavaScript für das Lesezeichen kopieren
+          JavaScript für das Lesezeichen
         </button>{" "}
         <span id="kopier-hinweis" class="zaehler" aria-live="polite" />
       </p>
@@ -73,7 +73,7 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
       </p>
       <p>
         <button type="button" id="kopiere-kurzbefehl" class="zeilenknopf">
-          JavaScript für den Kurzbefehl kopieren
+          JavaScript für den Kurzbefehl
         </button>
       </p>
       <p class="zaehler">
