@@ -114,10 +114,12 @@ const STYLES = `
      hell auf Tinte, im Dunkelmodus entsprechend umgekehrt. */
   .datumszeile { background: var(--tinte); }
   .datumszeile .kopfinhalt {
-    position: relative; display: block; text-align: center;
-    /* Ungleich, damit es gleich aussieht: die Courier sitzt tief in ihrer
-       Zeilenbox, erst der knappere Deckel zentriert den Untertitel im Band. */
-    padding-top: .15rem; padding-bottom: .4rem;
+    /* Der Untertitel steht mittig im Band; das Datum haengt rechts daneben
+       und veraendert die Bandhoehe nicht. Die Zeilenbox der Courier sitzt
+       tief, deshalb die kleine optische Korrektur ueber padding-bottom. */
+    position: relative; display: flex; align-items: center; justify-content: center;
+    min-height: 1.85rem; text-align: center;
+    padding-top: .1rem; padding-bottom: .25rem;
   }
   .untertitel { font: 700 .85rem/1.5 var(--mono); letter-spacing: .14em;
     text-transform: uppercase; color: var(--papier); }
@@ -142,9 +144,12 @@ const STYLES = `
     animation-range: 4rem 8rem;
   }
   .navzeile { background: var(--papier); }
+  /* Beim Scrollen soll der Kopf sichtbar ueber dem Blatt liegen: der Schatten
+     faellt tiefer und deutlich kraeftiger als zuvor — er trennt, statt nur
+     anzudeuten. */
   @keyframes kopfschatten {
-    from { box-shadow: 0 4px 12px -10px rgb(var(--schatten) / 0); }
-    to { box-shadow: 0 4px 14px -8px rgb(var(--schatten) / .3); }
+    from { box-shadow: 0 6px 16px -14px rgb(var(--schatten) / 0); }
+    to { box-shadow: 0 12px 26px -6px rgb(var(--schatten) / .55); }
   }
   .kopfinhalt {
     display: flex; flex-wrap: wrap; gap: .75rem 1.5rem;
@@ -677,13 +682,35 @@ const STYLES = `
     .markenzeile { padding: 1rem 0 .5rem; }
     .marke { font-size: 1.7rem; }
     .untertitel { font-size: .68rem; letter-spacing: .1em; }
-    .datum { position: static; transform: none; display: block; margin-top: .1rem; }
-    nav { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
-      -webkit-overflow-scrolling: touch; }
+    /* Schmal reicht die Zeile nicht fuer Untertitel und Datum nebeneinander:
+       Das Datum rueckt darunter, beides zentriert, das Band waechst mit. */
+    .datumszeile .kopfinhalt { flex-direction: column; gap: .05rem; min-height: 0;
+      padding-top: .3rem; padding-bottom: .35rem; }
+    .datum { position: static; transform: none; font-size: .7rem; }
+
+    /* Die Ressorts bleiben eine Zeile; die Verwaltungspille rutscht darunter
+       in eine eigene, zentrierte Reihe — statt die Zeile zu verlaengern. */
+    nav { flex-wrap: wrap; justify-content: center; row-gap: .1rem; }
     nav a { white-space: nowrap; font-size: .72rem; padding: .55rem .7rem .45rem; }
-    /* In der Scrollzeile reihen sich alle Ressorts wieder ein. */
     nav > a:first-child { margin-left: 0; }
-    .randressorts { display: contents; }
+    /* Umbruch VOR der Pille: das leere Pseudoelement fuellt die Zeile, die
+       Pille kommt per order dahinter — sie behaelt dadurch ihre natuerliche
+       Breite, statt sich ueber die ganze Zeile zu spannen. */
+    nav::after { content: ""; flex-basis: 100%; height: 0; }
+    .randressorts { position: static; transform: none; margin: 0 0 .35rem; order: 1; }
+
+    /* Die Mailvorschau bringt eine feste Lesebreite mit (Outlook-Tabelle):
+       schmal muss sie sich fuegen. Tabellen auf volle Breite zwingen, die
+       grosszuegigen Mail-Innenabstaende kuerzen; bleibt doch etwas ueber,
+       scrollt der Kasten selbst — abgeschnitten wird nichts. */
+    .mailvorschau { overflow-x: auto; }
+    .mailvorschau table { width: 100% !important; max-width: 100% !important; }
+    .mailvorschau td { padding-left: .35rem !important; padding-right: .35rem !important; }
+    .mailvorschau div { max-width: 100%; box-sizing: border-box; }
+    /* Artikeladressen sind lang und kennen keine Trennstelle — ohne das
+       hielten sie die Tabelle auf ihrer Mindestbreite. */
+    .mailvorschau a, .mailvorschau p, .mailvorschau div { overflow-wrap: anywhere; }
+    .mailkopf { font-size: .78rem; word-break: break-word; }
   }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
