@@ -233,6 +233,7 @@ const STYLES = `
   .trefferWechsel { display: block; font: 700 .85rem/1.4 var(--mono); }
   .trefferWechsel del { color: var(--korrektur); text-decoration-thickness: 2px; margin-right: .5em; }
   .trefferWechsel ins { color: var(--vorschlag); text-decoration: none; }
+  .trefferOft { font: .68rem/1 var(--sans); color: var(--rand); margin-left: .6em; }
   .trefferSatz { display: block; font-size: .8rem; color: var(--rand); margin-top: .15rem; }
   .trefferSatz mark { background: color-mix(in srgb, var(--korrektur) 18%, var(--papier));
     color: var(--tinte); font-weight: 700; }

@@ -114,3 +114,18 @@ describe("ordneAlleZu", () => {
     expect(funde[0]?.falsch).toBe("Fehelr");
   });
 });
+
+describe("Zusammenfassen gleicher Stellen", () => {
+  it("meldet dieselbe Fundstelle einmal mit Anzahl", () => {
+    const text = "Ein Feler hier. Ein Feler dort. Ein Feler ganz am Ende.";
+    const bereiche: [number, number][] = [[0, text.length]];
+    const stellen = [4, 20, 36].map((offset) =>
+      befund({ offset, length: 5, replacements: [{ value: "Fehler" }] }),
+    );
+    const funde = ordneAlleZu(stellen, text, bereiche);
+    expect(funde).toHaveLength(1);
+    expect(funde[0]?.anzahl).toBe(3);
+    // Der Satz des ersten Vorkommens bleibt erhalten.
+    expect(funde[0]?.satz).toBe(text);
+  });
+});

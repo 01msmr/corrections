@@ -37,6 +37,8 @@ export interface Fund {
   hinweis: string;
   /** Regel-Kennung, damit ein Befund nachvollziehbar bleibt. */
   regel: string;
+  /** Wie oft dieselbe Stelle im Artikel vorkommt (siehe ordneAlleZu). */
+  anzahl: number;
 }
 
 /**
@@ -120,18 +122,31 @@ export function ordneZu(
       : (erkannt ?? ausTabelle),
     hinweis: befund.message,
     regel: befund.rule.id,
+    anzahl: 1,
   };
 }
 
-/** Alle Befunde einer Antwort, harte zuerst, Stil danach. */
+/**
+ * Alle Befunde einer Antwort: harte zuerst, Stil danach, und gleiche Stellen
+ * zusammengefasst. Ein Wort, das im Artikel sechsmal gleich falsch steht,
+ * ist eine Fundstelle mit Anzahl sechs — sechs Zeilen waeren blosses
+ * Rauschen. Behalten wird der erste Fund samt seinem Satz.
+ */
 export function ordneAlleZu(
   befunde: LtBefund[],
   text: string,
   bereiche: [number, number][],
 ): Fund[] {
-  const funde = befunde
-    .map((befund) => ordneZu(befund, text, bereiche))
-    .filter((fund): fund is Fund => fund !== null);
+  const nachStelle = new Map<string, Fund>();
+  for (const befund of befunde) {
+    const fund = ordneZu(befund, text, bereiche);
+    if (!fund) continue;
+    const schluessel = `${fund.falsch}\u0000${fund.richtig}`;
+    const bekannt = nachStelle.get(schluessel);
+    if (bekannt) bekannt.anzahl += 1;
+    else nachStelle.set(schluessel, fund);
+  }
+  const funde = [...nachStelle.values()];
   return [
     ...funde.filter((fund) => fund.art === "hart"),
     ...funde.filter((fund) => fund.art === "stil"),

@@ -198,6 +198,12 @@ const erkennungScript = (basis: string) => `
       wechsel.className = "trefferWechsel";
       wechsel.append(Object.assign(document.createElement("del"), { textContent: fund.falsch }));
       wechsel.append(Object.assign(document.createElement("ins"), { textContent: fund.richtig }));
+      if (fund.anzahl > 1) {
+        const oft = document.createElement("span");
+        oft.className = "trefferOft";
+        oft.textContent = fund.anzahl + "\u00d7 im Artikel";
+        wechsel.append(oft);
+      }
       knopf.append(wechsel, satzMitMarkierung(fund));
       knopf.addEventListener("click", () => {
         falsch.value = fund.falsch;

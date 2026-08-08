@@ -27,7 +27,7 @@ export function extractArticle(
     const article = new Readability(document as unknown as Document).parse();
     if (!article) return null;
 
-    const text = normalizeText(article.textContent ?? "");
+    const text = baueText(article.content ?? "") || normalizeText(article.textContent ?? "");
     if (text.length === 0) return null;
 
     const title = article.title ? normalizeText(article.title) : null;
@@ -38,4 +38,36 @@ export function extractArticle(
     // Ausnahme, die einen ganzen Request abbrechen wuerde.
     return null;
   }
+}
+
+/**
+ * Baut den Fliesstext aus dem aufbereiteten HTML — Block fuer Block, mit
+ * Leerzeile dazwischen.
+ *
+ * Noetig, weil `textContent` Blockelemente ohne Trennzeichen aneinanderhaengt:
+ * Aus einer Zwischenueberschrift und dem folgenden Absatz wird dann
+ * "unproblematischEine", aus Bildnachweis und Textanfang "Getty Images Wer".
+ * Eine Rechtschreibpruefung meldet solche Stellen zu Recht — nur stehen sie
+ * so nicht im Artikel. Bildstrecken und Nachweise fallen ganz weg; sie
+ * gehoeren nicht zum Text, den eine Redaktion korrigieren wuerde.
+ */
+function baueText(inhalt: string): string {
+  if (inhalt.length === 0) return "";
+  /* linkedom fuellt <body> nur, wenn ein <html> drumherum steht — ohne das
+     bleibt der Koerper leer und die Bloecke faenden sich nie. */
+  const { document } = parseHTML(`<html><body>${inhalt}</body></html>`);
+  const koerper = document.body;
+  if (!koerper) return "";
+
+  for (const beiwerk of koerper.querySelectorAll("figure, figcaption, aside, table")) {
+    beiwerk.remove();
+  }
+
+  const bloecke: string[] = [];
+  for (const block of koerper.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre")) {
+    const zeile = normalizeText(block.textContent ?? "");
+    /* Verschachtelte Bloecke (li in ul in div) wuerden sich sonst doppeln. */
+    if (zeile.length > 0 && !bloecke.includes(zeile)) bloecke.push(zeile);
+  }
+  return bloecke.join("\n\n");
 }
