@@ -9,6 +9,7 @@ import {
 } from "@korrektur/shared";
 import { createId } from "@paralleldrive/cuid2";
 import { Hono, type Handler } from "hono";
+import { z } from "zod";
 import { getErrorTypeByKey, listErrorTypes } from "../repo/errorTypes.js";
 import { createCorrection, type CreateDeps } from "../repo/corrections.js";
 import { extractArticle } from "../article/extract.js";
@@ -16,33 +17,60 @@ import { resolveOutletByHost } from "../repo/outlets.js";
 import { composeMail } from "../dispatch/compose.js";
 import { CaptureForm, CapturePreview, CaptureResult } from "../views/capture.js";
 
+/**
+ * Vorbefuellung aus der Query: bevorzugt der Base64-Parameter `b`
+ * (base64url-kodiertes JSON {u, t}) — noetig, weil die "URL oeffnen"-Aktion
+ * der iOS-Kurzbefehle Prozent-Kodierung wieder aufloest und die URL dann am
+ * ersten Leerzeichen der Auswahl abreisst. `url`/`text` bleiben fuer das
+ * Bookmarklet erhalten. Unlesbares wird ignoriert, nie beanstandet.
+ */
+function leseVorbefuellung(c: Parameters<Handler>[0]): { url: string; quote: string } {
+  const b = c.req.query("b");
+  if (b) {
+    try {
+      const json = Buffer.from(b.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
+      const gelesen = z
+        .object({ u: z.string().optional(), t: z.string().optional() })
+        .safeParse(JSON.parse(json));
+      if (gelesen.success) {
+        return { url: gelesen.data.u ?? "", quote: gelesen.data.t ?? "" };
+      }
+    } catch {
+      /* unlesbar -> leeres Formular */
+    }
+  }
+  return { url: c.req.query("url") ?? "", quote: c.req.query("text") ?? "" };
+}
+
 export function captureRoutes(deps: CreateDeps & { mailFrom: string }): Hono {
   const app = new Hono();
 
-  app.get("/neu", (c) =>
-    c.html(
+  app.get("/neu", (c) => {
+    const vorbefuellt = leseVorbefuellung(c);
+    return c.html(
       <CaptureForm
         errorTypes={listErrorTypes(deps.db)}
         idempotencyKey={createId()}
-        url={c.req.query("url") ?? ""}
-        quote={c.req.query("text") ?? ""}
+        url={vorbefuellt.url}
+        quote={vorbefuellt.quote}
       />,
-    ),
-  );
+    );
+  });
 
   /* Der Besucherweg (§ Spec 2026-08-08): dasselbe Formular ohne Anmeldung,
      nur die Sendemethode am Ende ist das Mail-Programm des Besuchers. */
-  app.get("/hinweis", (c) =>
-    c.html(
+  app.get("/hinweis", (c) => {
+    const vorbefuellt = leseVorbefuellung(c);
+    return c.html(
       <CaptureForm
         errorTypes={listErrorTypes(deps.db)}
         idempotencyKey={createId()}
-        url={c.req.query("url") ?? ""}
-        quote={c.req.query("text") ?? ""}
+        url={vorbefuellt.url}
+        quote={vorbefuellt.quote}
         basis="/hinweis"
       />,
-    ),
-  );
+    );
+  });
 
   /** Holt die Ueberschrift, sobald die URL im Formular steht. */
   const ueberschriftHandler: Handler = async (c) => {

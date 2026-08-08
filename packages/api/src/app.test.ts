@@ -137,3 +137,24 @@ describe("Hybrid-Ressort Neue Korrektur", () => {
     expect(html).not.toContain("[VORSCHAU]");
   });
 });
+
+describe("Base64-Vorbefuellung (?b=)", () => {
+  it("entpackt url und text aus dem b-Parameter", async () => {
+    const nutzlast = JSON.stringify({
+      u: "https://beispiel.de/artikel",
+      t: "Wer nicht aufpasst, könnte Daten hinterlassen.",
+    });
+    const b64 = Buffer.from(nutzlast, "utf8")
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+    const html = await (await app().request(`/hinweis?b=${b64}`)).text();
+    expect(html).toContain('value="https://beispiel.de/artikel"');
+    expect(html).toContain("Wer nicht aufpasst, könnte Daten hinterlassen.");
+  });
+
+  it("ignoriert unlesbare b-Parameter, statt zu scheitern", async () => {
+    expect((await app().request("/hinweis?b=%%%kaputt")).status).toBe(200);
+  });
+});
