@@ -410,10 +410,10 @@ export const CaptureForm: FC<{
             steht dort, wo der Blick nach dem Ausfuellen endet. */}
         <div class="abschluss">
           <button type="submit">
-              <span class="knopftext">
-                Korrektur-Vorschau<span class="taste" aria-hidden="true">⏎</span>
-              </span>
-            </button>
+            <span class="knopftext">
+              Korrektur-Vorschau<span class="taste" aria-hidden="true">⏎</span>
+            </span>
+          </button>
         </div>
       </aside>
     </form>
@@ -467,14 +467,22 @@ export const CapturePreview: FC<{
       /* Besucher senden mit dem eigenen Mail-Programm — Betreff und Text
          sind fertig vorbefuellt, die Sendemethode ist der einzige Unterschied. */
       <p>
-        <a class="sendeknopf" href={mailtoHref}><EnvelopeOpenTextIcon /> Im Mail-Programm öffnen und senden</a>
+        <a class="sendeknopf" href={mailtoHref}>
+          <span class="knopftext">
+            <EnvelopeOpenTextIcon /> Im Mail-Programm senden
+          </span>
+        </a>
       </p>
     ) : (
       <form method="post" action="/neu">
         {Object.entries(werte).map(([name, wert]) => (
           <input type="hidden" name={name} value={wert} />
         ))}
-        <button type="submit"><FilePenIcon /> Korrektur senden</button>
+        <button type="submit">
+          <span class="knopftext">
+            <FilePenIcon /> Korrektur senden
+          </span>
+        </button>
       </form>
     )}
     <p>

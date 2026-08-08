@@ -115,14 +115,19 @@ const STYLES = `
   .datumszeile { background: var(--tinte); }
   .datumszeile .kopfinhalt {
     /* Der Untertitel steht mittig im Band; das Datum haengt rechts daneben
-       und veraendert die Bandhoehe nicht. Die Zeilenbox der Courier sitzt
-       tief, deshalb die kleine optische Korrektur ueber padding-bottom. */
+       und veraendert die Bandhoehe nicht. Die Innenabstaende bleiben
+       symmetrisch, sonst sitzt der Untertitel hoeher als das absolut
+       zentrierte Datum. */
     position: relative; display: flex; align-items: center; justify-content: center;
     min-height: 1.85rem; text-align: center;
-    padding-top: .1rem; padding-bottom: .25rem;
+    padding-top: .2rem; padding-bottom: .2rem;
   }
+  /* Die Zeilenbox der Courier sitzt ueber den Versalien hoeher als darunter:
+     zentriert waere die Box, nicht die Schrift. Der Versatz holt die Versalien
+     auf die Mitte des Bandes (gemessen: .05em). */
   .untertitel { font: 700 .85rem/1.5 var(--mono); letter-spacing: .14em;
-    text-transform: uppercase; color: var(--papier); }
+    text-transform: uppercase; color: var(--papier);
+    position: relative; top: .05em; }
   .datum { position: absolute; right: 1.25rem; top: 50%; transform: translateY(-50%);
     font: .78rem/1.4 var(--mono); letter-spacing: .04em; color: var(--rand); }
   /* Das Datum hellt beim Ueberfahren auf Papierweiss auf: schnell an (0.25s),
@@ -130,6 +135,7 @@ const STYLES = `
      unterschiedlichen Dauern stehen deshalb an Grund- und Hover-Zustand. */
   .datumszeile .datum { color: var(--linie); transition: color 2s ease-out; }
   .datumszeile .datum:hover { color: var(--papier); transition-duration: .25s; }
+  .datum-kurz { display: none; }
   /* Untertitelband und Ressortleiste bleiben beim Scrollen gemeinsam stehen;
      nur der Titel scrollt weg wie bei einer Zeitung. Der Schatten kommt erst,
      wenn der Titel darueber aus dem Bild ist -- ueber eine Scroll-Zeitachse,
@@ -150,6 +156,12 @@ const STYLES = `
   @keyframes kopfschatten {
     from { box-shadow: 0 6px 16px -14px rgb(var(--schatten) / 0); }
     to { box-shadow: 0 12px 26px -6px rgb(var(--schatten) / .55); }
+  }
+  /* Schmal gibt das Datum beim Scrollen seine Zeile frei (siehe Medienblock);
+     der Kopf schrumpft dabei um genau diese Zeile. */
+  @keyframes datumweicht {
+    from { max-height: 1.4rem; opacity: 1; }
+    to { max-height: 0; opacity: 0; }
   }
   .kopfinhalt {
     display: flex; flex-wrap: wrap; gap: .75rem 1.5rem;
@@ -204,8 +216,13 @@ const STYLES = `
   }
   .randressorts a { border-bottom: none; color: var(--tinte);
     padding: calc(.45rem - 1px) calc(.95rem - 1px); }
+  /* Am Spalt stossen zwei Innenabstaende aufeinander und ergaeben sonst
+     doppelt so viel Luft wie an den runden Aussenkanten. Innen daher knapper,
+     damit die Pille in beiden Ansichten gleichmaessig wirkt. */
+  .randressorts a:first-child { padding-right: calc(.55rem - 1px); }
   /* Trennstrich im Seiten-Hintergrund: wirkt wie ein Spalt in der Pille. */
-  .randressorts a + a { border-left: 2px solid var(--papier); }
+  .randressorts a + a { border-left: 2px solid var(--papier);
+    padding-left: calc(.55rem - 1px); }
   .randressorts a:hover, .randressorts a:focus-visible {
     background: color-mix(in srgb, var(--linie) 90%, rgb(var(--schatten)));
     color: var(--tinte); }
@@ -214,7 +231,11 @@ const STYLES = `
   nav a { font: 700 .95rem/1 var(--mono); letter-spacing: .03em;
     color: var(--rand); text-decoration: none; padding: .6rem .95rem .5rem;
     border-bottom: 2px solid transparent; }
-  .navicon { width: .85em; height: .85em; margin-right: .4em; vertical-align: -.06em; }
+  /* Das Icon steht als Inline-Element mit seiner Unterkante auf der
+     Grundlinie der Schrift; die Feinkorrektur gleicht die Innenraender der
+     Font-Awesome-Zeichenflaeche aus. */
+  .navicon { width: .85em; height: .85em; margin-right: .4em;
+    vertical-align: baseline; position: relative; top: .02em; }
   nav a:hover, nav a:focus-visible { color: var(--tinte); border-bottom-color: var(--korrektur); }
   /* Die aktuelle Seite ist rot hinterlegt statt groesser gesetzt: die Leiste
      behaelt so auf jeder Seite dieselbe Hoehe und springt beim Wechsel nicht. */
@@ -468,7 +489,13 @@ const STYLES = `
      ausgeloest wird. aria-hidden, weil das fuer Vorlesesoftware ohnehin gilt. */
   /* Text und Zeichen teilen sich eine Zeilenbox, damit das ⏎ auf der Grundlinie
      der Beschriftung sitzt und nicht darunter haengt. */
-  .knopftext { display: inline; }
+  /* Beschriftung samt Icon in einer Zeile: bricht der Text um, stuende das
+     Zeichen sonst allein in der ersten. Der Text bleibt dabei gewoehnlicher
+     Inline-Fluss (kein Flex) -- nur dort teilen Icon und Schrift eine
+     Grundlinie; im Flex-Kasten des Knopfes gaebe es keine gemeinsame, weil
+     dessen align-items die Beschriftung an die Unterkante zieht. */
+  .knopftext { display: block; white-space: nowrap; }
+  button, a.sendeknopf { white-space: nowrap; }
   .taste { margin-left: .32em; font-size: 1.2em; opacity: .7; }
 
   .hinweis { padding: .85rem 1rem; margin: 0 0 1.5rem;
@@ -682,11 +709,25 @@ const STYLES = `
     .markenzeile { padding: 1rem 0 .5rem; }
     .marke { font-size: 1.7rem; }
     .untertitel { font-size: .68rem; letter-spacing: .1em; }
+    /* Der Untertitel bricht schmal an seiner sinnvollen Fuge: die Selbst-
+       beschreibung in Zeile eins, die beiden Haltungen zusammen darunter. */
+    .untertiteltrenner { display: none; }
+    .untertitelrest { display: block; }
     /* Schmal reicht die Zeile nicht fuer Untertitel und Datum nebeneinander:
        Das Datum rueckt darunter, beides zentriert, das Band waechst mit. */
     .datumszeile .kopfinhalt { flex-direction: column; gap: .05rem; min-height: 0;
       padding-top: .3rem; padding-bottom: .35rem; }
     .datum { position: static; transform: none; font-size: .7rem; }
+    /* Schmal traegt die Zeile nur die Kurzfassung. */
+    .datum-lang { display: none; }
+    /* Und sie darf weichen, sobald gescrollt wird: der klebende Kopf nimmt
+       auf kleinen Anzeigen sonst zu viel vom Blatt. Dieselbe Scroll-Zeitachse
+       wie der Kopfschatten, also ohne Skript; wo der Browser sie nicht kennt,
+       bleibt das Datum einfach stehen. */
+    .datum-kurz { display: block; overflow: hidden;
+      animation: datumweicht linear both;
+      animation-timeline: scroll(root);
+      animation-range: 1rem 5rem; }
 
     /* Die Ressorts bleiben eine Zeile; die Verwaltungspille rutscht darunter
        in eine eigene, zentrierte Reihe — statt die Zeile zu verlaengern. */
@@ -711,6 +752,45 @@ const STYLES = `
        hielten sie die Tabelle auf ihrer Mindestbreite. */
     .mailvorschau a, .mailvorschau p, .mailvorschau div { overflow-wrap: anywhere; }
     .mailkopf { font-size: .78rem; word-break: break-word; }
+
+    /* Schriftstaffel fuers Telefon: Fliesstext bleibt bei 16 px (darunter
+       zoomen Browser beim Tippen in Felder), alles Ausgezeichnete rueckt
+       eine Stufe herunter — die Verhaeltnisse bleiben, die Seite wird
+       ruhiger und nichts bricht mehr unschoen um. */
+    h1 { font-size: 1.35rem; margin-bottom: 1rem; }
+    h2 { font-size: 1rem; }
+    h2.rubrik { font-size: 1.05rem; margin-top: 2rem; }
+    .prosa .einstieg { font-size: 1.05rem; }
+    button, a.sendeknopf { font-size: .95rem; padding: .7rem .6rem .6rem .9rem; }
+    .kennzahl-wert { font-size: 1.6rem; }
+    .kennzahl-wert.klein { font-size: 1rem; }
+    .balkenname { font-size: .8rem; }
+    .balkenwert { font-size: .78rem; }
+    .balkenteilname { font-size: .62rem; }
+    .teilzahl { min-width: .95rem; height: .95rem; font-size: .56rem; }
+    .zaehlweise { font-size: .56rem; }
+    .trefferWechsel { font-size: .78rem; }
+    .trefferSatz { font-size: .74rem; }
+
+    /* Schriftstaffel fuers Telefon: Fliesstext bleibt bei 16 px (darunter
+       zoomen Browser beim Tippen in Felder), alles Ausgezeichnete rueckt
+       eine Stufe herunter — die Verhaeltnisse bleiben, die Seite wird
+       ruhiger und nichts bricht mehr unschoen um. */
+    h1 { font-size: 1.35rem; margin-bottom: 1rem; }
+    h2 { font-size: 1rem; }
+    h2.rubrik { font-size: 1.05rem; margin-top: 2rem; }
+    .prosa .einstieg { font-size: 1.05rem; }
+    button, a.sendeknopf { font-size: .95rem; padding: .7rem .6rem .6rem .9rem; }
+    .kennzahl-wert { font-size: 1.6rem; }
+    .kennzahl-wert.klein { font-size: 1rem; }
+    .balkenname { font-size: .8rem; }
+    .balkenwert { font-size: .78rem; }
+    .balkenteilname { font-size: .62rem; }
+    .teilzahl { min-width: .95rem; height: .95rem; font-size: .56rem; }
+    .zaehlweise { font-size: .56rem; }
+    .verlaufsmonat, .verlaufswert { font-size: .6rem; }
+    .trefferWechsel { font-size: .78rem; }
+    .trefferSatz { font-size: .74rem; }
   }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -739,6 +819,16 @@ function datumszeile(): string {
     weekday: "long",
     day: "numeric",
     month: "long",
+    year: "numeric",
+  }).format(new Date());
+}
+
+/** Kurzfassung fuer schmale Anzeigen: "So., 9. Aug. 2026". */
+function datumKurz(): string {
+  return new Intl.DateTimeFormat("de-DE", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
     year: "numeric",
   }).format(new Date());
 }
@@ -788,8 +878,12 @@ export const Layout: FC<
       <div class="klebekopf">
         <div class="datumszeile">
           <div class="kopfinhalt">
-            <span class="untertitel">Blatt zur Textpflege • Unabhängig • Überparteilich</span>
-            <span class="datum">{datumszeile()}</span>
+            <span class="untertitel">
+              Blatt zur Textpflege<span class="untertiteltrenner"> • </span>
+              <span class="untertitelrest">Unabhängig • Überparteilich</span>
+            </span>
+            <span class="datum datum-lang">{datumszeile()}</span>
+            <span class="datum datum-kurz">{datumKurz()}</span>
           </div>
         </div>
         <div class="navzeile">

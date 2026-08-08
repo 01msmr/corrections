@@ -130,7 +130,7 @@ describe("Hybrid-Ressort Neue Korrektur", () => {
     const html = await res.text();
     // Kein Medium zur Domain hinterlegt: der Hinweis faellt auf MAIL_FROM zurueck.
     expect(html).toContain(`mailto:${ENV.MAIL_FROM}?subject=`);
-    expect(html).toContain("Im Mail-Programm öffnen");
+    expect(html).toContain("Im Mail-Programm senden");
     expect(html).not.toContain("Korrektur senden");
     // Ohne Kennung: kein "Kennung stehen lassen"-Satz und kein [VORSCHAU]-Token.
     expect(html).not.toContain("Lassen Sie die Kennung");
