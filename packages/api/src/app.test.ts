@@ -158,3 +158,61 @@ describe("Base64-Vorbefuellung (?b=)", () => {
     expect((await app().request("/hinweis?b=%%%kaputt")).status).toBe(200);
   });
 });
+
+describe("Fehlerpruefung (/pruefen)", () => {
+  const FORM = { "content-type": "application/x-www-form-urlencoded" };
+  const anfrage = (body: Record<string, string>) => ({
+    method: "POST",
+    body: new URLSearchParams(body),
+    headers: FORM,
+  });
+
+  it("liegt fuer den Betreiber hinter der Auth und kennt kein Kontingent", async () => {
+    const a = app();
+    expect((await a.request("/neu/pruefen", anfrage({ url: "https://x.test/a" }))).status).toBe(401);
+
+    /* Ohne erreichbaren Artikel kommt eine leere Liste, nie ein Fehler —
+       und das beliebig oft. */
+    for (let i = 0; i < 5; i++) {
+      const res = await a.request("/neu/pruefen", {
+        ...anfrage({ url: "https://x.test/a" }),
+        headers: { ...FORM, authorization: AUTH },
+      });
+      expect(res.status).toBe(200);
+      await expect(res.json()).resolves.toEqual({ funde: [] });
+    }
+  });
+
+  it("gibt Besuchern zwei Pruefungen am Tag und lehnt die dritte ab", async () => {
+    const a = app();
+    const kopf = { ...FORM, "x-forwarded-for": "203.0.113.9" };
+    for (let i = 0; i < 2; i++) {
+      const res = await a.request("/hinweis/pruefen", {
+        ...anfrage({ url: "https://x.test/a" }),
+        headers: kopf,
+      });
+      expect(res.status).toBe(200);
+    }
+    const dritte = await a.request("/hinweis/pruefen", {
+      ...anfrage({ url: "https://x.test/a" }),
+      headers: kopf,
+    });
+    expect(dritte.status).toBe(429);
+    await expect(dritte.json()).resolves.toMatchObject({ grund: "kontingent" });
+  });
+
+  it("zaehlt Besucher getrennt", async () => {
+    const a = app();
+    for (let i = 0; i < 2; i++) {
+      await a.request("/hinweis/pruefen", {
+        ...anfrage({ url: "https://x.test/a" }),
+        headers: { ...FORM, "x-forwarded-for": "203.0.113.9" },
+      });
+    }
+    const andere = await a.request("/hinweis/pruefen", {
+      ...anfrage({ url: "https://x.test/a" }),
+      headers: { ...FORM, "x-forwarded-for": "198.51.100.2" },
+    });
+    expect(andere.status).toBe(200);
+  });
+});

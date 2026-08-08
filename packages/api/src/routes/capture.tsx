@@ -15,6 +15,8 @@ import { createCorrection, type CreateDeps } from "../repo/corrections.js";
 import { extractArticle } from "../article/extract.js";
 import { resolveOutletByHost } from "../repo/outlets.js";
 import { composeMail } from "../dispatch/compose.js";
+import { bucheBesucherPruefung } from "../pruefung/kontingent.js";
+import { pruefeText } from "../pruefung/languagetool.js";
 import { CaptureForm, CapturePreview, CaptureResult } from "../views/capture.js";
 
 /**
@@ -42,7 +44,13 @@ function leseVorbefuellung(c: Parameters<Handler>[0]): { url: string; quote: str
   return { url: c.req.query("url") ?? "", quote: c.req.query("text") ?? "" };
 }
 
-export function captureRoutes(deps: CreateDeps & { mailFrom: string }): Hono {
+export function captureRoutes(
+  deps: CreateDeps & {
+    mailFrom: string;
+    /** Adresse und Sprache der Rechtschreibpruefung (Spec 2026-08-08). */
+    pruefung: { url: string; sprache: string };
+  },
+): Hono {
   const app = new Hono();
 
   app.get("/neu", (c) => {
@@ -106,6 +114,44 @@ export function captureRoutes(deps: CreateDeps & { mailFrom: string }): Hono {
   };
   app.post("/neu/kategorie", kategorieHandler);
   app.post("/hinweis/kategorie", kategorieHandler);
+
+  /**
+   * Sucht Fehler im Artikel (Spec 2026-08-08). Laeuft nur auf Klick, nie
+   * beim Tippen: die oeffentliche LanguageTool-API untersagt automatisierte
+   * Anfragen.
+   *
+   * Der Betreiber loest sie selbst aus und hat kein Kontingent; fuer
+   * Besucher gilt das Tageskontingent aus kontingent.ts. Faellt die
+   * Pruefung aus, kommt eine leere Liste — nie ein Fehler.
+   */
+  const pruefHandler = (oeffentlich: boolean): Handler => async (c) => {
+    if (oeffentlich) {
+      /* Hinter Passenger steht die echte Adresse im Forwarded-Header; ohne
+         ihn bleibt nur die Verbindung selbst. Beides wird nur gehasht
+         gezaehlt, nie gespeichert. */
+      const ip =
+        c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
+        c.req.header("x-real-ip") ??
+        "unbekannt";
+      const kontingent = bucheBesucherPruefung(deps.db, ip, deps.now());
+      if (!kontingent.erlaubt) {
+        return c.json({ funde: [], grund: "kontingent", verbleibend: 0 }, 429);
+      }
+    }
+
+    const body = await c.req.parseBody();
+    const canon = canonicalizeUrl(typeof body["url"] === "string" ? body["url"] : "");
+    if (!canon) return c.json({ funde: [] });
+
+    const geholt = await deps.fetchArticle(canon.canonical);
+    if (!geholt.ok) return c.json({ funde: [] });
+    const artikel = extractArticle(geholt.html, canon.canonical);
+    if (!artikel) return c.json({ funde: [] });
+
+    return c.json({ funde: await pruefeText(artikel.text, deps.pruefung) });
+  };
+  app.post("/neu/pruefen", pruefHandler(false));
+  app.post("/hinweis/pruefen", pruefHandler(true));
 
   /**
    * Vorschau vor dem Versand: dieselbe Pruefung wie beim Senden, aber ohne

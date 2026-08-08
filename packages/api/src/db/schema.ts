@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const outlets = sqliteTable("outlets", {
   id: text("id").primaryKey(),
@@ -159,4 +159,29 @@ export const imapCursor = sqliteTable("imap_cursor", {
   folder: text("folder").primaryKey(),
   uidvalidity: integer("uidvalidity").notNull(),
   lastUid: integer("last_uid").notNull(),
+});
+
+/**
+ * Kontingent der Rechtschreibpruefung (Spec 2026-08-08). Zwei Zwecke in
+ * einer Tabelle: je Tag eine Zeile pro Besucher-Kennung und eine Zeile
+ * "#gesamt" fuer die Tagessumme.
+ *
+ * `kennung` ist ein Hash aus Tagessalz und IP — die IP selbst wird nie
+ * gespeichert, und mit dem Salz verschwindet am Tagesende die Moeglichkeit,
+ * den Hash zurueckzurechnen (§2.1).
+ */
+export const pruefKontingent = sqliteTable(
+  "pruef_kontingent",
+  {
+    tag: text("tag").notNull(),
+    kennung: text("kennung").notNull(),
+    anzahl: integer("anzahl").notNull().default(0),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.tag, t.kennung] }) }),
+);
+
+/** Zufallssalz je Tag; wird mit den Kontingentzeilen des Vortags geloescht. */
+export const pruefSalz = sqliteTable("pruef_salz", {
+  tag: text("tag").primaryKey(),
+  salz: text("salz").notNull(),
 });

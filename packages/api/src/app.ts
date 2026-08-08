@@ -44,6 +44,10 @@ export function createApp(options: AppOptions): Hono {
       baseUrl: options.env.PUBLIC_BASE_URL,
       /* Empfaenger-Fallback des Besucherwegs /hinweis. */
       mailFrom: options.env.MAIL_FROM,
+      pruefung: {
+        url: options.env.LANGUAGETOOL_URL,
+        sprache: options.env.LANGUAGETOOL_SPRACHE,
+      },
     }),
   );
   app.route("/", outletAdminRoutes(options.db, now));
