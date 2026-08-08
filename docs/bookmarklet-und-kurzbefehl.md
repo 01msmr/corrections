@@ -20,19 +20,23 @@ javascript:(()=>{const t=String(getSelection()).trim().slice(0,200);location.hre
 
 Kurzbefehl-Details: „Im Share Sheet anzeigen“, Eingabetyp **Safari-Webseiten**.
 
+Nur zwei Aktionen — die komplette URL entsteht im JavaScript, damit keine
+Shortcuts-Kodierung dazwischenfunkt (Zeilenumbrüche und Sonderzeichen in der
+Auswahl zerrissen sonst die Query):
+
 1. **JavaScript auf Webseite ausführen**
 
    ```javascript
    const auswahl = String(getSelection()).trim().slice(0, 200);
-   completion({ url: location.href, text: auswahl });
+   completion(
+     "https://korrekturen.msmr.co/neu?url=" +
+       encodeURIComponent(location.href) +
+       "&text=" +
+       encodeURIComponent(auswahl),
+   );
    ```
 
-2. **Wert für Schlüssel abrufen** — `url` aus „JavaScript-Ergebnis“
-3. **URL codieren** — Eingabe: Ergebnis von 2
-4. **Wert für Schlüssel abrufen** — `text` aus „JavaScript-Ergebnis“
-5. **URL codieren** — Eingabe: Ergebnis von 4
-6. **URL** — `https://korrekturen.msmr.co/neu?url=[3]&text=[5]`
-7. **In Safari öffnen** — Eingabe: Aktion 6
+2. **URL öffnen** — Eingabe: „JavaScript-Ergebnis“
 
 Der alte Kurzbefehl (Wörterbuch `RedNAME`/`RedMAIL`, eigener Mailversand) ist
 damit abgelöst; seine Stammdaten leben in `packages/api/src/db/medien.json`

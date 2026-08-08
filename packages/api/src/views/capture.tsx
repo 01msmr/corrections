@@ -159,6 +159,11 @@ const erkennungScript = (basis: string) => `
       zeitgeber = setTimeout(pruefen, 400);
     });
   }
+  /* Vorbefuellte Felder (Bookmarklet/Kurzbefehl: ?url=…&text=…) loesen kein
+     input-Ereignis aus — Ueberschrift und Kategorie deshalb einmal beim
+     Laden anstossen. */
+  if (url.value.trim()) ueberschriftHolen();
+  if (falsch.value.trim() && richtig.value.trim()) pruefen();
 `;
 
 const Zeichen: FC<{ art: "url" | "titel" | "falsch" | "richtig" | "notiz"; titel: string }> = ({
