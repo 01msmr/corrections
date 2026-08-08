@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { istBetreiber } from "../auth.js";
 import type { Db } from "../db/client.js";
 import { ladeBilanz } from "../repo/bilanz.js";
 import { BilanzSeite } from "../views/bilanz.js";
@@ -10,6 +11,8 @@ import { BilanzSeite } from "../views/bilanz.js";
  */
 export function bilanzRoutes(db: Db, now: () => number): Hono {
   const app = new Hono();
-  app.get("/bilanz", (c) => c.html(<BilanzSeite bilanz={ladeBilanz(db, now())} />));
+  app.get("/bilanz", (c) =>
+    c.html(<BilanzSeite bilanz={ladeBilanz(db, now())} betreiber={istBetreiber(c)} />),
+  );
   return app;
 }

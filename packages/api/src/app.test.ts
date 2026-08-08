@@ -83,3 +83,25 @@ describe("App-Verdrahtung", () => {
     expect(html).toContain("Textfehler");
   });
 });
+
+describe("Hybrid-Ressort Neue Korrektur", () => {
+  it("setzt das Betreiber-Cookie nur nach erfolgreichem Admin-Zugriff", async () => {
+    const a = app();
+    const abgewiesen = await a.request("/neu");
+    expect(abgewiesen.headers.get("set-cookie")).toBeNull();
+    const erlaubt = await a.request("/neu", { headers: { authorization: AUTH } });
+    expect(erlaubt.headers.get("set-cookie")).toContain("betreiber=1");
+  });
+
+  it("zeigt Besuchern das mailto-Geruest, Betreibern den Formular-Link", async () => {
+    const a = app();
+    const besucher = await (await a.request("/bilanz")).text();
+    expect(besucher).toContain(`mailto:${ENV.MAIL_FROM}?subject=Korrekturhinweis`);
+    expect(besucher).toContain(encodeURIComponent("Artikel-URL:"));
+    expect(besucher).not.toContain('href="/neu"');
+    const betreiber = await (
+      await a.request("/bilanz", { headers: { cookie: "betreiber=1" } })
+    ).text();
+    expect(betreiber).toContain('href="/neu"');
+  });
+});

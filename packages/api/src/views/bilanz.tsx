@@ -112,7 +112,10 @@ const Verteilung: FC<{ werte: Verteilungswert[] }> = ({ werte }) => {
   );
 };
 
-export const BilanzSeite: FC<{ bilanz: Bilanz }> = ({ bilanz }) => {
+export const BilanzSeite: FC<{ bilanz: Bilanz; betreiber?: boolean }> = ({
+  bilanz,
+  betreiber = false,
+}) => {
   const hoechsterMonat = bilanz.verlauf.reduce((max, wert) => Math.max(max, wert.anzahl), 0);
   const zeitraum =
     bilanz.von !== null && bilanz.bis !== null
@@ -120,7 +123,7 @@ export const BilanzSeite: FC<{ bilanz: Bilanz }> = ({ bilanz }) => {
       : "—";
 
   return (
-    <Layout title="Bilanz" aktiv="bilanz">
+    <Layout title="Bilanz" aktiv="bilanz" betreiber={betreiber}>
       {bilanz.meldungen === 0 ? (
         <p class="hinweis">
           Noch nichts erfasst. Sobald die ersten Korrekturen versendet sind, stehen hier

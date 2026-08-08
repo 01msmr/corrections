@@ -176,7 +176,7 @@ export const CaptureForm: FC<{
   fehler?: string | undefined;
   fehlendeRedaktion?: { host: string; zurueck: string } | undefined;
 }> = ({ errorTypes, idempotencyKey, url, quote, fehler, fehlendeRedaktion }) => (
-  <Layout title="Neue Korrektur" aktiv="neu">
+  <Layout title="Neue Korrektur" aktiv="neu" betreiber>
     {fehlendeRedaktion ? (
       <FehlendeRedaktion host={fehlendeRedaktion.host} zurueck={fehlendeRedaktion.zurueck} />
     ) : fehler ? (
@@ -320,7 +320,7 @@ export const CapturePreview: FC<{
   const fahne = vergleicheFassungen(werte["quoteBefore"] ?? "", werte["suggestionAfter"] ?? "");
   const veraendert = fahne.some((stueck) => stueck.art !== "gleich");
   return (
-  <Layout title="Vorschau" aktiv="neu">
+  <Layout title="Vorschau" aktiv="neu" betreiber>
     <div class="mailkopf">
       <div>
         <span class="zaehler">An:</span> {an}
@@ -378,7 +378,7 @@ export const CaptureResult: FC<{
   artikelGeladen: boolean;
   sent: boolean;
 }> = ({ ref, anchored, artikelGeladen, sent }) => (
-  <Layout title="Hinweis erfasst" aktiv="neu">
+  <Layout title="Hinweis erfasst" aktiv="neu" betreiber>
     <p class="hinweis">
       {sent ? (
         <>

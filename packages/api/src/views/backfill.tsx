@@ -19,7 +19,7 @@ export const BackfillSeite: FC<{
   adressen?: number | undefined;
   stammdaten?: StammdatenErgebnis | undefined;
 }> = ({ ergebnis, lesefehler, fehler, adressen, stammdaten }) => (
-  <Layout title="Altbestand" aktiv="backfill">
+  <Layout title="Altbestand" aktiv="backfill" betreiber>
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
     {ergebnis ? (

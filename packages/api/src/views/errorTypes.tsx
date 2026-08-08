@@ -65,7 +65,7 @@ export const ErrorTypeList: FC<{
   hinweis?: string | undefined;
   fehler?: string | undefined;
 }> = ({ types, hinweis, fehler }) => (
-  <Layout title="Kategorien" aktiv="fehlerarten">
+  <Layout title="Kategorien" aktiv="fehlerarten" betreiber>
     {hinweis ? <p class="hinweis">{hinweis}</p> : null}
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
@@ -127,7 +127,7 @@ export const ErrorTypeList: FC<{
 );
 
 export const ErrorTypeEdit: FC<{ type: ErrorTypeRecord }> = ({ type }) => (
-  <Layout title={`Kategorie: ${type.label}`} aktiv="fehlerarten">
+  <Layout title={`Kategorie: ${type.label}`} aktiv="fehlerarten" betreiber>
     <form method="post" action={`/admin/fehlerarten/${type.id}`}>
       <label for="key">
         <span>Schlüssel:</span>

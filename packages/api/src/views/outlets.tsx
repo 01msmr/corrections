@@ -109,7 +109,7 @@ export const OutletList: FC<{
   /** Nach fehlgeschlagener Validierung: die getippten Werte, nicht verworfen. */
   eingabe?: OutletFormValues | undefined;
 }> = ({ outlets, hinweis, fehler, vorgabeDomain, zurueck, eingabe }) => (
-  <Layout title="Medien" aktiv="redaktionen">
+  <Layout title="Medien" aktiv="redaktionen" betreiber>
     {hinweis ? <p class="hinweis">{hinweis}</p> : null}
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
@@ -162,7 +162,7 @@ export const OutletList: FC<{
 );
 
 export const OutletEdit: FC<{ outlet: OutletRecord }> = ({ outlet }) => (
-  <Layout title={`Medium: ${outlet.name}`} aktiv="redaktionen">
+  <Layout title={`Medium: ${outlet.name}`} aktiv="redaktionen" betreiber>
     <form method="post" action={`/admin/redaktionen/${outlet.id}`}>
       <Felder outlet={outlet} />
       <button type="submit">Speichern</button>

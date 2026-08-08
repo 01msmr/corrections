@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { FetchResult } from "./article/fetch.js";
-import { adminAuth } from "./auth.js";
+import { adminAuth, betreiberErkennung } from "./auth.js";
 import type { Db } from "./db/client.js";
 import type { Mailer } from "./dispatch/send.js";
 import type { Env } from "./env.js";
@@ -11,6 +11,7 @@ import { bilanzRoutes } from "./routes/bilanz.js";
 import { captureRoutes } from "./routes/capture.js";
 import { health } from "./routes/health.js";
 import { ueberRoutes } from "./routes/ueber.js";
+import { setzeHinweisMailto } from "./views/layout.js";
 
 export interface AppOptions {
   env: Env;
@@ -24,13 +25,18 @@ export function createApp(options: AppOptions): Hono {
   const now = options.now ?? (() => Math.floor(Date.now() / 1000));
   const app = new Hono();
 
+  /* Das Besucher-mailto kennt seine Adresse erst zur Laufzeit. */
+  setzeHinweisMailto(options.env.MAIL_FROM);
+
   app.route("/", health);
 
-  app.use("/neu", adminAuth(options.env));
-  app.use("/neu/*", adminAuth(options.env));
-  // Beide Muster: /admin/* deckt den Pfad ohne abschliessenden Schraegstrich nicht ab.
-  app.use("/admin", adminAuth(options.env));
-  app.use("/admin/*", adminAuth(options.env));
+  /* Erkennung vor der Auth registriert: ihr next() umschliesst die Auth,
+     eine 401 bekommt also kein Betreiber-Cookie. */
+  for (const pfad of ["/neu", "/neu/*", "/admin", "/admin/*"]) {
+    // Beide Muster je Bereich: /admin/* deckt den Pfad ohne Schraegstrich nicht ab.
+    app.use(pfad, betreiberErkennung());
+    app.use(pfad, adminAuth(options.env));
+  }
 
   app.route(
     "/",

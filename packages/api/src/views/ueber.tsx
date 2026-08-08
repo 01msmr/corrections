@@ -6,8 +6,8 @@ import { Layout } from "./layout.js";
  * Korrekturmail hier vorfindet — die Fusszeile jeder Mail verweist auf diese
  * Adresse. Erfassung und Verwaltung liegen dagegen hinter der Basic-Auth.
  */
-export const UeberSeite: FC = () => (
-  <Layout title="In eigener Sache" aktiv="ueber">
+export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) => (
+  <Layout title="In eigener Sache" aktiv="ueber" betreiber={betreiber}>
     <div class="prosa">
       <h2 class="rubrik">In eigener Sache</h2>
       <p class="einstieg">

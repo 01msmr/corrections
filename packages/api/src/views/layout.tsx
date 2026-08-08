@@ -209,6 +209,7 @@ const STYLES = `
   nav a { font: 700 .95rem/1 var(--mono); letter-spacing: .03em;
     color: var(--rand); text-decoration: none; padding: .6rem .95rem .5rem;
     border-bottom: 2px solid transparent; }
+  .navicon { width: .85em; height: .85em; margin-right: .4em; vertical-align: -.06em; }
   nav a:hover, nav a:focus-visible { color: var(--tinte); border-bottom-color: var(--korrektur); }
   /* Die aktuelle Seite ist rot hinterlegt statt groesser gesetzt: die Leiste
      behaelt so auf jeder Seite dieselbe Hoehe und springt beim Wechsel nicht. */
@@ -651,9 +652,37 @@ function datumszeile(): string {
   }).format(new Date());
 }
 
-export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | undefined }>> = ({
+/* Ziel des Besucher-Ressorts: mailto an MAIL_FROM mit Betreff und Geruest.
+   Wird beim App-Bau gesetzt (setzeHinweisMailto in app.ts); der Fallback
+   haelt direkt gerenderte Views — etwa in Routen-Tests — funktionsfaehig. */
+let HINWEIS_MAILTO = "mailto:";
+export function setzeHinweisMailto(mailFrom: string): void {
+  const geruest = "Artikel-URL: \r\nZitat (falsche Stelle): \r\nVorschlag: \r\nAnmerkung: \r\n";
+  HINWEIS_MAILTO = `mailto:${mailFrom}?subject=${encodeURIComponent("Korrekturhinweis")}&body=${encodeURIComponent(geruest)}`;
+}
+
+/* Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com
+   License - https://fontawesome.com/license/free (Icons: CC BY 4.0)
+   Copyright 2024 Fonticons, Inc. — Pfade byteidentisch aus svgs/solid/
+   uebernommen (file-pen.svg, envelope-open-text.svg), als inline SVG statt
+   Webfont (Projektregel: keine Webfonts). */
+const FilePenIcon: FC = () => (
+  <svg class="navicon" viewBox="0 0 576 512" aria-hidden="true">
+    <path fill="currentColor" d="M0 64C0 28.7 28.7 0 64 0L224 0l0 128c0 17.7 14.3 32 32 32l128 0 0 125.7-86.8 86.8c-10.3 10.3-17.5 23.1-21 37.2l-18.7 74.9c-2.3 9.2-1.8 18.8 1.3 27.5L64 512c-35.3 0-64-28.7-64-64L0 64zm384 64l-128 0L256 0 384 128zM549.8 235.7l14.4 14.4c15.6 15.6 15.6 40.9 0 56.6l-29.4 29.4-71-71 29.4-29.4c15.6-15.6 40.9-15.6 56.6 0zM311.9 417L441.1 287.8l71 71L382.9 487.9c-4.1 4.1-9.2 7-14.9 8.4l-60.1 15c-5.5 1.4-11.2-.2-15.2-4.2s-5.6-9.7-4.2-15.2l15-60.1c1.4-5.6 4.3-10.8 8.4-14.9z" />
+  </svg>
+);
+const EnvelopeOpenTextIcon: FC = () => (
+  <svg class="navicon" viewBox="0 0 512 512" aria-hidden="true">
+    <path fill="currentColor" d="M215.4 96L144 96l-36.2 0L96 96l0 8.8L96 144l0 40.4 0 89L.2 202.5c1.6-18.1 10.9-34.9 25.7-45.8L48 140.3 48 96c0-26.5 21.5-48 48-48l76.6 0 49.9-36.9C232.2 3.9 243.9 0 256 0s23.8 3.9 33.5 11L339.4 48 416 48c26.5 0 48 21.5 48 48l0 44.3 22.1 16.4c14.8 10.9 24.1 27.7 25.7 45.8L416 273.4l0-89 0-40.4 0-39.2 0-8.8-11.8 0L368 96l-71.4 0-81.3 0zM0 448L0 242.1 217.6 403.3c11.1 8.2 24.6 12.7 38.4 12.7s27.3-4.4 38.4-12.7L512 242.1 512 448s0 0 0 0c0 35.3-28.7 64-64 64L64 512c-35.3 0-64-28.7-64-64c0 0 0 0 0 0zM176 160l160 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-160 0c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64l160 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-160 0c-8.8 0-16-7.2-16-16s7.2-16 16-16z" />
+  </svg>
+);
+
+export const Layout: FC<
+  PropsWithChildren<{ title: string; aktiv?: Bereich | undefined; betreiber?: boolean }>
+> = ({
   title,
   aktiv,
+  betreiber = false,
   children,
 }) => {
   const ohneTitel = aktiv !== undefined && BEREICH_TITEL[aktiv] === title;
@@ -684,9 +713,15 @@ export const Layout: FC<PropsWithChildren<{ title: string; aktiv?: Bereich | und
         <div class="navzeile">
           <div class="kopfinhalt">
             <nav>
-            <a href="/neu" aria-current={aktiv === "neu" ? "page" : undefined} draggable={false}>
-              Neue Korrektur
-            </a>
+            {betreiber ? (
+              <a href="/neu" aria-current={aktiv === "neu" ? "page" : undefined} draggable={false}>
+                <FilePenIcon /> Neue Korrektur
+              </a>
+            ) : (
+              <a href={HINWEIS_MAILTO} draggable={false}>
+                <EnvelopeOpenTextIcon /> Neue Korrektur
+              </a>
+            )}
             <a href="/bilanz" aria-current={aktiv === "bilanz" ? "page" : undefined} draggable={false}>
               Bilanz
             </a>
