@@ -34,54 +34,60 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
         hält geduldig fest, was daraus wird.
       </p>
 
-      <h2>Schneller melden: Lesezeichen und Kurzbefehl</h2>
+      <h2>Schneller melden</h2>
       <p>
-        Wer beim Lesen eine Stelle markiert und dann das Lesezeichen anklickt, bekommt
-        das Formular mit Artikeladresse und Fundstelle schon ausgefüllt. Auf dem iPhone
-        macht ein Kurzbefehl dasselbe aus dem Teilen-Menü heraus.
+        Wer beim Lesen eine Stelle markiert und dann teilt, bekommt das Formular mit
+        Artikeladresse und Fundstelle schon ausgefüllt — auf dem Telefon über einen
+        Kurzbefehl, am Rechner über ein{" "}
+        <a href="https://de.wikipedia.org/wiki/Bookmarklet" target="_blank" rel="noopener">
+          Bookmarklet
+        </a>
+        : ein Lesezeichen, das keine Seite öffnet, sondern ein kleines Skript auf der
+        gerade offenen Seite ausführt.
       </p>
       <p>
         <button type="button" id="kopiere-lesezeichen" class="zeilenknopf">
-          JavaScript für das Lesezeichen
+          JavaScript für das Bookmarklet
         </button>{" "}
-        <span id="kopier-hinweis" class="zaehler" aria-live="polite" />
+        <span id="lesezeichen-hinweis" class="zaehler" aria-live="polite" />
       </p>
       <p class="zaehler">
-        Danach ein neues Lesezeichen anlegen, als Adresse das Kopierte einfügen und ihm
-        einen Namen geben — etwa „Korrektur“. Manche Browser öffnen Lesezeichen in einem
-        neuen leeren Tab; dann hat das Skript keinen Artikel mehr vor sich. In Vivaldi
-        hilft ein Spitzname (etwa <code>kor</code>), den man in der Adresszeile eintippt.
-      </p>
-      <p>
-        <a href="https://www.icloud.com/shortcuts/84f1ff381c1140b1b07711738869d1b7" target="_blank" rel="noopener">
-          Fertigen Kurzbefehl für iPhone und iPad übernehmen
-        </a>{" "}
-        <span class="zaehler">— öffnet die Kurzbefehle-App.</span>
-      </p>
-      <p class="zaehler">
-        Er zielt auf das Erfassungsformular; wer keinen Zugang hat, baut sich den
-        Kurzbefehl mit dem Code hier selbst und trägt die eigene Adresse ein.
-      </p>
-      <p class="qr-zeile">
-        <a href="https://www.icloud.com/shortcuts/84f1ff381c1140b1b07711738869d1b7" target="_blank" rel="noopener">
-          <KurzbefehlQr />
+        Neues Lesezeichen anlegen, das Kopierte als Adresse einsetzen, benennen — etwa
+        „Korrektur“. Öffnet der Browser Lesezeichen in einem neuen Tab, hat das Skript
+        keinen Artikel mehr vor sich; in Vivaldi hilft ein Spitzname wie{" "}
+        <code>kor</code>. Mehr dazu in{" "}
+        <a
+          href="https://github.com/01msmr/corrections/blob/main/docs/bookmarklet-und-kurzbefehl.md"
+          target="_blank"
+          rel="noopener"
+        >
+          der Anleitung im Quellcode
         </a>
-        <span class="zaehler">
-          Am Rechner? Diesen Code mit der Kamera des iPhones abfotografieren — der
-          Kurzbefehl öffnet sich direkt auf dem Gerät.
-        </span>
+        .
       </p>
-      <p>
-        <button type="button" id="kopiere-kurzbefehl" class="zeilenknopf">
-          JavaScript für den Kurzbefehl
-        </button>
-      </p>
-      <p class="zaehler">
-        Für iOS: Kurzbefehl anlegen, in den Details „Im Share Sheet anzeigen“ einschalten,
-        als Aktionen <em>JavaScript auf Webseite ausführen</em> (dort das Kopierte
-        einsetzen) und <em>URL öffnen</em>. In den Einstellungen muss unter
-        Kurzbefehle → Erweitert das Ausführen von Skripten erlaubt sein.
-      </p>
+
+      <div class="zusammenhalt">
+        <h2>Zum Mitnehmen</h2>
+        <p>
+          <a href="https://www.icloud.com/shortcuts/84f1ff381c1140b1b07711738869d1b7" target="_blank" rel="noopener">
+            Fertigen Kurzbefehl für iPhone und iPad übernehmen
+          </a>{" "}
+          <button type="button" id="kopiere-kurzbefehl-link" class="zeilenknopf">
+            Link kopieren
+          </button>{" "}
+          <span id="kopier-hinweis" class="zaehler" aria-live="polite" />
+        </p>
+        <p class="qr-zeile">
+          <a href="https://www.icloud.com/shortcuts/84f1ff381c1140b1b07711738869d1b7" target="_blank" rel="noopener">
+            <KurzbefehlQr />
+          </a>
+          <span class="zaehler">
+            Mit der iPhone-Kamera abfotografieren.
+            <br />
+            Skripte erlauben: Einstellungen → Kurzbefehle → Erweitert.
+          </span>
+        </p>
+      </div>
 
       <h2>Der Weg eines Hinweises</h2>
       <p>
@@ -136,34 +142,39 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
         </span>
       </p>
     </div>
-    {/* Baut beide Fassungen aus der aufgerufenen Adresse, damit sie auch
-        lokal und auf einer anderen Domain stimmen. Der Text reist als
-        base64url im Parameter b — die "URL oeffnen"-Aktion der Kurzbefehle
-        loest Prozentkodierung sonst wieder auf und schneidet am ersten
-        Leerzeichen ab. */}
+    {/* Der Link laesst sich am Rechner schlecht antippen — kopieren hilft
+        beim Weiterschicken ans Telefon. Ohne JavaScript bleibt der Link
+        daneben unveraendert benutzbar. */}
     <script
       dangerouslySetInnerHTML={{
         __html: `
   const ziel = ${betreiber ? '"/neu"' : '"/hinweis"'};
-  const kern =
+  /* Das Lesezeichen wird aus der aufgerufenen Adresse gebaut, damit es auch
+     lokal stimmt. Der markierte Text reist als base64url im Parameter b —
+     die "URL oeffnen"-Aktion der Kurzbefehle loest Prozentkodierung sonst
+     wieder auf und schneidet am ersten Leerzeichen ab. */
+  const lesezeichen =
+    "javascript:(()=>{" +
     "const t=String(getSelection()).trim().slice(0,200);" +
     "const b=btoa(unescape(encodeURIComponent(JSON.stringify({u:location.href,t}))))" +
-    ".replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');";
-  const adresse = location.origin + ziel;
-  const lesezeichen = "javascript:(()=>{" + kern + "location.href='" + adresse + "?b='+b})()";
-  const kurzbefehl = kern + "\\ncompletion('" + adresse + "?b='+b);";
+    ".replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');" +
+    "location.href='" + location.origin + ziel + "?b='+b})()";
+
+  const lesezeichenHinweis = document.getElementById("lesezeichen-hinweis");
+  document.getElementById("kopiere-lesezeichen").addEventListener("click", () => {
+    navigator.clipboard.writeText(lesezeichen).then(
+      () => { lesezeichenHinweis.textContent = "kopiert"; lesezeichenHinweis.classList.add("erkannt"); },
+      () => { lesezeichenHinweis.textContent = "Kopieren nicht erlaubt — bitte von Hand markieren."; },
+    );
+  });
 
   const hinweis = document.getElementById("kopier-hinweis");
-  const kopiere = (text) => {
-    navigator.clipboard.writeText(text).then(
+  document.getElementById("kopiere-kurzbefehl-link").addEventListener("click", () => {
+    navigator.clipboard.writeText("https://www.icloud.com/shortcuts/84f1ff381c1140b1b07711738869d1b7").then(
       () => { hinweis.textContent = "kopiert"; hinweis.classList.add("erkannt"); },
-      () => { hinweis.textContent = "Kopieren nicht erlaubt — bitte von Hand markieren."; },
+      () => { hinweis.textContent = "Kopieren nicht erlaubt — bitte den Link von Hand kopieren."; },
     );
-  };
-  document.getElementById("kopiere-lesezeichen")
-    .addEventListener("click", () => kopiere(lesezeichen));
-  document.getElementById("kopiere-kurzbefehl")
-    .addEventListener("click", () => kopiere(kurzbefehl));`,
+  });`,
       }}
     />
   </Layout>

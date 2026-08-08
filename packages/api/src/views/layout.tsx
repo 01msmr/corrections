@@ -240,7 +240,15 @@ const STYLES = `
 
   /* QR-Code des Kurzbefehls: klein, mit Papierrand, damit Kameras ihn auch
      auf dunklem Grund lesen. */
-  .qr-zeile { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  /* Blöcke, die der Spaltenumbruch nicht zerreissen darf: Ueberschrift,
+     Link und QR-Code des Kurzbefehls gehoeren zusammen — sonst stuende der
+     Code oben in der rechten Spalte und sein Link unten in der linken. */
+  .zusammenhalt { break-inside: avoid; }
+
+  /* Der Hinweis steht neben dem Code, nicht darunter — deshalb kein
+     Umbruch; der Text schrumpft stattdessen mit der Spalte. */
+  .qr-zeile { display: flex; align-items: center; gap: .9rem; }
+  .qr-zeile .zaehler { min-width: 0; }
   .qr { width: 8.5rem; height: 8.5rem; flex: none;
     background: var(--papier); padding: .35rem; border: 1px solid var(--linie); border-radius: 3px; }
 
