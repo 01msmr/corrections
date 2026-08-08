@@ -117,3 +117,39 @@ describe("composeMail", () => {
     expect(extractRefFromSubject(subject)).toBe("K7QW3M");
   });
 });
+
+describe("Fundstelle im Satzzusammenhang", () => {
+  const basis = {
+    ref: "K7F3A2B",
+    outletName: "Beispiel-Zeitung",
+    articleUrl: "https://beispiel-zeitung.de/a",
+    articleUrlCanon: "https://beispiel-zeitung.de/a",
+    headline: null,
+    errorTypeKey: "buchstabendreher",
+    errorTypeLabel: "ein Buchstabendreher",
+    severity: 2,
+    quoteBefore: "Feler",
+    suggestionAfter: "Fehler",
+    comment: null,
+    baseUrl: "https://korrekturen.msmr.co",
+  };
+
+  it("zeigt den Kontext um die Fundstelle, wenn Anker vorliegen", () => {
+    const mail = composeMail({
+      ...basis,
+      quotePrefix: "Das ist ein ",
+      quoteSuffix: " im Text.",
+    });
+    expect(mail.text).toContain("Im Artikel steht die Stelle hier:");
+    expect(mail.text).toContain("…Das ist ein »Feler« im Text.…");
+    // Im HTML ist die Stelle ausgezeichnet, nicht nur eingefasst.
+    expect(mail.html).toContain("<strong");
+    expect(mail.html).toContain("Feler</strong>");
+  });
+
+  it("laesst die Zeile weg, wenn kein Anker gefunden wurde", () => {
+    const mail = composeMail({ ...basis, quotePrefix: null, quoteSuffix: null });
+    expect(mail.text).not.toContain("Im Artikel steht die Stelle hier");
+    expect(mail.html).not.toContain("Im Artikel steht die Stelle hier");
+  });
+});

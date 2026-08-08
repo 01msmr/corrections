@@ -3,6 +3,10 @@ import { diffWords, PALETTE, type DiffSegment } from "@korrektur/shared";
 export interface ComposeInput {
   /** Kennung im Betreff; null bei Besucher-Hinweisen — niemand ordnet Antworten zu. */
   ref: string | null;
+  /** Text unmittelbar vor der Fundstelle im Artikel (Kontext-Anker, §8.1). */
+  quotePrefix?: string | null;
+  /** Text unmittelbar dahinter. */
+  quoteSuffix?: string | null;
   /** Fuer die Anrede „Liebe <Name>-Redaktion“. */
   outletName: string;
   articleUrl: string;
@@ -86,6 +90,42 @@ function buildSubject(input: ComposeInput): string {
   return `${SUBJECT_PREFIX}: ${truncate(input.headline, budget)}${tokenPart}`;
 }
 
+/**
+ * Die Fundstelle im Satzzusammenhang. Die Anker stehen ohnehin schon fest
+ * (§8.1) — sie hier zu zeigen erspart der Redaktion die Suche nach einem
+ * isolierten Zitat. Fehlt ein Anker, entfaellt die Zeile ersatzlos.
+ */
+function fundstelleText(input: ComposeInput, quote: string): string[] {
+  /* Die Leerzeichen an den Raendern gehoeren zum Satz — nur fuer die Frage,
+     ob ueberhaupt ein Anker vorliegt, wird getrimmt. */
+  const vor = input.quotePrefix ?? "";
+  const nach = input.quoteSuffix ?? "";
+  if (!vor.trim() && !nach.trim()) return [];
+  return [
+    "Im Artikel steht die Stelle hier:",
+    "",
+    `${QUOTE_INDENT}…${vor}»${quote}«${nach}…`,
+    "",
+  ];
+}
+
+function fundstelleHtml(
+  input: ComposeInput,
+  quote: string,
+  beschriftung: (text: string) => string,
+  schreibmaschine: string,
+): string {
+  const vor = input.quotePrefix ?? "";
+  const nach = input.quoteSuffix ?? "";
+  if (!vor.trim() && !nach.trim()) return "";
+  const markiert = `<strong style="color:${COLOR_BEFORE}">${escapeHtml(quote)}</strong>`;
+  return (
+    beschriftung("Im Artikel steht die Stelle hier:") +
+    `<div style="${schreibmaschine};font-size:13px;line-height:1.7;color:${PALETTE.rand};margin:0 0 16px">` +
+    `…${escapeHtml(vor)}${markiert}${escapeHtml(nach)}…</div>`
+  );
+}
+
 /** Rein. Baut Betreff und beide Koerper; Header und Versand liegen in send.ts (§6). */
 export function composeMail(input: ComposeInput): { subject: string; text: string; html: string } {
   const quote = neutralizeMetaMarkers(input.quoteBefore);
@@ -109,6 +149,7 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
     "",
     `${QUOTE_INDENT}„${quote}“`,
     "",
+    ...fundstelleText(input, quote),
     "Meiner Einschätzung nach wäre richtig:",
     "",
     `${QUOTE_INDENT}„${suggestion}“`,
@@ -178,6 +219,7 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
     linie,
     beschriftung(`Falsch ist (${escapeHtml(input.errorTypeLabel)}):`),
     zitat(renderSegments(diff.before, COLOR_BEFORE), COLOR_BEFORE),
+    fundstelleHtml(input, quote, beschriftung, schreibmaschine),
     beschriftung("Meiner Einschätzung nach wäre richtig:"),
     zitat(renderSegments(diff.after, COLOR_AFTER), COLOR_AFTER),
     linie,

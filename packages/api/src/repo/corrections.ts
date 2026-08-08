@@ -237,6 +237,8 @@ export async function createCorrection(
     quoteBefore: input.quoteBefore,
     suggestionAfter: input.suggestionAfter,
     comment: input.comment,
+    quotePrefix: anchors.prefix,
+    quoteSuffix: anchors.suffix,
     baseUrl: deps.baseUrl,
   });
 
