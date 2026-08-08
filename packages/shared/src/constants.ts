@@ -9,6 +9,15 @@ export const MIN_N_FOR_RATE = 10;
  *  in der Voreinstellung aus (Umschalter ?alle=1). Erweiterbar. */
 export const WEICHE_FEHLERARTEN = ["schlechter_satzbau"] as const;
 
+/** Betreff-/Textmuster von Eingangsbestaetigungen (klein geschrieben,
+ *  Teilstring-Vergleich). Bewusst eng — lieber eine Bestaetigung liegen
+ *  lassen als eine echte Antwort verschieben. */
+export const BESTAETIGUNGS_MUSTER = [
+  "gerne sichten wir",
+  "eingangsbestätigung",
+  "empfangsbestätigung",
+] as const;
+
 /** Medien-Segmente in "Was auffaellt": eigenes Segment nur ab diesem Anteil am Balken … */
 export const SEGMENT_MINDEST_ANTEIL = 0.15;
 /** … und nur ab dieser absoluten Anzahl — kleine Balken bleiben einfarbig. */

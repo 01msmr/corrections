@@ -13,6 +13,13 @@ const envSchema = z.object({
   SMTP_USER: z.string().min(1),
   SMTP_PASSWORD: z.string().min(1),
   MAIL_FROM: z.string().email(),
+  /* IMAP nur fuer den Worker (Bestaetigungen aufraeumen; spaeter Abgleich).
+     Optional: ohne IMAP_HOST ueberspringt der Worker den Schritt sauber. */
+  IMAP_HOST: z.string().min(1).optional(),
+  IMAP_PORT: z.coerce.number().int().positive().default(993),
+  IMAP_USER: z.string().min(1).optional(),
+  IMAP_PASSWORD: z.string().min(1).optional(),
+  IMAP_TRASH: z.string().min(1).default("Trash"),
 });
 
 export type Env = z.infer<typeof envSchema>;

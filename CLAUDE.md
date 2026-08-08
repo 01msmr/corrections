@@ -40,7 +40,7 @@ Ist der Altbestand drin, kann die Route entfallen: eine Zeile in `app.ts` (§11.
 - TypeScript strict. Kein `any`, kein `as` außer in Typ-Guards.
 - Zod-Schemas leben in `packages/shared` und sind die einzige Typquelle.
 - Parser und Normalisierer sind reine Funktionen ohne IO. IO nur in `db/client.ts`,
-  `article/fetch.ts`, `dispatch/send.ts`, `repo/*.ts`.
+  `article/fetch.ts`, `dispatch/send.ts`, `inbox/postfach.ts`, `repo/*.ts`.
 - Zeitstempel als UTC-Epoch-Sekunden (int) in der Datenbank, Formatierung nur in der Ansicht.
 - Datenbankänderungen nur über Drizzle-Migrationen. Ausnahme: die Kennzahlen-Views,
   die beim Start aus den Konstanten in `shared` neu erzeugt werden.
