@@ -1030,6 +1030,23 @@ export const Layout: FC<
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <meta name="robots" content="noindex" />
       <title>{title}</title>
+      {/* Icons und Manifest: siehe routes/icons.ts. Das SVG kommt zuerst,
+          Browser die es koennen nehmen es; die .ico bleibt fuer die uebrigen. */}
+      <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+      <link rel="icon" href="/favicon.ico" sizes="32x32" />
+      <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+      <link rel="manifest" href="/site.webmanifest" />
+      {/* Die Browserleiste nimmt die Farbe des Blattes an, in beiden Modi. */}
+      <meta name="theme-color" media="(prefers-color-scheme: light)" content={PALETTE.papier} />
+      <meta
+        name="theme-color"
+        media="(prefers-color-scheme: dark)"
+        content={PALETTE_DUNKEL.papier}
+      />
+      <meta name="mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-title" content="Korrekturen" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       <style dangerouslySetInnerHTML={{ __html: STYLES }} />
     </head>
     <body>
@@ -1101,6 +1118,13 @@ export const Layout: FC<
       <script
         dangerouslySetInnerHTML={{
           __html: `
+  /* Der Service Worker macht die Seite installierbar; er faengt nur die
+     Navigation ohne Netz ab (siehe routes/icons.ts). Scheitert die
+     Registrierung, aendert sich an der Seite nichts. */
+  if ("serviceWorker" in navigator) {
+    addEventListener("load", () => { navigator.serviceWorker.register("/sw.js").catch(() => {}); });
+  }
+
   /* Umschalter, die nur einen Seitenteil betreffen (Zaehlweise der Bilanz):
      Der Inhalt wird nachgeladen und an Ort und Stelle ersetzt, statt die
      Seite neu zu laden — sonst spraenge der Blick bei jedem Umschalten

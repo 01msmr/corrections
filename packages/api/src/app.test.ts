@@ -159,6 +159,41 @@ describe("Base64-Vorbefuellung (?b=)", () => {
   });
 });
 
+describe("Icons und Manifest", () => {
+  it("liefert Favicon, Manifest und Service Worker ohne Anmeldung", async () => {
+    const a = app();
+    const erwartet: [string, string][] = [
+      ["/favicon.ico", "image/x-icon"],
+      ["/icon.svg", "image/svg+xml"],
+      ["/apple-touch-icon.png", "image/png"],
+      ["/icon-192.png", "image/png"],
+      ["/icon-512.png", "image/png"],
+      ["/site.webmanifest", "application/manifest+json"],
+      ["/sw.js", "text/javascript; charset=utf-8"],
+    ];
+    for (const [pfad, typ] of erwartet) {
+      const res = await a.request(pfad);
+      expect(res.status, pfad).toBe(200);
+      expect(res.headers.get("content-type"), pfad).toBe(typ);
+    }
+  });
+
+  it("nennt im Manifest beide Groessen und eine maskierbare Fassung", async () => {
+    /* Android verlangt 192 und 512; ohne "maskable" schneidet es das Icon in
+       einen weissen Kreis statt in die Systemform. */
+    const res = await app().request("/site.webmanifest");
+    const manifest = (await res.json()) as {
+      icons: { sizes: string; purpose?: string }[];
+      start_url: string;
+    };
+    expect(manifest.start_url).toBe("/");
+    expect(manifest.icons.map((i) => i.sizes)).toEqual(
+      expect.arrayContaining(["192x192", "512x512"]),
+    );
+    expect(manifest.icons.some((i) => i.purpose === "maskable")).toBe(true);
+  });
+});
+
 describe("Fehlerpruefung (/pruefen)", () => {
   const FORM = { "content-type": "application/x-www-form-urlencoded" };
   const anfrage = (body: Record<string, string>) => ({

@@ -10,6 +10,7 @@ import { backfillAdminRoutes } from "./routes/admin/backfill.js";
 import { bilanzRoutes } from "./routes/bilanz.js";
 import { captureRoutes } from "./routes/capture.js";
 import { health } from "./routes/health.js";
+import { iconRoutes } from "./routes/icons.js";
 import { ueberRoutes } from "./routes/ueber.js";
 
 export interface AppOptions {
@@ -25,6 +26,9 @@ export function createApp(options: AppOptions): Hono {
   const app = new Hono();
 
   app.route("/", health);
+  /* Vor der Auth: Browser holen Favicon und Manifest ohne Anmeldung, sonst
+     bliebe der Tab im Verwaltungsbereich leer. */
+  app.route("/", iconRoutes());
 
   /* Erkennung vor der Auth registriert: ihr next() umschliesst die Auth,
      eine 401 bekommt also kein Betreiber-Cookie. */
