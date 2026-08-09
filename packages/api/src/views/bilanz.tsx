@@ -280,7 +280,7 @@ export const BilanzSeite: FC<{
       )}
 
       <h2 class="balken">Was diese Zahlen nicht sagen</h2>
-      <div class="prosa-schmal">
+      <div class="prosa-schmal prosa-zweispaltig">
         <p>
           Die gemeldeten Artikel sind <strong>keine Stichprobe</strong>. Gelesen wird, was
           interessiert; gemeldet wird, was dabei auffällt. Wer bei einem Medium viele

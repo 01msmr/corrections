@@ -57,6 +57,10 @@ const STYLES = `
        weiter unten sind darauf abgestimmt. */
     --mono: "Courier New", Courier, ui-monospace, SFMono-Regular, Menlo, monospace;
     --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+    /* Die Schrift des Zeitungstitels; sie traegt auch die kleine Marke im
+       klebenden Band. Didot und Bodoni liegen auf Apple-Systemen, Georgia
+       faengt den Rest ab. */
+    --titel: "Didot", "Bodoni 72", Didot, Georgia, "Times New Roman", serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -100,6 +104,14 @@ const STYLES = `
   @media (min-width: 48rem) {
     .prosa { columns: 2; column-gap: 2.75rem; column-rule: 1px solid var(--linie); }
     .prosa .einstieg, .prosa h2.rubrik { column-span: all; }
+    /* Am Spaltenanfang kappt der Browser den oberen Abstand -- in der zweiten
+       Spalte, nicht in der ersten, die den Fluss unter dem Spanner fortsetzt.
+       Was dem Spanner folgt, bekommt ihn deshalb auch dort genommen: sonst
+       begaenne die linke Spalte eine Zeile tiefer als die rechte. */
+    .prosa .einstieg + *:not(.rubrik), .prosa h2.rubrik + *:not(.rubrik) { margin-top: 0; }
+    /* Die Luft, die dort wegfaellt, kommt unter den Vorspann: dort gilt sie
+       fuer beide Spalten gleich, statt nur die linke tiefer zu setzen. */
+    .prosa .einstieg { margin-bottom: 1.6rem; }
   }
 
   /* Der Kopf ist ein Zeitungskopf: der Titel zentriert wie ein Zeitungstitel,
@@ -136,6 +148,27 @@ const STYLES = `
   .datumszeile .datum { color: var(--linie); transition: color 2s ease-out; }
   .datumszeile .datum:hover { color: var(--papier); transition-duration: .25s; }
   .datum-kurz { display: none; }
+  /* Ist der Titel weggescrollt, tritt er verkleinert ins Band -- links,
+     spiegelbildlich zum Datum rechts, und mager statt fett: er meldet sich
+     zurueck, ohne den Platz des Untertitels zu beanspruchen. Ein- und
+     ausgeblendet ueber dieselbe Scroll-Zeitachse wie der Kopfschatten, also
+     ohne Skript; wo der Browser sie nicht kennt, bleibt er unsichtbar. */
+  .klebemarke {
+    position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%);
+    font: 400 1.05rem/1.2 var(--titel); letter-spacing: .05em;
+    text-transform: uppercase; color: var(--linie);
+    pointer-events: none; opacity: 0;
+    animation: markeauf linear both;
+    animation-timeline: scroll(root);
+    animation-range: 2.5rem 4.5rem;
+  }
+  /* Im Band traegt der getilgte Buchstabe die Bandfarbe, nicht die Tinte --
+     sonst verschwaende er im Schwarz. */
+  .klebemarke .tilgung { color: inherit; }
+  @keyframes markeauf {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
   /* Untertitelband und Ressortleiste bleiben beim Scrollen gemeinsam stehen;
      nur der Titel scrollt weg wie bei einer Zeitung. Der Schatten kommt erst,
      wenn der Titel darueber aus dem Bild ist -- ueber eine Scroll-Zeitachse,
@@ -171,7 +204,7 @@ const STYLES = `
   /* Der Zeitungstitel laeuft nicht in der Schreibmaschine, sondern in einer
      Didone -- der Schriftgattung klassischer Titelkoepfe. Didot und Bodoni
      liegen auf Apple-Systemen, Georgia faengt den Rest ab. */
-  .marke { font: 700 2.6rem/1.1 "Didot", "Bodoni 72", Didot, Georgia, "Times New Roman", serif;
+  .marke { font: 700 2.6rem/1.1 var(--titel);
     letter-spacing: .05em; text-transform: uppercase;
     color: inherit; text-decoration: none; }
   /* Die Schrift bleibt in Tinte; ausgezeichnet wird ueber eine Unterstreichung
@@ -187,11 +220,15 @@ const STYLES = `
   /* display: inline, nicht inline-block: ein Inline-Block bildet einen eigenen
      Dekorationsbereich, wodurch die Unterstreichung beim Ueberfahren am "h"
      abgerissen waere. */
-  .marke .tilgung { position: relative; color: var(--tinte); }
+  /* Die Lage teilen sich beide Marken; die Farbe nicht: auf dem Blatt bleibt
+     der Buchstabe in Tinte, im schwarzen Band nimmt er die Bandfarbe an
+     (siehe .klebemarke) -- in Tinte staende er dort schwarz auf schwarz. */
+  .marke .tilgung, .klebemarke .tilgung { position: relative; }
+  .marke .tilgung { color: var(--tinte); }
   /* Kein text-decoration und kein gerader Balken: ein Filzstiftstrich ist leicht
      gebogen, laeuft ueber den Buchstaben hinaus und wird zum Ende hin flacher.
      Deshalb eine gezeichnete Kurve als Data-URI statt einer gedrehten Linie. */
-  .marke .tilgung::after {
+  .marke .tilgung::after, .klebemarke .tilgung::after {
     content: ""; position: absolute;
     left: -.22em; right: -.22em; top: -.15em; bottom: -.15em;
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='26' viewBox='0 0 46 26' preserveAspectRatio='none'%3E%3Cpath d='M2.4 20.6C13.2 16.4 26.4 10.2 41.8 3.2c1.1-.5 1.9.6 1 1.3-2 1.5-4.6 3-8 4.8C25.6 14.4 13.4 20.4 4.4 24c-1.3.5-2.6-1.6-2-3.4z' fill='${uri(PALETTE.korrektur)}'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
@@ -589,6 +626,16 @@ const STYLES = `
 
   /* Fliesstext der Methodik schmal halten: lange Zeilen liest niemand. */
   .prosa-schmal { max-width: 40rem; }
+  /* Unter der Bilanz laeuft der Vorbehalt zweispaltig wie das Blatt: drei
+     kurze Absaetze nebeneinander lesen sich schneller als eine lange Fahne.
+     Die Spalten duerfen dafuer weiter als die schmale Lesebreite reichen. */
+  @media (min-width: 48rem) {
+    .prosa-zweispaltig { max-width: 62rem; columns: 2; column-gap: 2.75rem;
+      column-rule: 1px solid var(--linie); }
+    /* Die Absaetze duerfen umbrechen wie im Blatt -- sonst faellt einer ganz
+       in die linke Spalte und die Fahnen werden ungleich lang. */
+    .prosa-zweispaltig p:first-child { margin-top: 0; }
+  }
   .prosa-schmal p { margin: 0 0 .8rem; }
 
   /* Die Korrekturfahne zeigt den Wortunterschied der beiden Fassungen:
@@ -718,7 +765,9 @@ const STYLES = `
     .datumszeile .kopfinhalt { flex-direction: column; gap: .05rem; min-height: 0;
       padding-top: .3rem; padding-bottom: .35rem; }
     .datum { position: static; transform: none; font-size: .7rem; }
-    /* Schmal traegt die Zeile nur die Kurzfassung. */
+    /* Schmal traegt die Zeile nur die Kurzfassung, und die kleine Marke
+       entfaellt: das Band ist hier eine zentrierte Spalte ohne freie Flanke. */
+    .klebemarke { display: none; }
     .datum-lang { display: none; }
     /* Und sie darf weichen, sobald gescrollt wird: der klebende Kopf nimmt
        auf kleinen Anzeigen sonst zu viel vom Blatt. Dieselbe Scroll-Zeitachse
@@ -878,6 +927,9 @@ export const Layout: FC<
       <div class="klebekopf">
         <div class="datumszeile">
           <div class="kopfinhalt">
+            <span class="klebemarke" aria-hidden="true">
+              Korrektu<span class="tilgung">h</span>ren
+            </span>
             <span class="untertitel">
               Blatt zur Textpflege<span class="untertiteltrenner"> • </span>
               <span class="untertitelrest">Unabhängig • Überparteilich</span>
