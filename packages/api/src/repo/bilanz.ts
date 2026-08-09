@@ -71,9 +71,9 @@ export interface Bilanz {
 }
 
 const SCHWERE_NAMEN: Record<number, string> = {
-  1: "kosmetisch",
-  2: "störend",
-  3: "sinnentstellend",
+  1: "leicht",
+  2: "mittel",
+  3: "schwer",
 };
 
 export function ladeBilanz(

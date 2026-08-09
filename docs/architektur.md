@@ -124,7 +124,7 @@ Seit den Diagrammen oben dazugekommen:
   farbiger Kante in Courier — nur Inline-Stile und überall vorhandene Schriften.
 - **Wortwelt:** Ressorts „In eigener Sache · Neue Korrektur · Titel ·
   Kategorien"; das Versandobjekt heißt Hinweis, sein Token Kennung; Schwere
-  kosmetisch/störend/sinnentstellend. Fehlerarten sind die flache Liste des
+  leicht/mittel/schwer. Fehlerarten sind die flache Liste des
   ursprünglichen Kurzbefehls plus Ergänzungen.
 - **Geplant, noch nicht gebaut:** die öffentliche Statistik-Seite „Bilanz"
   (Route + Ansicht; Kennzahlen-Views und `repo/stats.ts` liegen bereit; Regeln:

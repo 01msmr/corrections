@@ -278,7 +278,7 @@ export const CaptureForm: FC<{
     ) : fehler ? (
       <p class="hinweis">{fehler}</p>
     ) : null}
-    <form class="arbeitsflaeche" method="post" action={`${basis}/vorschau`}>
+    <form class="arbeitsflaeche erfassungsraster" method="post" action={`${basis}/vorschau`}>
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
 
       {/* Hauptspalte: der Artikel und die eigentliche Korrektur. */}
@@ -385,13 +385,13 @@ export const CaptureForm: FC<{
         </div>
 
         <div class="feld">
-          <label for="severity">Schwere:</label>
+          <label for="severity">Schweregrad:</label>
           <select id="severity" name="severity">
-            <option value="1">kosmetisch</option>
+            <option value="1">leicht</option>
             <option value="2" selected>
-              störend
+              mittel
             </option>
-            <option value="3">sinnentstellend</option>
+            <option value="3">schwer</option>
           </select>
         </div>
 

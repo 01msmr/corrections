@@ -251,9 +251,9 @@ function kern(wort: string): string {
 }
 
 /**
- * Schwere zum erkannten Fall: 1 kosmetisch, 2 stoerend, 3 sinnentstellend.
+ * Schweregrad zum erkannten Fall: 1 leicht, 2 mittel, 3 schwer.
  * Grundlage ist die Kategorie; eine Negation oder ein Gegensatzpaar hebt auf
- * sinnentstellend, weil die Aussage dann kippt statt nur zu holpern.
+ * auf 3, weil die Aussage dann kippt statt nur zu holpern.
  */
 export function detectSeverity(
   falsch: string,

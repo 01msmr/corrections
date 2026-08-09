@@ -826,6 +826,30 @@ const STYLES = `
     .zeilenraster { grid-auto-flow: row dense; align-items: start; }
     .zeilenraster .hauptspalte > .feld { grid-column: 1; }
     .zeilenraster .nebenspalte > .feld { grid-column: 2; }
+
+    /* Das Erfassungsformular nutzt dieselbe Mechanik, nur mit fester
+       Zuordnung: die Einordnung rechts sitzt neben dem, was sie einordnet --
+       die Anmerkung neben der Fundstelle, der Abschluss neben der
+       berichtigten Fassung. Die Zeile der Pruefung bleibt rechts frei,
+       damit rechts keine Luecke im Lauf entsteht. */
+    .erfassungsraster .hauptspalte, .erfassungsraster .nebenspalte { display: contents; }
+    .erfassungsraster { align-items: start; }
+    .erfassungsraster .hauptspalte > * { grid-column: 1; }
+    .erfassungsraster .nebenspalte > * { grid-column: 2; }
+    .erfassungsraster .hauptspalte > :nth-child(1) { grid-row: 1; }
+    .erfassungsraster .hauptspalte > :nth-child(2) { grid-row: 2; }
+    .erfassungsraster .hauptspalte > :nth-child(3) { grid-row: 3; }
+    .erfassungsraster .hauptspalte > :nth-child(4) { grid-row: 4; }
+    .erfassungsraster .hauptspalte > :nth-child(5) { grid-row: 5; }
+    .erfassungsraster .nebenspalte > :nth-child(1) { grid-row: 1; }
+    .erfassungsraster .nebenspalte > :nth-child(2) { grid-row: 3; }
+    .erfassungsraster .nebenspalte > :nth-child(3) { grid-row: 4; }
+    .erfassungsraster .nebenspalte > :nth-child(4) { grid-row: 5; }
+    /* Im Raster braucht der Abschluss kein margin-top: auto mehr -- seine
+       Zeile ist dieselbe wie die des letzten Textfeldes. Er fuellt sie ganz,
+       damit beide Spalten unten buendig abschliessen. */
+    .erfassungsraster .abschluss { margin-top: 0; align-self: stretch; }
+    .erfassungsraster .abschluss button { height: 100%; }
   }
 
   /* Schmale Schirme: kompakter Kopf wie die mobile Ausgabe einer Zeitung --

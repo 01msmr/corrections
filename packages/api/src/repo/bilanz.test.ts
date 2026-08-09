@@ -207,8 +207,8 @@ describe("ladeBilanz", () => {
     meldung({ severity: 1 });
     meldung({ severity: 3 });
     expect(ladeBilanz(db, JETZT).schwere).toEqual([
-      { name: "kosmetisch", anzahl: 1 },
-      { name: "sinnentstellend", anzahl: 1 },
+      { name: "leicht", anzahl: 1 },
+      { name: "schwer", anzahl: 1 },
     ]);
   });
 });

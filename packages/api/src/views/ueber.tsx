@@ -124,7 +124,7 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
         Faden, an dem Antwort und Korrektur wieder zusammenfinden.
       </p>
       <p>
-        Auch Kategorie und Schwere schlägt die Seite selbst vor: Sie vergleicht beide
+        Auch Kategorie und Schweregrad schlägt die Seite selbst vor: Sie vergleicht beide
         Fassungen geduldig Wort für Wort — fehlt ein Komma, sind zwei Buchstaben verdreht,
         stimmt eine Zahl nicht? Dahinter steckt keine künstliche Intelligenz, sondern eine
         Handvoll nachvollziehbarer Regeln, gebaut wie Korrekturzeichen: klein und klar. Und
