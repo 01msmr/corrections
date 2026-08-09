@@ -70,7 +70,7 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
         <h2>Zum Mitnehmen</h2>
         <p>
           <a href="https://www.icloud.com/shortcuts/84f1ff381c1140b1b07711738869d1b7" target="_blank" rel="noopener">
-            Fertigen Kurzbefehl für iPhone und iPad übernehmen
+            Kurzbefehl beziehen
           </a>{" "}
           <button type="button" id="kopiere-kurzbefehl-link" class="zeilenknopf">
             Link kopieren
