@@ -273,6 +273,8 @@ const STYLES = `
   /* Das Icon steht als Inline-Element mit seiner Unterkante auf der
      Grundlinie der Schrift; die Feinkorrektur gleicht die Innenraender der
      Font-Awesome-Zeichenflaeche aus. */
+  /* Zeichen, die nicht quadratisch angelegt sind, behalten ihr Verhaeltnis. */
+  .navicon.schmal { width: auto; }
   .navicon { width: .85em; height: .85em; margin-right: .4em;
     vertical-align: baseline; position: relative; top: .02em; }
   nav a:hover, nav a:focus-visible { color: var(--tinte); border-bottom-color: var(--korrektur); }
@@ -477,9 +479,10 @@ const STYLES = `
   .kategoriezeile select { flex: 1; min-width: 0; }
   #errorCount[hidden] { display: none; }
 
-  /* .sendeknopf: der mailto-Abschluss des Besucher-Formulars traegt dieselbe
-     Bleisatz-Gestalt wie die freistehenden Knoepfe. */
-  button, a.sendeknopf {
+  /* a.knopf: Verweise, die wie ein Knopf auftreten sollen -- der mailto-
+     Abschluss des Besucher-Formulars und der Bezug des Kurzbefehls. Sie
+     tragen dieselbe Bleisatz-Gestalt wie die freistehenden Knoepfe. */
+  button, a.knopf {
     /* Beschriftung unten rechts: dort endet der Blick nach dem Ausfuellen, und
        im hohen Knopf saehe zentrierter Text verloren aus. */
     display: flex; align-items: flex-end; justify-content: flex-end;
@@ -507,7 +510,7 @@ const STYLES = `
   }
   /* Beim Zeigen hebt sich der Klotz weiter aus dem Blatt; die Grundflaeche
      bleibt im Raster verankert. */
-  button:hover, button:focus-visible, a.sendeknopf:hover, a.sendeknopf:focus-visible {
+  button:hover, button:focus-visible, a.knopf:hover, a.knopf:focus-visible {
     transform: translate(-7px, -7px);
     box-shadow: ${klotzKanten(7)}, 12px 13px 14px -7px rgb(var(--schatten) / .4);
   }
@@ -516,8 +519,8 @@ const STYLES = `
      isometrischen Seitenwaende wie der erhabene Koerper -- abgedunkelt, weil
      sie im eigenen Schatten liegen --, dazu der weiche Schattenfall auf die
      vertiefte Flaeche. Die Flaechenfarbe selbst bleibt unveraendert. */
-  a.sendeknopf { display: inline-flex; text-decoration: none; }
-  button:active, a.sendeknopf:active {
+  a.knopf { display: inline-flex; text-decoration: none; }
+  button:active, a.knopf:active {
     transform: none;
     /* Die Fuellung endet an der Innenkante des (transparenten) Rahmens: um
        die Vertiefung herum scheint das Blatt durch, kein grauer Saum. */
@@ -534,7 +537,7 @@ const STYLES = `
      Grundlinie; im Flex-Kasten des Knopfes gaebe es keine gemeinsame, weil
      dessen align-items die Beschriftung an die Unterkante zieht. */
   .knopftext { display: block; white-space: nowrap; }
-  button, a.sendeknopf { white-space: nowrap; }
+  button, a.knopf { white-space: nowrap; }
   .taste { margin-left: .32em; font-size: 1.2em; opacity: .7; }
 
   .hinweis { padding: .85rem 1rem; margin: 0 0 1.5rem;
@@ -834,7 +837,7 @@ const STYLES = `
     h2 { font-size: 1rem; }
     h2.rubrik { font-size: 1.05rem; margin-top: 2rem; }
     .prosa .einstieg { font-size: 1.05rem; }
-    button, a.sendeknopf { font-size: .95rem; padding: .7rem .6rem .6rem .9rem; }
+    button, a.knopf { font-size: .95rem; padding: .7rem .6rem .6rem .9rem; }
     .kennzahl-wert { font-size: 1.6rem; }
     .kennzahl-wert.klein { font-size: 1rem; }
     .balkenname { font-size: .8rem; }
@@ -853,7 +856,7 @@ const STYLES = `
     h2 { font-size: 1rem; }
     h2.rubrik { font-size: 1.05rem; margin-top: 2rem; }
     .prosa .einstieg { font-size: 1.05rem; }
-    button, a.sendeknopf { font-size: .95rem; padding: .7rem .6rem .6rem .9rem; }
+    button, a.knopf { font-size: .95rem; padding: .7rem .6rem .6rem .9rem; }
     .kennzahl-wert { font-size: 1.6rem; }
     .kennzahl-wert.klein { font-size: 1rem; }
     .balkenname { font-size: .8rem; }
@@ -909,11 +912,17 @@ function datumKurz(): string {
 /* Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com
    License - https://fontawesome.com/license/free (Icons: CC BY 4.0)
    Copyright 2024 Fonticons, Inc. — Pfade byteidentisch aus svgs/solid/
-   uebernommen (file-pen.svg, envelope-open-text.svg), als inline SVG statt
+   uebernommen (solid/file-pen.svg, solid/envelope-open-text.svg,
+   brands/apple.svg), als inline SVG statt
    Webfont (Projektregel: keine Webfonts). */
 export const FilePenIcon: FC = () => (
   <svg class="navicon" viewBox="0 0 576 512" aria-hidden="true">
     <path fill="currentColor" d="M0 64C0 28.7 28.7 0 64 0L224 0l0 128c0 17.7 14.3 32 32 32l128 0 0 125.7-86.8 86.8c-10.3 10.3-17.5 23.1-21 37.2l-18.7 74.9c-2.3 9.2-1.8 18.8 1.3 27.5L64 512c-35.3 0-64-28.7-64-64L0 64zm384 64l-128 0L256 0 384 128zM549.8 235.7l14.4 14.4c15.6 15.6 15.6 40.9 0 56.6l-29.4 29.4-71-71 29.4-29.4c15.6-15.6 40.9-15.6 56.6 0zM311.9 417L441.1 287.8l71 71L382.9 487.9c-4.1 4.1-9.2 7-14.9 8.4l-60.1 15c-5.5 1.4-11.2-.2-15.2-4.2s-5.6-9.7-4.2-15.2l15-60.1c1.4-5.6 4.3-10.8 8.4-14.9z" />
+  </svg>
+);
+export const AppleIcon: FC = () => (
+  <svg class="navicon schmal" viewBox="0 0 384 512" aria-hidden="true">
+    <path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
   </svg>
 );
 export const EnvelopeOpenTextIcon: FC = () => (

@@ -467,7 +467,7 @@ export const CapturePreview: FC<{
       /* Besucher senden mit dem eigenen Mail-Programm — Betreff und Text
          sind fertig vorbefuellt, die Sendemethode ist der einzige Unterschied. */
       <p>
-        <a class="sendeknopf" href={mailtoHref}>
+        <a class="knopf sendeknopf" href={mailtoHref}>
           <span class="knopftext">
             <EnvelopeOpenTextIcon /> Im Mail-Programm senden
           </span>

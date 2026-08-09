@@ -1,5 +1,5 @@
 import type { FC } from "hono/jsx";
-import { Layout } from "./layout.js";
+import { AppleIcon, Layout } from "./layout.js";
 
 /**
  * Die Startseite. Oeffentlich, weil sie erklaert, was ein Empfaenger einer
@@ -69,13 +69,16 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
       <div class="zusammenhalt">
         <h2>Zum Mitnehmen</h2>
         <p>
-          <a href="https://www.icloud.com/shortcuts/84f1ff381c1140b1b07711738869d1b7" target="_blank" rel="noopener">
-            Kurzbefehl beziehen
-          </a>{" "}
-          <button type="button" id="kopiere-kurzbefehl-link" class="zeilenknopf">
-            Link kopieren
-          </button>{" "}
-          <span id="kopier-hinweis" class="zaehler" aria-live="polite" />
+          <a
+            class="knopf"
+            href="https://www.icloud.com/shortcuts/84f1ff381c1140b1b07711738869d1b7"
+            target="_blank"
+            rel="noopener"
+          >
+            <span class="knopftext">
+              <AppleIcon /> Kurzbefehl beziehen
+            </span>
+          </a>
         </p>
         <p class="qr-zeile">
           <a href="https://www.icloud.com/shortcuts/84f1ff381c1140b1b07711738869d1b7" target="_blank" rel="noopener">
@@ -167,14 +170,7 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
       () => { lesezeichenHinweis.textContent = "Kopieren nicht erlaubt — bitte von Hand markieren."; },
     );
   });
-
-  const hinweis = document.getElementById("kopier-hinweis");
-  document.getElementById("kopiere-kurzbefehl-link").addEventListener("click", () => {
-    navigator.clipboard.writeText("https://www.icloud.com/shortcuts/84f1ff381c1140b1b07711738869d1b7").then(
-      () => { hinweis.textContent = "kopiert"; hinweis.classList.add("erkannt"); },
-      () => { hinweis.textContent = "Kopieren nicht erlaubt — bitte den Link von Hand kopieren."; },
-    );
-  });`,
+`,
       }}
     />
   </Layout>
