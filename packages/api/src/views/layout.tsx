@@ -627,13 +627,20 @@ const STYLES = `
   /* Ganz unten, unter dem Blatt: ein leiser Hinweis auf die Herkunft. Er
      klebt nicht und draengt sich nicht vor -- eine Zeile im Ton eines
      Impressums, abgesetzt durch eine feine Linie. */
-  .fusszeile { margin-top: 3.5rem; padding-top: .9rem; padding-bottom: 1.75rem;
-    border-top: 1px solid var(--linie); text-align: center;
-    font: .7rem/1.6 var(--mono); letter-spacing: .04em; color: var(--rand); }
-  .fusszeile a { color: inherit; text-decoration-color: var(--linie);
-    text-underline-offset: .25em; }
-  .fusszeile a:hover, .fusszeile a:focus-visible {
-    color: var(--tinte); text-decoration-color: var(--korrektur); }
+  .fusszeile { margin-top: 3.5rem; }
+  /* Der Strich sitzt am inneren Kasten, nicht am aeusseren: sonst liefe er
+     um den Innenabstand des Blattes breiter als alles darueber. */
+  .fussinhalt { margin: 0; padding: 1rem 0 2rem;
+    border-top: 2px solid var(--linie); text-align: center;
+    font: .8rem/1.6 var(--mono); letter-spacing: .05em;
+    color: color-mix(in srgb, var(--rand) 70%, var(--tinte)); }
+  /* Die Adresse ist der Zweck der Zeile: sie steht in Tinte und traegt den
+     Rotstift-Unterstrich der uebrigen Verweise. */
+  .fussinhalt a { color: var(--tinte); font-weight: 700;
+    text-decoration-color: var(--korrektur); text-decoration-thickness: 1px;
+    text-underline-offset: .28em; }
+  .fussinhalt a:hover, .fussinhalt a:focus-visible {
+    text-decoration-thickness: 2px; }
 
   /* Fliesstext der Methodik schmal halten: lange Zeilen liest niemand. */
   .prosa-schmal { max-width: 40rem; }
@@ -986,10 +993,12 @@ export const Layout: FC<
         {children}
       </div>
       <footer class="fusszeile">
-        Ein offenes Werkzeug — Quelltext auf{" "}
-        <a href="https://github.com/01msmr/corrections" target="_blank" rel="noopener">
-          github.com/01msmr/corrections
-        </a>
+        <p class="fussinhalt">
+          Ein offenes Werkzeug — Quelltext auf{" "}
+          <a href="https://github.com/01msmr/corrections" target="_blank" rel="noopener">
+            github.com/01msmr/corrections
+          </a>
+        </p>
       </footer>
       <script
         dangerouslySetInnerHTML={{
