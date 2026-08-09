@@ -61,6 +61,11 @@ const STYLES = `
        klebenden Band. Didot und Bodoni liegen auf Apple-Systemen, Georgia
        faengt den Rest ab. */
     --titel: "Didot", "Bodoni 72", Didot, Georgia, "Times New Roman", serif;
+    /* Die beiden Satzspiegel: das Blatt traegt Tabellen und Formulare, die
+       Prosaspalte bleibt schmaler, weil lange Zeilen niemand liest. Kopf und
+       Fusszeile richten sich nach dem, was auf der Seite steht. */
+    --mass-blatt: 72rem;
+    --mass-prosa: 62rem;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -95,14 +100,19 @@ const STYLES = `
   /* Faellt die Ueberschrift weg, weil sie den Navigationspunkt wiederholt, muss
      ihr Raum ersetzt werden -- sonst beginnt das Formular direkt unter dem
      Balken. Seiten mit Ueberschrift bringen ihn selbst mit. */
-  .blatt.ohne-titel { padding-top: 1rem; }
+  .blatt.ohne-titel { padding-top: .35rem; }
   /* Die Startseite laeuft wie ein Blatt: ab Tabletbreite zwei gleich breite
      Spalten mit feiner Spaltenlinie, linksbuendig -- Blocksatz ohne
      Silbentrennung reisst Loecher. Vorspann und Rubriken spannen ueber beide
      Spalten, die Rubrik sitzt damit mittig auf der vollen Breite. */
-  .prosa { max-width: 62rem; margin: 0 auto; text-align: left; }
+  .prosa { max-width: var(--mass-prosa); margin: 0 auto; text-align: left; }
   .prosa .einstieg { font-size: 1.2rem; line-height: 1.55; }
   .prosa h2:not(.rubrik) { margin-top: 1.6rem; }
+  /* Steht der Vorspann ganz oben, gehoert er zum Titel und nicht zu einem
+     eigenen Abschnitt: er rueckt dicht unter den Kopf und dicht ueber die
+     Rubrik. */
+  .prosa .einstieg:first-child { margin-top: 0; }
+  .prosa .einstieg:first-child + h2.rubrik { margin-top: 1rem; }
   @media (min-width: 48rem) {
     .prosa { columns: 2; column-gap: 2.75rem; column-rule: 1px solid var(--linie); }
     .prosa .einstieg, .prosa h2.rubrik { column-span: all; }
@@ -179,7 +189,7 @@ const STYLES = `
      ueber die Grenzen des Elternkastens hinaus kleben kann. */
   .klebekopf {
     position: sticky; top: 0; z-index: 5;
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.5rem;
     animation: kopfschatten linear both;
     animation-timeline: scroll(root);
     animation-range: 4rem 8rem;
@@ -316,8 +326,28 @@ const STYLES = `
      Umbruch; der Text schrumpft stattdessen mit der Spalte. */
   .qr-zeile { display: flex; align-items: center; gap: .9rem; }
   .qr-zeile .zaehler { min-width: 0; }
-  .qr { width: 8.5rem; height: 8.5rem; flex: none;
+  .qr { width: 100%; height: auto; display: block;
     background: var(--papier); padding: .35rem; border: 1px solid var(--linie); border-radius: 3px; }
+  /* Der Code ist ein Schalter, kein Knopf im Bleisatz: er traegt nichts als
+     sich selbst. Angetippt waechst er auf Lesegroesse und legt sich beim
+     naechsten Klick wieder ab -- angegeben wird nur die Breite, die Hoehe
+     folgt dem Quadrat. */
+  .qrschalter { display: block; box-sizing: border-box;
+    /* Breite und flex-basis zusammen: als Flex-Element bemisst sich der
+       Schalter nach der Basis, ein Uebergang allein auf width bliebe
+       stehen. */
+    width: 8.5rem; flex: 0 0 8.5rem;
+    margin: 0; padding: 0; border: 0; font: inherit; color: inherit;
+    max-width: 100%; cursor: zoom-in;
+    transition: width .2s ease, flex-basis .2s ease; }
+  /* Die Bleisatz-Gestalt der Knoepfe gilt hier nicht: der Code steht fuer
+     sich, ohne Klotz, Kante und Schatten -- in jedem Zustand. */
+  .qrschalter, .qrschalter:hover, .qrschalter:focus-visible, .qrschalter:active {
+    background: none; transform: none; box-shadow: none; }
+  .qrschalter:focus-visible { outline: 2px solid var(--korrektur); outline-offset: 3px; }
+  /* Schlichte Laenge statt min(): Chrome haelt den Uebergang sonst am
+     Anfangswert fest. Die Begrenzung uebernimmt max-width oben. */
+  .qrschalter.gross { width: 20rem; flex-basis: 20rem; cursor: zoom-out; }
 
   h1 { font: 700 1.9rem/1.25 var(--mono); margin: 0 0 1.25rem; letter-spacing: .01em; }
   /* 1.2rem statt 1.15: ab 18.66px fett gilt Text als gross, und dort genuegt
@@ -334,7 +364,8 @@ const STYLES = `
        geringerem Schwarzanteil, sonst saenke er in den dunklen Grund. */
     color: var(--balkenschrift);
     background: var(--balkengrund);
-    border-radius: 4px;
+    /* Eckig wie ein gesetzter Balken: eine Rundung machte ihn zur Schaltflaeche. */
+    border-radius: 0;
     /* Optisch mittig statt rechnerisch: Zentriert wird zwischen Versaloberkante
        und Grundlinie, denn so nimmt das Auge den Textkoerper wahr — ob zufaellig
        ein „g" vorkommt, darf die Lage nicht verschieben. Die Zeilenbox reserviert
@@ -447,6 +478,10 @@ const STYLES = `
      einer anderen Sprechebene als die Beschriftung links daneben. */
   .zaehler { font: italic 400 .72rem/1.4 var(--sans); letter-spacing: 0;
     text-transform: none; color: var(--rand); }
+  /* Ganze Absaetze in dieser Nebenstimme wollen gelesen werden, nicht nur
+     ueberflogen: sie bekommen Lesegroesse. Die kurzen Stempel an den
+     Formularfeldern bleiben klein. */
+  p.zaehler { font-size: .9rem; line-height: 1.55; }
   /* Automatisch befuellte Felder tragen ihren Hinweis als Stempel: hell auf
      Karmin, eckig wie die Ressortmarke, kursiv wie die uebrigen Zusaetze.
      Die Aussage steht im Text selbst, die Farbe traegt sie also nie allein. */
@@ -539,6 +574,13 @@ const STYLES = `
   .knopftext { display: block; white-space: nowrap; }
   button, a.knopf { white-space: nowrap; }
   .taste { margin-left: .32em; font-size: 1.2em; opacity: .7; }
+  /* Knoepfe im Fliesstext sind keine Formularabschluesse: sie stehen mitten
+     im Absatz, tragen deshalb kleinere Schrift und ihre Beschriftung mittig
+     statt unten rechts. Mittig heisst hier optisch -- zentriert wird die
+     Versalienhoehe, nicht die Zeilenbox; der Ausgleich steht in den
+     Innenabstaenden (gemessen). */
+  button.zeilenknopf, a.zeilenknopf { align-items: center; justify-content: center;
+    font-size: 1rem; padding: .62rem 1.05rem .58rem; }
 
   .hinweis { padding: .85rem 1rem; margin: 0 0 1.5rem;
     background: var(--feld); border: 1px solid var(--linie);
@@ -750,7 +792,19 @@ const STYLES = `
      ruecken nebeneinander. Darunter bleibt es einspaltig -- untereinander sind
      zwei kurze Textfelder besser lesbar als zwei sehr schmale. */
   @media (min-width: 62rem) {
-    .blatt, .kopfinhalt, .fusszeile { max-width: 72rem; }
+    .blatt, .kopfinhalt, .fusszeile { max-width: var(--mass-blatt); }
+    /* Steht auf der Seite die schmalere Prosaspalte, ruecken die freistehenden
+       Marken des Kopfes und der Strich der Fusszeile auf deren Kanten -- sonst
+       liefen sie sichtbar ueber den Inhalt hinaus. */
+    body:has(.prosa) .klebemarke {
+      left: calc((var(--mass-blatt) - var(--mass-prosa)) / 2); }
+    body:has(.prosa) .datum {
+      right: calc((var(--mass-blatt) - var(--mass-prosa)) / 2); }
+    body:has(.prosa) .fusszeile { max-width: calc(var(--mass-prosa) + 2.5rem); }
+    /* Die Ressortpille haengt an der Navigation, die schon im Inhaltskasten
+       steht -- ihr Versatz ist deshalb um dessen Innenabstand kleiner. */
+    body:has(.prosa) .randressorts {
+      right: calc((var(--mass-blatt) - var(--mass-prosa)) / 2 - 1.25rem); }
     /* Hauptspalte traegt Artikel und Korrektur, Nebenspalte die Einordnung.
        Die Aufteilung folgt der Arbeit, nicht dem verfuegbaren Platz. */
     .arbeitsflaeche { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 0 2.25rem; }

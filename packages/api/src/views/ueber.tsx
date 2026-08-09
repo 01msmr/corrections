@@ -27,12 +27,11 @@ const KurzbefehlQr: FC = () => (
 export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) => (
   <Layout title="In eigener Sache" aktiv="ueber" betreiber={betreiber}>
     <div class="prosa">
-      <h2 class="rubrik">In eigener Sache</h2>
       <p class="einstieg">
-        Korrekturen sammelt, was beim Lesen leise hängen bleibt: kleine Textfehler in
-        Online-Artikeln. Es reicht sie freundlich an die zuständige Redaktion weiter — und
-        hält geduldig fest, was daraus wird.
+        Kleine Textfehler in Online-Artikeln: an die Redaktion gemeldet und festgehalten,
+        was daraus wird.
       </p>
+      <h2 class="rubrik">In eigener Sache</h2>
 
       <h2>Schneller melden</h2>
       <p>
@@ -47,7 +46,7 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
       </p>
       <p>
         <button type="button" id="kopiere-lesezeichen" class="zeilenknopf">
-          JavaScript für das Bookmarklet
+          <span class="knopftext">JavaScript für das Bookmarklet</span>
         </button>{" "}
         <span id="lesezeichen-hinweis" class="zaehler" aria-live="polite" />
       </p>
@@ -67,10 +66,9 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
       </p>
 
       <div class="zusammenhalt">
-        <h2>Zum Mitnehmen</h2>
         <p>
           <a
-            class="knopf"
+            class="knopf zeilenknopf"
             href="https://www.icloud.com/shortcuts/84f1ff381c1140b1b07711738869d1b7"
             target="_blank"
             rel="noopener"
@@ -81,9 +79,9 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
           </a>
         </p>
         <p class="qr-zeile">
-          <a href="https://www.icloud.com/shortcuts/84f1ff381c1140b1b07711738869d1b7" target="_blank" rel="noopener">
+          <button type="button" id="qr-schalter" class="qrschalter" aria-expanded="false">
             <KurzbefehlQr />
-          </a>
+          </button>
           <span class="zaehler">
             Mit der iPhone-Kamera abfotografieren.
             <br />
@@ -169,6 +167,15 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
       () => { lesezeichenHinweis.textContent = "kopiert"; lesezeichenHinweis.classList.add("erkannt"); },
       () => { lesezeichenHinweis.textContent = "Kopieren nicht erlaubt — bitte von Hand markieren."; },
     );
+  });
+
+  /* Der QR-Code laesst sich antippen und waechst dann auf Lesegroesse --
+     abfotografiert wird er aus der Ferne, klein ist er dafuer oft zu fein.
+     Ein zweiter Klick legt ihn wieder ab. */
+  const qrSchalter = document.getElementById("qr-schalter");
+  qrSchalter.addEventListener("click", () => {
+    const gross = qrSchalter.classList.toggle("gross");
+    qrSchalter.setAttribute("aria-expanded", String(gross));
   });
 `,
       }}
