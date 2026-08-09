@@ -46,3 +46,23 @@ export function canonicalizeUrl(raw: string): { canonical: string; host: string 
 
   return { canonical, host: new URL(canonical).hostname };
 }
+
+/**
+ * Steht die Antwort noch an der angefragten Stelle? Zwischenseiten --
+ * Zustimmungsfenster, Anmeldung, Bezahlschranke -- leiten den Abruf auf eine
+ * andere Adresse um; der Artikeltext kommt dann nie an. Verglichen wird der
+ * Pfad, nicht die Abfrage: ein angehaengtes `?from=…` oder ein Tracking-
+ * Parameter aendert nichts daran, dass man am Ziel ist.
+ */
+export function gleicherOrt(angefragt: string, erreicht: string): boolean {
+  try {
+    const a = new URL(angefragt);
+    const b = new URL(erreicht);
+    const pfad = (u: URL): string => u.pathname.replace(/\/+$/, "");
+    return a.host === b.host && pfad(a) === pfad(b);
+  } catch {
+    /* Unlesbare Adresse: lieber annehmen, dass alles stimmt, als eine
+       brauchbare Pruefung zu verweigern. */
+    return true;
+  }
+}

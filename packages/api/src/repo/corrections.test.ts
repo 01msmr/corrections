@@ -29,7 +29,12 @@ function deps(overrides: Partial<CreateDeps> = {}): CreateDeps {
   return {
     db,
     mailer: createJsonMailer("korrektur@example.tld"),
-    fetchArticle: async (): Promise<FetchResult> => ({ ok: true, status: 200, html: HTML }),
+    fetchArticle: async (): Promise<FetchResult> => ({
+      ok: true,
+      status: 200,
+      html: HTML,
+      url: "https://beispiel-zeitung.de/politik/artikel-123",
+    }),
     now: () => NOW,
     baseUrl: "https://korrektur.example.tld",
     ...overrides,

@@ -74,7 +74,7 @@ const erkennungScript = (basis: string) => `
     setzeHinweis(ueberschriftHinweis, "wird geholt …", false);
     fetch("${basis}/ueberschrift", {
       method: "POST",
-      body: new URLSearchParams({ url: url.value }),
+      body: new URLSearchParams({ url: url.value, text: falsch.value }),
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((daten) => {
@@ -226,7 +226,7 @@ const erkennungScript = (basis: string) => `
     setzeHinweis(pruefHinweis, "wird durchgesehen …", false);
     fetch("${basis}/pruefen", {
       method: "POST",
-      body: new URLSearchParams({ url: url.value }),
+      body: new URLSearchParams({ url: url.value, text: falsch.value }),
     })
       .then((res) => (res.status === 429 ? "kontingent" : res.ok ? res.json() : null))
       .then((daten) => {
@@ -236,13 +236,24 @@ const erkennungScript = (basis: string) => `
         }
         const funde = daten && Array.isArray(daten.funde) ? daten.funde : [];
         zeigeTreffer(funde);
-        setzeHinweis(
-          pruefHinweis,
-          funde.length === 0
+        /* "nichts gefunden" und "nichts zu prüfen" sind zweierlei: viele
+           Seiten liefern Servern nur ein Zustimmungsfenster aus. Dann sagt
+           die Antwort, was statt des Artikels geprüft wurde. */
+        const quelle = daten && daten.quelle;
+        const zahl = funde.length + " Stelle" + (funde.length === 1 ? "" : "n");
+        let text;
+        if (quelle === "keine") {
+          text = "Der Artikel ließ sich nicht lesen — oft ein Zustimmungsfenster. "
+            + "Trag die Fundstelle ein, dann sehe ich wenigstens die durch.";
+        } else if (quelle === "fundstelle") {
+          text = "Der Artikel ließ sich nicht lesen — geprüft wurde nur die Fundstelle: "
+            + (funde.length === 0 ? "nichts gefunden" : zahl + " zum Ansehen");
+        } else {
+          text = funde.length === 0
             ? "nichts gefunden — was nicht heißt, dass nichts drin steht"
-            : funde.length + " Stelle" + (funde.length === 1 ? "" : "n") + " zum Ansehen",
-          funde.length > 0,
-        );
+            : zahl + " zum Ansehen";
+        }
+        setzeHinweis(pruefHinweis, text, funde.length > 0);
       })
       .catch(() => { setzeHinweis(pruefHinweis, "Prüfung nicht erreichbar.", false); })
       .finally(() => { pruefKnopf.disabled = false; });

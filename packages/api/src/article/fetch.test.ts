@@ -14,7 +14,12 @@ describe("fetchArticle", () => {
       }),
     );
     const result = await fetchArticle("https://beispiel-zeitung.de/a", { fetchImpl: stub });
-    expect(result).toEqual({ ok: true, status: 200, html: "<html><body>Text</body></html>" });
+    expect(result).toEqual({
+      ok: true,
+      status: 200,
+      html: "<html><body>Text</body></html>",
+      url: "https://beispiel-zeitung.de/a",
+    });
   });
 
   it("meldet http bei Fehlerstatus", async () => {
@@ -32,7 +37,12 @@ describe("fetchArticle", () => {
       }),
     );
     const result = await fetchArticle("https://beispiel-zeitung.de/a", { fetchImpl: stub });
-    expect(result).toEqual({ ok: true, status: 200, html: "<html><body>Text</body></html>" });
+    expect(result).toEqual({
+      ok: true,
+      status: 200,
+      html: "<html><body>Text</body></html>",
+      url: "https://beispiel-zeitung.de/a",
+    });
   });
 
   it("meldet not_html bei fremdem Content-Type", async () => {
@@ -60,5 +70,22 @@ describe("fetchArticle", () => {
     }) as unknown as typeof fetch;
     const result = await fetchArticle("https://beispiel-zeitung.de/a", { fetchImpl: stub });
     expect(result).toEqual({ ok: false, status: null, reason: "network" });
+  });
+});
+
+describe("erreichte Adresse", () => {
+  it("meldet die Adresse nach der Weiterleitung, nicht die angefragte", async () => {
+    /* Zwischenseiten -- Zustimmungsfenster, Anmeldung -- antworten mit 200
+       an anderer Stelle. Nur daran laesst sich das erkennen. */
+    const ziel = "https://beispiel-zeitung.de/zustimmung/auswahl.html";
+    const antwort = new Response("<html><body>Bitte zustimmen</body></html>", {
+      status: 200,
+      headers: { "content-type": "text/html" },
+    });
+    Object.defineProperty(antwort, "url", { value: ziel });
+    const result = await fetchArticle("https://beispiel-zeitung.de/a", {
+      fetchImpl: (async () => antwort) as unknown as typeof fetch,
+    });
+    expect(result.ok && result.url).toBe(ziel);
   });
 });

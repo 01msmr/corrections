@@ -32,6 +32,15 @@ const antwortSchema = z.object({
 
 /** Laenge, ab der die oeffentliche API abweist (20 KB je Anfrage). */
 const TEXT_GRENZE = 18_000;
+
+/**
+ * Kuerzer als das ist kein Artikel, sondern eine Zwischenseite --
+ * Zustimmungsfenster, Bezahlschranke, Fehlermeldung. Der Wert ist bewusst
+ * grosszuegig: der kuerzeste gemeldete Artikel im Bestand hat rund 1500
+ * Zeichen, Golems Zustimmungsseite rund 1660 -- entschieden wird deshalb
+ * zuerst an der Adresse (gleicherOrt), diese Schwelle faengt nur den Rest.
+ */
+export const ARTIKEL_MINDESTZEICHEN = 900;
 const ZEIT_GRENZE_MS = 8_000;
 
 export interface PruefDeps {

@@ -179,8 +179,21 @@ describe("Fehlerpruefung (/pruefen)", () => {
         headers: { ...FORM, authorization: AUTH },
       });
       expect(res.status).toBe(200);
-      await expect(res.json()).resolves.toEqual({ funde: [] });
+      await expect(res.json()).resolves.toEqual({ funde: [], quelle: "keine" });
     }
+  });
+
+  it("prueft ersatzweise die Fundstelle, wenn der Artikel nicht zu lesen ist", async () => {
+    /* Viele Seiten liefern Servern nur ein Zustimmungsfenster aus. Dann darf
+       die Antwort nicht "nichts gefunden" heissen -- geprueft wird, was im
+       Formular steht. */
+    const res = await app().request("/neu/pruefen", {
+      ...anfrage({ url: "https://x.test/a", text: "Der Mietwgaen stand bereit." }),
+      headers: { ...FORM, authorization: AUTH },
+    });
+    expect(res.status).toBe(200);
+    const daten = (await res.json()) as { quelle: string };
+    expect(daten.quelle).toBe("fundstelle");
   });
 
   it("gibt Besuchern zwei Pruefungen am Tag und lehnt die dritte ab", async () => {

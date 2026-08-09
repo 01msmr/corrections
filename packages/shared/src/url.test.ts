@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canonicalizeUrl } from "./url.js";
+import { canonicalizeUrl, gleicherOrt } from "./url.js";
 
 describe("canonicalizeUrl", () => {
   it("entfernt Tracking-Parameter und Fragment", () => {
@@ -45,5 +45,31 @@ describe("canonicalizeUrl", () => {
   it("gibt null zurück bei ungültiger Eingabe", () => {
     expect(canonicalizeUrl("kein-url")).toBeNull();
     expect(canonicalizeUrl("ftp://example.de/x")).toBeNull();
+  });
+});
+
+describe("gleicherOrt", () => {
+  const artikel = "https://www.golem.de/news/wochenrueckblick-2506-197242.html";
+
+  it("erkennt die Umleitung auf ein Zustimmungsfenster", () => {
+    /* Genau so antwortet Golem auf einen Abruf ohne Zustimmung: Status 200,
+       aber an ganz anderer Stelle. Wer nur den Status prueft, haelt die
+       Auswahlseite fuer den Artikel. */
+    expect(
+      gleicherOrt(artikel, "https://www.golem.de/sonstiges/zustimmung/auswahl.html?from=x"),
+    ).toBe(false);
+  });
+
+  it("laesst angehaengte Parameter und einen Schlussstrich gelten", () => {
+    expect(gleicherOrt(artikel, artikel + "?utm_source=rss")).toBe(true);
+    expect(gleicherOrt(artikel + "/", artikel)).toBe(true);
+  });
+
+  it("erkennt den Wechsel des Hosts", () => {
+    expect(gleicherOrt(artikel, "https://consent.golem.de/news/wochenrueckblick-2506-197242.html")).toBe(false);
+  });
+
+  it("nimmt bei unlesbarer Adresse an, dass alles stimmt", () => {
+    expect(gleicherOrt("kein-url", "auch-keine")).toBe(true);
   });
 });

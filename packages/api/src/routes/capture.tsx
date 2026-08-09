@@ -5,6 +5,7 @@ import {
   detectErrorCount,
   detectErrorTypeKey,
   detectSeverity,
+  gleicherOrt,
   newCorrectionSchema,
 } from "@korrektur/shared";
 import { createId } from "@paralleldrive/cuid2";
@@ -16,7 +17,7 @@ import { extractArticle } from "../article/extract.js";
 import { resolveOutletByHost } from "../repo/outlets.js";
 import { composeMail } from "../dispatch/compose.js";
 import { bucheBesucherPruefung } from "../pruefung/kontingent.js";
-import { pruefeText } from "../pruefung/languagetool.js";
+import { ARTIKEL_MINDESTZEICHEN, pruefeText } from "../pruefung/languagetool.js";
 import { CaptureForm, CapturePreview, CaptureResult } from "../views/capture.js";
 
 /**
@@ -141,14 +142,32 @@ export function captureRoutes(
 
     const body = await c.req.parseBody();
     const canon = canonicalizeUrl(typeof body["url"] === "string" ? body["url"] : "");
-    if (!canon) return c.json({ funde: [] });
+    const fundstelle = typeof body["text"] === "string" ? body["text"].trim() : "";
+    if (!canon) return c.json({ funde: [], quelle: "keine" });
 
-    const geholt = await deps.fetchArticle(canon.canonical);
-    if (!geholt.ok) return c.json({ funde: [] });
-    const artikel = extractArticle(geholt.html, canon.canonical);
-    if (!artikel) return c.json({ funde: [] });
+    /* Der Artikeltext -- oder null, wenn wir ihn nicht bekommen haben. Das
+       kommt haeufiger vor, als es aussieht: viele Seiten leiten Abrufe auf
+       ein Zustimmungsfenster um und liefern dort 200 mit ein paar Zeilen
+       Text. Wer das nicht bemerkt, prueft die Zustimmungsseite und meldet
+       "nichts gefunden". */
+    const artikelText = await (async (): Promise<string | null> => {
+      const geholt = await deps.fetchArticle(canon.canonical);
+      if (!geholt.ok) return null;
+      if (!gleicherOrt(canon.canonical, geholt.url)) return null;
+      const artikel = extractArticle(geholt.html, canon.canonical);
+      if (!artikel) return null;
+      return artikel.text.trim().length < ARTIKEL_MINDESTZEICHEN ? null : artikel.text;
+    })();
 
-    return c.json({ funde: await pruefeText(artikel.text, deps.pruefung) });
+    if (artikelText !== null) {
+      return c.json({ funde: await pruefeText(artikelText, deps.pruefung), quelle: "artikel" });
+    }
+    /* Ersatzweise die Fundstelle: sie steht im Formular und braucht keinen
+       Abruf. Weniger als der ganze Artikel, aber besser als nichts. */
+    if (fundstelle.length > 0) {
+      return c.json({ funde: await pruefeText(fundstelle, deps.pruefung), quelle: "fundstelle" });
+    }
+    return c.json({ funde: [], quelle: "keine" });
   };
   app.post("/neu/pruefen", pruefHandler(false));
   app.post("/hinweis/pruefen", pruefHandler(true));

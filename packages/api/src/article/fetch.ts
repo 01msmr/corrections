@@ -4,7 +4,9 @@ const USER_AGENT =
   "KorrekturTracker/1.0 (+https://korrekturen.msmr.co/anleitung; Fehlermeldungen an Redaktionen)";
 
 export type FetchResult =
-  | { ok: true; status: number; html: string }
+  /** `url` ist die Adresse **nach** allen Weiterleitungen -- daran erkennt
+      der Aufrufer, ob er den Artikel bekommen hat oder eine Zwischenseite. */
+  | { ok: true; status: number; html: string; url: string }
   | {
       ok: false;
       status: number | null;
@@ -38,7 +40,7 @@ export async function fetchArticle(
       return { ok: false, status: response.status, reason: "too_large" };
     }
 
-    return { ok: true, status: response.status, html };
+    return { ok: true, status: response.status, html, url: response.url || url };
   } catch (error) {
     const aborted = error instanceof Error && error.name === "AbortError";
     return { ok: false, status: null, reason: aborted ? "timeout" : "network" };

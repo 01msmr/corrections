@@ -173,7 +173,7 @@ const STYLES = `
     position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%);
     font: 400 1.05rem/1.2 var(--titel); letter-spacing: .05em;
     text-transform: uppercase; color: var(--linie);
-    pointer-events: none; opacity: 0;
+    text-decoration: none; opacity: 0;
     animation: markeauf linear both;
     animation-timeline: scroll(root);
     animation-range: 2.5rem 4.5rem;
@@ -181,10 +181,17 @@ const STYLES = `
   /* Im Band traegt der getilgte Buchstabe die Bandfarbe, nicht die Tinte --
      sonst verschwaende er im Schwarz. */
   .klebemarke .tilgung { color: inherit; }
+  /* Unsichtbar ist sie auch kein Ziel: pointer-events wandert mit, damit am
+     Seitenanfang niemand ins Leere klickt. */
   @keyframes markeauf {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; pointer-events: none; }
+    to { opacity: 1; pointer-events: auto; }
   }
+  /* Wie die grosse Marke: beim Zeigen der Rotstift-Unterstrich. */
+  .klebemarke:hover, .klebemarke:focus-visible {
+    color: var(--papier); text-decoration: underline;
+    text-decoration-color: var(--korrektur); text-decoration-thickness: 2px;
+    text-underline-offset: .28em; }
   /* Untertitelband und Ressortleiste bleiben beim Scrollen gemeinsam stehen;
      nur der Titel scrollt weg wie bei einer Zeitung. Der Schatten kommt erst,
      wenn der Titel darueber aus dem Bild ist -- ueber eine Scroll-Zeitachse,
@@ -1036,9 +1043,9 @@ export const Layout: FC<
       <div class="klebekopf">
         <div class="datumszeile">
           <div class="kopfinhalt">
-            <span class="klebemarke" aria-hidden="true">
+            <a class="klebemarke" href="/" aria-label="Korrekturen" draggable={false}>
               Korrektu<span class="tilgung">h</span>ren
-            </span>
+            </a>
             <span class="untertitel">
               Blatt zur Textpflege<span class="untertiteltrenner"> • </span>
               <span class="untertitelrest">Unabhängig • Überparteilich</span>
