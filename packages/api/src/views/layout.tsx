@@ -82,7 +82,9 @@ const STYLES = `
 
   * { box-sizing: border-box; }
   body {
-    margin: 0; padding: 0 0 4rem;
+    /* Unten nur ein schmaler Rand: den Abstand zum Inhalt bringt die
+       Fusszeile selbst mit, darunter soll die Seite enden. */
+    margin: 0; padding: 0 0 .5rem;
     background: var(--papier); color: var(--tinte);
     font: 16px/1.6 var(--sans);
   }
@@ -630,17 +632,21 @@ const STYLES = `
   .fusszeile { margin-top: 3.5rem; }
   /* Der Strich sitzt am inneren Kasten, nicht am aeusseren: sonst liefe er
      um den Innenabstand des Blattes breiter als alles darueber. */
-  .fussinhalt { margin: 0; padding: 1rem 0 2rem;
+  /* Unter der Zeile bleibt nur ein schmaler Rand: die Seite soll dort enden,
+     nicht ausklingen. */
+  .fussinhalt { margin: 0; padding: 1rem 0 .6rem;
     border-top: 2px solid var(--linie); text-align: center;
     font: .8rem/1.6 var(--mono); letter-spacing: .05em;
     color: color-mix(in srgb, var(--rand) 70%, var(--tinte)); }
   /* Die Adresse ist der Zweck der Zeile: sie steht in Tinte und traegt den
      Rotstift-Unterstrich der uebrigen Verweise. */
   .fussinhalt a { color: var(--tinte); font-weight: 700;
-    text-decoration-color: var(--korrektur); text-decoration-thickness: 1px;
-    text-underline-offset: .28em; }
+    text-decoration-color: color-mix(in srgb, var(--korrektur) 40%, transparent);
+    text-decoration-thickness: 1px; text-underline-offset: .28em;
+    transition: text-decoration-color .15s ease, text-decoration-thickness .15s ease; }
+  /* In Ruhe nur angedeutet, beim Zeigen der volle Rotstift. */
   .fussinhalt a:hover, .fussinhalt a:focus-visible {
-    text-decoration-thickness: 2px; }
+    text-decoration-color: var(--korrektur); text-decoration-thickness: 2px; }
 
   /* Fliesstext der Methodik schmal halten: lange Zeilen liest niemand. */
   .prosa-schmal { max-width: 40rem; }
@@ -994,7 +1000,7 @@ export const Layout: FC<
       </div>
       <footer class="fusszeile">
         <p class="fussinhalt">
-          Ein offenes Werkzeug — Quelltext auf{" "}
+          Textkorrekturen melden und tracken — Quelltext auf{" "}
           <a href="https://github.com/01msmr/corrections" target="_blank" rel="noopener">
             github.com/01msmr/corrections
           </a>
