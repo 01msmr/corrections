@@ -89,7 +89,7 @@ const STYLES = `
   /* Der Kopf laeuft ueber die volle Breite, damit sein Schatten keine Kanten
      nach links und rechts wirft; ausgerichtet wird der Inhalt darin auf
      dieselbe Spalte wie der Rest der Seite. */
-  .blatt, .kopfinhalt { max-width: 44rem; margin: 0 auto; padding: 0 1.25rem; }
+  .blatt, .kopfinhalt, .fusszeile { max-width: 44rem; margin: 0 auto; padding: 0 1.25rem; }
   /* Faellt die Ueberschrift weg, weil sie den Navigationspunkt wiederholt, muss
      ihr Raum ersetzt werden -- sonst beginnt das Formular direkt unter dem
      Balken. Seiten mit Ueberschrift bringen ihn selbst mit. */
@@ -624,6 +624,17 @@ const STYLES = `
   .verlaufsmonat { font: .68rem/1.4 var(--mono); color: var(--rand); margin-top: .25rem;
     white-space: nowrap; }
 
+  /* Ganz unten, unter dem Blatt: ein leiser Hinweis auf die Herkunft. Er
+     klebt nicht und draengt sich nicht vor -- eine Zeile im Ton eines
+     Impressums, abgesetzt durch eine feine Linie. */
+  .fusszeile { margin-top: 3.5rem; padding-top: .9rem; padding-bottom: 1.75rem;
+    border-top: 1px solid var(--linie); text-align: center;
+    font: .7rem/1.6 var(--mono); letter-spacing: .04em; color: var(--rand); }
+  .fusszeile a { color: inherit; text-decoration-color: var(--linie);
+    text-underline-offset: .25em; }
+  .fusszeile a:hover, .fusszeile a:focus-visible {
+    color: var(--tinte); text-decoration-color: var(--korrektur); }
+
   /* Fliesstext der Methodik schmal halten: lange Zeilen liest niemand. */
   .prosa-schmal { max-width: 40rem; }
   /* Unter der Bilanz laeuft der Vorbehalt zweispaltig wie das Blatt: drei
@@ -723,7 +734,7 @@ const STYLES = `
      ruecken nebeneinander. Darunter bleibt es einspaltig -- untereinander sind
      zwei kurze Textfelder besser lesbar als zwei sehr schmale. */
   @media (min-width: 62rem) {
-    .blatt, .kopfinhalt { max-width: 72rem; }
+    .blatt, .kopfinhalt, .fusszeile { max-width: 72rem; }
     /* Hauptspalte traegt Artikel und Korrektur, Nebenspalte die Einordnung.
        Die Aufteilung folgt der Arbeit, nicht dem verfuegbaren Platz. */
     .arbeitsflaeche { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 0 2.25rem; }
@@ -974,6 +985,12 @@ export const Layout: FC<
         {ohneTitel ? null : <h1>{title}</h1>}
         {children}
       </div>
+      <footer class="fusszeile">
+        Ein offenes Werkzeug — Quelltext auf{" "}
+        <a href="https://github.com/01msmr/corrections" target="_blank" rel="noopener">
+          github.com/01msmr/corrections
+        </a>
+      </footer>
       <script
         dangerouslySetInnerHTML={{
           __html: `
