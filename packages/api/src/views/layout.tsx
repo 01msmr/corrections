@@ -61,11 +61,14 @@ const STYLES = `
        klebenden Band. Didot und Bodoni liegen auf Apple-Systemen, Georgia
        faengt den Rest ab. */
     --titel: "Didot", "Bodoni 72", Didot, Georgia, "Times New Roman", serif;
-    /* Die beiden Satzspiegel: das Blatt traegt Tabellen und Formulare, die
-       Prosaspalte bleibt schmaler, weil lange Zeilen niemand liest. Kopf und
-       Fusszeile richten sich nach dem, was auf der Seite steht. */
-    --mass-blatt: 72rem;
-    --mass-prosa: 62rem;
+    /* Ein Satzspiegel fuer alles: Kopf, Blatt und Fusszeile teilen diese
+       Breite, und die Prosa laeuft darin mit, statt ein zweites Mass
+       aufzumachen. Vorher standen 72rem und 62rem nebeneinander -- die
+       Kanten von Marke, Datum und Fussstrich lagen dann je nach Seite
+       woanders. 73.75rem ergibt 1140px Inhalt: zwei Spalten zu je 570px, und
+       eine Prosaspalte traegt damit rund 74 Zeichen -- die uebliche
+       Obergrenze fuer bequemes Lesen. */
+    --mass: 73.75rem;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -105,7 +108,8 @@ const STYLES = `
      Spalten mit feiner Spaltenlinie, linksbuendig -- Blocksatz ohne
      Silbentrennung reisst Loecher. Vorspann und Rubriken spannen ueber beide
      Spalten, die Rubrik sitzt damit mittig auf der vollen Breite. */
-  .prosa { max-width: var(--mass-prosa); margin: 0 auto; text-align: left; }
+  /* Kein eigenes Mass: die Prosa fuellt die Inhaltsspalte des Blattes. */
+  .prosa { margin: 0 auto; text-align: left; }
   .prosa .einstieg { font-size: 1.2rem; line-height: 1.55; }
   .prosa h2:not(.rubrik) { margin-top: 1.6rem; }
   /* Steht der Vorspann ganz oben, gehoert er zum Titel und nicht zu einem
@@ -591,7 +595,13 @@ const STYLES = `
   /* Die Kennung ist das, wonach spaeter gesucht wird — also im Raster und fett. */
   .kennung { font: 700 1.05em var(--mono); letter-spacing: .04em; }
 
-  table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+  /* Feste Aufteilung: alle Spalten gleich breit, unabhaengig davon, wie lang
+     die laengste Zelle gerade ist. Sonst wandern die Kanten mit dem Bestand
+     und keine zwei Tabellen der Seite fluchten. Die Mailvorschau bringt ihre
+     eigene Tabelle mit und bleibt davon unberuehrt. */
+  table { width: 100%; border-collapse: collapse; margin-top: 1rem;
+    table-layout: fixed; }
+  .mailvorschau table { table-layout: auto; }
   th { font: 1rem/1.3 var(--mono); letter-spacing: .01em; color: var(--tinte); }
   th, td { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid var(--linie);
     vertical-align: middle; }
@@ -699,7 +709,7 @@ const STYLES = `
      kurze Absaetze nebeneinander lesen sich schneller als eine lange Fahne.
      Die Spalten duerfen dafuer weiter als die schmale Lesebreite reichen. */
   @media (min-width: 48rem) {
-    .prosa-zweispaltig { max-width: 62rem; columns: 2; column-gap: 2.75rem;
+    .prosa-zweispaltig { max-width: none; columns: 2; column-gap: 2.75rem;
       column-rule: 1px solid var(--linie); }
     /* Die Absaetze duerfen umbrechen wie im Blatt -- sonst faellt einer ganz
        in die linke Spalte und die Fahnen werden ungleich lang. */
@@ -792,19 +802,7 @@ const STYLES = `
      ruecken nebeneinander. Darunter bleibt es einspaltig -- untereinander sind
      zwei kurze Textfelder besser lesbar als zwei sehr schmale. */
   @media (min-width: 62rem) {
-    .blatt, .kopfinhalt, .fusszeile { max-width: var(--mass-blatt); }
-    /* Steht auf der Seite die schmalere Prosaspalte, ruecken die freistehenden
-       Marken des Kopfes und der Strich der Fusszeile auf deren Kanten -- sonst
-       liefen sie sichtbar ueber den Inhalt hinaus. */
-    body:has(.prosa) .klebemarke {
-      left: calc((var(--mass-blatt) - var(--mass-prosa)) / 2); }
-    body:has(.prosa) .datum {
-      right: calc((var(--mass-blatt) - var(--mass-prosa)) / 2); }
-    body:has(.prosa) .fusszeile { max-width: calc(var(--mass-prosa) + 2.5rem); }
-    /* Die Ressortpille haengt an der Navigation, die schon im Inhaltskasten
-       steht -- ihr Versatz ist deshalb um dessen Innenabstand kleiner. */
-    body:has(.prosa) .randressorts {
-      right: calc((var(--mass-blatt) - var(--mass-prosa)) / 2 - 1.25rem); }
+    .blatt, .kopfinhalt, .fusszeile { max-width: var(--mass); }
     /* Hauptspalte traegt Artikel und Korrektur, Nebenspalte die Einordnung.
        Die Aufteilung folgt der Arbeit, nicht dem verfuegbaren Platz. */
     .arbeitsflaeche { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 0 2.25rem; }
