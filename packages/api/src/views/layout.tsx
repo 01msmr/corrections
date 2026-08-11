@@ -591,6 +591,15 @@ const STYLES = `
      wenn man ihn meint. Die Ruecksetzungen heben die Bleisatz-Gestalt der
      freistehenden Knoepfe auf. */
   .feldzeile { position: relative; }
+  /* Der Einfuege-Hinweis ist kurz und darf deshalb etwas groesser sprechen
+     als die uebrigen Zusaetze. */
+  #einfuege-hinweis { font-size: .95rem; }
+  /* Die gesperrte Fundstelle ist leicht zurueckgenommen -- lesbar, aber
+     erkennbar "uebernommen, nicht in Arbeit". Der Zeiger laedt zum
+     Entsperren ein. */
+  .feldzeile textarea[readonly] { cursor: pointer;
+    background: color-mix(in srgb, var(--feld) 55%, var(--papier));
+    color: color-mix(in srgb, var(--tinte) 72%, var(--feld)); }
   button.einfuegeknopf, button.einfuegeknopf:hover, button.einfuegeknopf:focus-visible,
   button.einfuegeknopf:active {
     background: none; transform: none; box-shadow: none; }

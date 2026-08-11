@@ -310,13 +310,24 @@ const erkennungScript = (basis: string) => `
       },
       () => {
         falsch.focus();
-        setzeHinweis(
-          einfuegeHinweis,
-          "Der Browser gibt die Zwischenablage nicht frei — bitte direkt einfügen, die Einfügemarke steht schon im Feld.",
-          false,
-        );
+        setzeHinweis(einfuegeHinweis, "Bitte von Hand einfügen.", false);
       },
     );
+  });
+
+  /* Die vorbefuellte Fundstelle ist gegen versehentliches Tippen gesperrt;
+     der erste Tipp aufs Feld entsperrt sie. Auf dem Telefon springt so beim
+     blossen Beruehren keine Tastatur auf -- erst der zweite, bewusste Tipp
+     schreibt. */
+  const falschZusatz = document.getElementById("falsch-zusatz");
+  falsch.addEventListener("click", (e) => {
+    /* Nur echte Eingaben entsperren: Erweiterungen und Werkzeuge feuern
+       kuenstliche Klicks, und die sollen die Sperre nicht aufheben. */
+    if (!e.isTrusted) return;
+    if (!falsch.hasAttribute("readonly")) return;
+    falsch.removeAttribute("readonly");
+    falschZusatz.textContent = "bis zu ${QUOTE_MAX_LENGTH} Zeichen";
+    falsch.focus();
   });
 
   /* Vorbefuellte Felder (Bookmarklet/Kurzbefehl: ?url=…&text=…) loesen kein
@@ -402,7 +413,11 @@ export const CaptureForm: FC<{
               <Zeichen art="falsch" titel="So steht es im Artikel" />
               Falsch ist:
             </span>
-            <span class="zaehler">bis zu {QUOTE_MAX_LENGTH} Zeichen</span>
+            <span class="zaehler" id="falsch-zusatz">
+              {quote.trim().length > 0
+                ? "übernommen — zum Ändern antippen"
+                : `bis zu ${QUOTE_MAX_LENGTH} Zeichen`}
+            </span>
           </label>
           {/* Aus Nachrichten-Apps kommt oft nur die Adresse, nie die
               Auswahl. Wer die Stelle dort kopiert hat, holt sie mit dem
@@ -421,7 +436,17 @@ export const CaptureForm: FC<{
             >
               <PasteIcon />
             </button>
-            <textarea id="quoteBefore" name="quoteBefore" required maxlength={QUOTE_MAX_LENGTH}>
+            {/* Vorbefuellt kommt die Stelle wortgetreu aus dem Artikel; ein
+                versehentlicher Tipp soll sie nicht veraendern. readonly plus
+                leichte Abdunklung -- der erste Tipp entsperrt (siehe Skript),
+                erst der zweite schreibt. Selbstgetipptes bleibt frei. */}
+            <textarea
+              id="quoteBefore"
+              name="quoteBefore"
+              required
+              maxlength={QUOTE_MAX_LENGTH}
+              readonly={quote.trim().length > 0}
+            >
               {quote}
             </textarea>
           </div>
