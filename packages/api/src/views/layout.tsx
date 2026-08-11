@@ -610,63 +610,54 @@ const STYLES = `
      unter dem Kopf (top setzt das Seitenskript aus dessen gemessener Hoehe);
      der Papiergrund deckt die durchlaufenden Zeilen ab. z-Index unter dem
      Kopf, damit sie beim Fortscrollen unter ihm verschwindet, nicht davor. */
+  /* Fester Teil der Schale (siehe .listenrumpf): kein eigenes Kleben, die
+     Seite selbst scrollt nicht. Tintenkante und Schatten trennen zum
+     Scrollbereich. */
   .filterzeile { display: flex; flex-wrap: wrap; gap: .4rem .5rem; align-items: center;
-    position: sticky; top: 0; z-index: 4;
-    margin: 0 0 .6rem; padding: .35rem 0 .5rem;
-    background: var(--papier); border-bottom: 1px solid var(--tinte); }
+    margin: 0; padding: .3rem 0 .45rem; position: relative; z-index: 1;
+    background: var(--papier); border-bottom: 1px solid var(--tinte);
+    box-shadow: 0 10px 16px -14px rgb(var(--schatten) / .48); }
   /* Die Trefferzahl vor den Filtern: dicktengleich und ruhig, kein Wert mit
      Bedeutung, nur die Antwort auf "wie viele sind das gerade?". */
   .trefferzahl { font: 700 .95rem/1 var(--mono); color: var(--rand);
     padding-right: .35rem; }
   .filterzeile select, .filterzeile input { width: auto; margin: 0; }
+  /* Ohne die betonte Unterkante der Formularfelder: hier sind es Werkzeuge
+     in einer Leiste, keine Eingaben im Blatt. */
+  .filterzeile select, .filterzeile input[type="search"] {
+    border-bottom: 0; }
   .filterzeile input[type="search"] { flex: 1; min-width: 12rem; }
+
   /* Blaettern unter der Meldungsliste: dieselben Bleisatz-Kloetze wie die
      freistehenden Knoepfe, nur kleiner. Die aktive Seite steht als
      eingedrueckter Klotz da — dieselbe Vertiefung wie ein gedrueckter
-     Knopf, aber dauerhaft und ohne Ziel. An den Raendern stehen zurueck/vor
-     ohne Klotz, wenn es dort nicht weitergeht. */
-  /* Die Blaetterreihe steht fest am unteren Rand -- auf allen Geraeten, die
-     Reihe ist flach genug. Fest statt sticky: sie soll auch am Listenende
-     nicht mit hochscrollen; was unter ihr liegt (die Fusszeile), zieht
-     hinter ihr durch und bekommt dafuer unten Luft. Die Breite folgt der
-     Inhaltsspalte. */
+     Knopf, aber dauerhaft und ohne Ziel. Der untere feste Teil der Schale:
+     statisch, denn die Seite scrollt nicht. Der Innenrand schliesst die
+     Klotz-Geometrie ein (Hub 7px, Kanten 5px), sonst blitzten die Zeilen
+     um die Knoepfe herum durch. Tintenkante und Schatten spiegeln die
+     Filterzeile. */
   .seitenblaettern { display: flex; flex-wrap: wrap; gap: .3rem .7rem;
     justify-content: center; align-items: center;
-    position: fixed; bottom: 2.1rem; left: 50%; transform: translateX(-50%);
-    width: min(100% - 2.5rem, var(--mass) - 2.5rem); z-index: 4;
-    /* Der Innenrand muss die Klotz-Geometrie einschliessen: die Flaechen
-       schweben bis 7px ueber ihre Box (Zeigen), die Kanten reichen 5px
-       darunter -- sonst blitzen die Listenzeilen um die Knoepfe herum
-       durch, denn dort waere kein Papiergrund. */
-    margin: 0; padding: .55rem 0 .6rem;
-    /* Die Kanten zum Scrollbereich ziehen in Tinte, oben wie unten: die
-       festen Zonen sind damit klar vom laufenden Blatt getrennt. */
+    margin: 0; padding: .55rem 0 .6rem; position: relative; z-index: 1;
     background: var(--papier); border-top: 1px solid var(--tinte);
-    box-shadow: 0 -10px 16px -14px rgb(var(--schatten) / .4); }
-  /* Die Fusszeile gehoert mit in den festen Block, direkt unter die
-     Blaetterreihe -- nichts zieht hinter ihr durch. Das Seitenskript misst
-     ihre Hoehe und setzt die Reihe exakt darueber (2.1rem sind nur der
-     Rueckfall ohne Skript). Im Fluss bleibt lediglich so viel Innenrand,
-     dass die letzten Zeilen ueber dem Block lesbar enden. */
-  body:has(.seitenblaettern) .fusszeile { position: fixed; bottom: 0;
-    left: 50%; transform: translateX(-50%); z-index: 4;
-    width: min(100% - 2.5rem, var(--mass) - 2.5rem);
-    margin: 0; background: var(--papier); }
-  body:has(.seitenblaettern) .fussinhalt { padding: .25rem 0 .35rem;
-    border-top: 0; }
-  body:has(.seitenblaettern) .blatt { padding-bottom: 5.5rem; }
-  /* Die Meldungsliste ist ein Arbeitsblatt: vertikal dicht, aber mit Luft
-     zum Atmen -- knappe Zeilen, kein Gedraenge. Das Detail bleibt normal
-     gesetzt (es traegt keine Blaetterreihe). */
-  /* Ohne Balken beginnt die Liste direkt unterm Kopf: der grosse
-     Kopfabstand entfaellt auf dieser Seite. */
-  body:has(.seitenblaettern) .klebekopf { margin-bottom: .4rem; }
-  body:has(.seitenblaettern) .blatt.ohne-titel { padding-top: 0; }
-  body:has(.seitenblaettern) .blatt th,
-  body:has(.seitenblaettern) .blatt td { padding: .22rem .5rem; }
-  body:has(.seitenblaettern) .blatt table { margin-top: .4rem; }
-  body:has(.seitenblaettern) .filterzeile { padding: .3rem 0 .4rem; margin-bottom: .3rem; }
-  body:has(.seitenblaettern) .fussinhalt { padding: .2rem 0 .3rem; }
+    box-shadow: 0 -10px 16px -14px rgb(var(--schatten) / .48); }
+
+  /* Die Schale der Meldungsliste: Kopf, Filter, Blaettern und Fusszeile
+     stehen fest, dazwischen scrollt allein der Listenrumpf. Reines CSS --
+     kein Messen, kein doppeltes Kleben, kein reservierter Leerraum. */
+  body:has(.listenrumpf) { height: 100svh; overflow: hidden;
+    display: flex; flex-direction: column; padding-bottom: 0; }
+  body:has(.listenrumpf) .klebekopf { margin-bottom: .3rem; }
+  body:has(.listenrumpf) .blatt { flex: 1 1 auto; min-height: 0;
+    display: flex; flex-direction: column; width: 100%;
+    padding-top: 0; padding-bottom: 0; }
+  .listenrumpf { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  .listenrumpf table { margin-top: .25rem; }
+  body:has(.listenrumpf) .blatt th,
+  body:has(.listenrumpf) .blatt td { padding: .22rem .5rem; }
+  body:has(.listenrumpf) .fusszeile { margin-top: 0; }
+  body:has(.listenrumpf) .fussinhalt { padding: .2rem 0 .3rem; border-top: 0; }
+
   /* Flach gehalten: die Knoepfe behalten ihre Masse, nur die Reihe verliert
      die zusaetzlichen Innenraender. */
   .seitenblaettern a.knopf, .seitenblaettern .seitenknopf-aktiv,

@@ -123,46 +123,15 @@ export const MeldungsListe: FC<{
         dangerouslySetInnerHTML={{
           __html: `
   /* Kein Filtern-Knopf: die Auswahlen schicken sich selbst ab, das Suchfeld
-     schickt ueber die Eingabetaste. */
+     schickt ueber die Eingabetaste. Mehr Skript braucht die Seite nicht --
+     die feste Schale ist reines CSS (siehe .listenrumpf im Layout). */
   for (const auswahl of document.querySelectorAll(".filterzeile select")) {
     auswahl.addEventListener("change", () => auswahl.form.requestSubmit());
-  }
-
-  /* Die Filterzeile klebt direkt unter dem klebenden Kopf -- als ein Block,
-     nicht als zweites, eigenes Kleben. Der Kopf aendert seine Hoehe (schmal
-     weicht das Datum beim Scrollen), deshalb wird sie gemessen statt
-     geschaetzt. */
-  const kopf = document.querySelector(".klebekopf");
-  const filterzeile = document.querySelector(".filterzeile");
-  if (kopf && filterzeile) {
-    const setzeKante = () => {
-      filterzeile.style.top = kopf.getBoundingClientRect().height + "px";
-    };
-    new ResizeObserver(setzeKante).observe(kopf);
-    setzeKante();
-  }
-
-  /* Unten dasselbe Spiel: Fusszeile fest am Boden, die Blaetterreihe exakt
-     darueber, und das Blatt reserviert genau die Hoehe des Blocks -- mehr
-     scrollbarer Leerraum entsteht nicht. */
-  const reihe = document.querySelector(".seitenblaettern");
-  const fusszeile = document.querySelector(".fusszeile");
-  const blatt = document.querySelector(".blatt");
-  if (reihe) {
-    const lege = () => {
-      const fussHoehe = fusszeile ? fusszeile.getBoundingClientRect().height : 0;
-      reihe.style.bottom = fussHoehe + "px";
-      if (blatt) {
-        blatt.style.paddingBottom = fussHoehe + reihe.getBoundingClientRect().height + 6 + "px";
-      }
-    };
-    new ResizeObserver(lege).observe(reihe);
-    if (fusszeile) new ResizeObserver(lege).observe(fusszeile);
-    lege();
   }`,
         }}
       />
 
+      <div class="listenrumpf">
       <table class="sortierbar">
         <thead>
           <tr>
@@ -196,6 +165,7 @@ export const MeldungsListe: FC<{
         </tbody>
       </table>
       {zeilen.length === 0 ? <p class="zaehler">Nichts gefunden.</p> : null}
+      </div>
 
       {seiten > 1 ? (
         <nav class="seitenblaettern" aria-label="Seiten">
