@@ -620,14 +620,28 @@ const STYLES = `
     justify-content: center; align-items: center; margin-top: 1.75rem; }
   .seitenblaettern a.knopf, .seitenblaettern .seitenknopf-aktiv {
     font-size: .95rem; padding: .5rem .8rem .42rem; min-height: 0; }
+  /* Der Block ist ein <nav>: die Kopfzeilen-Regeln (nav a) wuerden hier
+     roten Unterstrich und Tinte beim Zeigen hineintragen. Der Klotz behaelt
+     stattdessen Papierschrift und kommt ohne Unterstrich aus. */
+  .seitenblaettern a.knopf, .seitenblaettern a.knopf:hover,
+  .seitenblaettern a.knopf:focus-visible {
+    color: var(--papier); border-bottom: 0; }
   .seitenknopf-aktiv { display: inline-flex; margin-top: .5rem;
     font: 700 .95rem/1 var(--mono); letter-spacing: .03em;
     background: var(--rand); color: var(--papier);
     border: 2px solid transparent; border-radius: 0;
     background-clip: padding-box;
     box-shadow: ${klotzKanten(5, true)}, inset 9px 10px 12px -5px rgb(var(--schatten) / .4); }
-  .seitenrand { font: 700 .95rem/1 var(--mono); letter-spacing: .03em;
-    color: var(--linie); margin-top: .5rem; }
+  /* zurueck/vor ohne Ziel: derselbe Klotz-Koerper, aber auf z = 0 -- weder
+     gehoben noch vertieft, keine Kanten, kein Schatten. Die Flaeche liegt
+     flach auf dem Blatt, hell und stark zurueckgenommen: erkennbar Teil der
+     Reihe, erkennbar ohne Funktion. */
+  .seitenrand { display: inline-flex; align-items: center; margin-top: .5rem;
+    font: 700 .95rem/1 var(--mono); letter-spacing: .03em;
+    padding: .5rem .8rem .42rem; border: 2px solid transparent; border-radius: 0;
+    background: color-mix(in srgb, var(--rand) 20%, var(--papier));
+    color: color-mix(in srgb, var(--rand) 55%, var(--papier));
+    transform: none; box-shadow: none; }
   /* Anker-Zitate im Meldungsdetail: die Fundstelle traegt Gewicht, der
      Kontext die Nebenstimme. */
   blockquote.anker { margin: 0 0 1rem; padding: .6rem .9rem;
