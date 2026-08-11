@@ -591,7 +591,18 @@ const STYLES = `
      Versalienhoehe, nicht die Zeilenbox; der Ausgleich steht in den
      Innenabstaenden (gemessen). */
   button.zeilenknopf, a.zeilenknopf { align-items: center; justify-content: center;
-    font-size: 1rem; padding: .62rem 1.05rem .58rem; }
+    /* inline-flex fuer beide: als blockartiger Kasten faellt der obere
+       Abstand eines <button> mit dem Rand des Absatzes zusammen, bei einem
+       <a> nicht -- die beiden Knoepfe saessen sonst unterschiedlich tief. */
+    display: inline-flex;
+    font-size: 1rem; padding: .62rem 1.05rem .58rem;
+    /* Feste Zeilenhoehe: sonst hebt ein Zeichen in der Beschriftung die
+       Zeilenbox an und der Knopf wuerde hoeher als sein Nachbar ohne
+       Zeichen. So haben alle Knoepfe im Fliesstext dieselben Masse. */
+    line-height: 1.25; }
+  /* Das Zeichen bleibt innerhalb dieser Zeile: knapp unter die Grundlinie
+     gesetzt, damit es sie oben nicht sprengt. */
+  .zeilenknopf .navicon { vertical-align: -.1em; }
 
   .hinweis { padding: .85rem 1rem; margin: 0 0 1.5rem;
     background: var(--feld); border: 1px solid var(--linie);
