@@ -669,6 +669,13 @@ const STYLES = `
      schmal wird er zum Scroll-Container: sonst braeche er das Kleben der
      Filterzeile auch am Desktop. */
   @media (max-width: 48rem) {
+    /* Die festen Leisten unten laufen schmal randlos ueber die volle
+       Breite: die zentrierte Spaltenbreite liesse links und rechts
+       1.25rem-Streifen frei, durch die der scrollende Inhalt
+       vorbeizoege. */
+    body:has(.listenrumpf) .seitenblaettern,
+    body:has(.listenrumpf) .fusszeile {
+      width: 100%; max-width: none; left: 0; transform: none; }
     .querblatt { overflow-x: auto; }
     .querblatt table { width: max-content; min-width: 100%; }
     .querblatt .filterzeile { flex-wrap: nowrap; min-width: max-content;
