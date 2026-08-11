@@ -69,17 +69,26 @@ Kurzbefehle können Text nicht für JSON escapen; ein Anführungszeichen in der
 Auswahl — in Zitaten die Regel — machte es unlesbar. Ein eigenes Feld hat
 beide Probleme nicht.
 
-**Kurzbefehl (Markierung teilen).** Eingabetyp *Text und URLs*, „Im Share
-Sheet anzeigen“ an:
+**Ein Kurzbefehl für Safari und Apps.** Kopfzeile: „Im Share Sheet
+anzeigen“ an, Empfangen *Safari-Webseiten und URLs*, wenn keine Eingabe:
+*Fortfahren*. Benutzung überall gleich: Stelle markieren → Kopieren →
+Artikel/Seite teilen → Kurzbefehl.
 
-1. **Text codieren** → Base64, Eingabe: Teilen-Eingabe (die Markierung)
-2. **Text ersetzen**: `+` → `-`
-3. **Text ersetzen**: `/` → `_`
-4. **Text ersetzen** (regulärer Ausdruck): `=+$` → *(leer)*
-5. **URL öffnen**: `https://korrekturen.msmr.co/hinweis?url=[Artikeladresse]&q=[Ergebnis]`
+1. **URLs abrufen** aus *Kurzbefehl-Eingabe*
+2. **Zwischenablage abrufen**
+3. **Text aus Eingabe abrufen** — zieht reinen Text aus dem Rich Text, den
+   Apps beim Kopieren ablegen; ohne diesen Schritt reist RTF-Quelltext
+4. **Base64 codieren**, Zeilenumbrüche: *Keine*
+5. **Text ersetzen**: `+` → `-` (kein regulärer Ausdruck)
+6. **Text ersetzen**: `/` → `_` (kein regulärer Ausdruck)
+7. **Text ersetzen** (regulärer Ausdruck an): `=+$` → *(leer)*
+8. **URL öffnen**: `https://korrekturen.msmr.co/hinweis?url=[URLs]&q=[Aktualisierter Text]`
+   — beide Variablen von Hand einsetzen: *URLs* aus Schritt 1, *Aktualisierter
+   Text* aus Schritt 7 (den letzten der drei!)
 
-Die Schritte 2–4 machen aus gewöhnlichem Base64 die URL-sichere Fassung;
+Die Schritte 5–7 machen aus gewöhnlichem Base64 die URL-sichere Fassung;
 ohne sie zerlegt die „URL öffnen“-Aktion die Adresse an `+` und `/`.
+Kommt dennoch RTF an, laesst der Server das Feld lieber leer.
 
 Kommt keine Markierung mit, genügt `?url=` allein: das Formular öffnet sich mit
 ausgefüllter Adresse, und „Artikel auf Fehler durchsehen“ arbeitet schon —

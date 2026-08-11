@@ -67,9 +67,13 @@ function leseVorbefuellung(c: Parameters<Handler>[0]): { url: string; quote: str
     }
   }
   const q = c.req.query("q");
+  /* Apps legen Kopiertes oft als Rich Text ab; nimmt der Kurzbefehl die
+     Zwischenablage ungewandelt, kommt hier RTF-Quelltext an. Der nuetzt im
+     Formular niemandem -- dann lieber ein leeres Feld. */
+  const roh = q ? ausBase64url(q).trim() : (c.req.query("text") ?? "");
   return {
     url: c.req.query("url") ?? "",
-    quote: q ? ausBase64url(q).trim() : (c.req.query("text") ?? ""),
+    quote: roh.startsWith("{\\rtf") ? "" : roh,
   };
 }
 

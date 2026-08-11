@@ -171,6 +171,15 @@ describe("Base64-Vorbefuellung (?b=)", () => {
     expect(html).toContain("Der Mietwgaen steht bereit.");
   });
 
+  it("verwirft RTF aus der Zwischenablage, statt es ins Feld zu stellen", async () => {
+    /* Apps legen Kopiertes oft als Rich Text ab; ein Kurzbefehl ohne
+       Text-Umwandlung schickt dann RTF-Quelltext. Der nuetzt niemandem. */
+    const rtf = "{\\rtf1\\ansi\\ansicpg1252 Der eigentliche Satz}";
+    const q = Buffer.from(rtf, "utf8").toString("base64url");
+    const html = await (await app().request(`/hinweis?url=https://x.test/a&q=${q}`)).text();
+    expect(html).toMatch(/id="quoteBefore"[^>]*><\/textarea>/);
+  });
+
   it("laesst ohne q die Fundstelle leer -- die Adresse steht trotzdem", async () => {
     const html = await (
       await app().request("/hinweis?url=" + encodeURIComponent("https://www.spiegel.de/a-1.html"))
