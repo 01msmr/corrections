@@ -271,8 +271,33 @@ const erkennungScript = (basis: string) => `
   };
   zeigeEinfuegen();
   falsch.addEventListener("input", zeigeEinfuegen);
+  /* readText() scheitert auch mit gefuellter Ablage: manche Browser
+     verweigern still, und manche Apps legen nur Rich Text ab, kein
+     text/plain. Zweiter Versuch deshalb ueber read(), das die Sorten
+     einzeln anbietet. Bleibt beides ohne Erfolg, wird wenigstens der Weg
+     geebnet: Einfuegemarke ins Feld, der Hinweis nennt das direkte
+     Einfuegen. */
+  const ablageLesen = () =>
+    navigator.clipboard.readText().catch(() =>
+      navigator.clipboard.read().then(async (eintraege) => {
+        for (const eintrag of eintraege) {
+          for (const sorte of ["text/plain", "text/html"]) {
+            if (eintrag.types.includes(sorte)) {
+              const text = await (await eintrag.getType(sorte)).text();
+              if (sorte === "text/html") {
+                const halter = document.createElement("div");
+                halter.innerHTML = text;
+                return halter.textContent || "";
+              }
+              return text;
+            }
+          }
+        }
+        throw new Error("keine lesbare Sorte");
+      }),
+    );
   einfuegeknopf.addEventListener("click", () => {
-    navigator.clipboard.readText().then(
+    ablageLesen().then(
       (text) => {
         const gekuerzt = text.trim().slice(0, ${QUOTE_MAX_LENGTH});
         if (!gekuerzt) { setzeHinweis(einfuegeHinweis, "Die Zwischenablage ist leer.", false); return; }
@@ -280,7 +305,14 @@ const erkennungScript = (basis: string) => `
         falsch.dispatchEvent(new Event("input", { bubbles: true }));
         falsch.focus();
       },
-      () => { setzeHinweis(einfuegeHinweis, "Kein Zugriff — bitte von Hand einfügen.", false); },
+      () => {
+        falsch.focus();
+        setzeHinweis(
+          einfuegeHinweis,
+          "Der Browser gibt die Zwischenablage nicht frei — bitte direkt einfügen, die Einfügemarke steht schon im Feld.",
+          false,
+        );
+      },
     );
   });
 
