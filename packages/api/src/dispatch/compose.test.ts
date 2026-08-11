@@ -43,13 +43,12 @@ describe("composeMail", () => {
     // Farben aus der Palette, nicht als Literal: sonst muss dieser Test bei
     // jeder Farbaenderung mit angefasst werden.
     expect(html).toContain(
-      `<span style="background:${PALETTE.korrektur};color:${PALETTE.papier};padding:1px 4px">4,2</span>`,
+      `<span style="background:${PALETTE.korrektur};color:${PALETTE.papier};font-weight:700;padding:1px 4px">4,2</span>`,
     );
     expect(html).toContain(
-      `<span style="background:${PALETTE.vorschlag};color:${PALETTE.papier};padding:1px 4px">2,4</span>`,
+      `<span style="background:${PALETTE.vorschlag};color:${PALETTE.papier};font-weight:700;padding:1px 4px">2,4</span>`,
     );
-    // Der Teilsatz um die Marke laeuft fett, die Marke nicht: ihre Farbe
-    // traegt schon.
+    // Der Teilsatz um die Marke laeuft fett wie die Marke selbst.
     expect(html).toMatch(/<strong style="font-weight:700">[^<]*Millionen Menschen/);
     // Der Rest des Satzes steht unmarkiert daneben, damit der Zusammenhang lesbar bleibt.
     expect(html).not.toContain(">Millionen</span>");

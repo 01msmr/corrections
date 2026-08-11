@@ -68,9 +68,9 @@ const TEILSATZ_GRENZE = /[,;.:!?\u2013\u2014]/;
  * Baut die Zitatzeile fuer den HTML-Teil. Die Fehlerstelle traegt Grundfarbe
  * statt Schriftfarbe -- helle Schrift auf Karmin (falsch) bzw. Gruen
  * (richtig), wie ein Textmarker. Der Satzteil **um** die Stelle herum
- * laeuft fett, die uebrigen Teilsaetze nicht: die unmittelbare Umgebung
- * gibt den Halt, und die Marke selbst braucht kein eigenes Gewicht -- ihre
- * Farbe traegt schon.
+ * laeuft fett wie die Marke selbst, die uebrigen Teilsaetze nicht: so
+ * springt der Blick an die richtige Stelle, und die Marke faellt nicht aus
+ * dem Gewicht ihrer Umgebung.
  */
 function renderSegments(segments: DiffSegment[], color: string): string {
   /* Zusammenhaengende Laeufe erst buendeln: der Diff liefert wortweise
@@ -119,7 +119,7 @@ function renderSegments(segments: DiffSegment[], color: string): string {
   for (const lauf of laeufe) {
     if (lauf.changed) {
       teile.push(
-        `<span style="background:${color};color:${PALETTE.papier};padding:1px 4px">${escapeHtml(lauf.text)}</span>`,
+        `<span style="background:${color};color:${PALETTE.papier};font-weight:700;padding:1px 4px">${escapeHtml(lauf.text)}</span>`,
       );
     } else {
       /* Der Lauf kann eine Zonengrenze ueberspannen: stueckweise ausgeben. */
