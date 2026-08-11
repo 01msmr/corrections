@@ -109,10 +109,6 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
         Fehlerkategorie und Schweregrad schlägt die Seite selbst vor: Sie vergleicht beide
         Fassungen und erkennt beides anhand von Regeln, wenn es eindeutig erscheint.
       </p>
-      <p>
-        Der gesamte Quelltext liegt offen unter{" "}
-        <a href="https://github.com/01msmr/corrections">github.com/01msmr/corrections</a>.
-      </p>
     </div>
     {/* Der Link laesst sich am Rechner schlecht antippen — kopieren hilft
         beim Weiterschicken ans Telefon. Ohne JavaScript bleibt der Link
