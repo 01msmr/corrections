@@ -1,4 +1,4 @@
-# Korrektur-Tracker
+# Korrekturen — Textfehler melden und verfolgen
 
 Erfasst Fehler in Online-Artikeln, meldet sie per E-Mail an die zuständige
 Redaktion und verfolgt, was daraus wird: ob eine Antwort kommt und ob die
