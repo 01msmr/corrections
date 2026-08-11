@@ -197,6 +197,28 @@ describe("Base64-Vorbefuellung (?b=)", () => {
   });
 });
 
+describe("Sitzung nach Anmeldung", () => {
+  it("setzt nach Basic Auth ein Sitzungs-Cookie und laesst es allein gelten", async () => {
+    const a = app();
+    /* Erste Anfrage mit Zugangsdaten: die Antwort bringt die Sitzung mit. */
+    const erste = await a.request("/neu", { headers: { authorization: AUTH } });
+    expect(erste.status).toBe(200);
+    const cookie = erste.headers.get("set-cookie") ?? "";
+    expect(cookie).toContain("sitzung=");
+    expect(cookie).toContain("HttpOnly");
+
+    /* Ab dann traegt das Cookie allein -- ohne Authorization-Kopf. */
+    const sitzung = cookie.split(";")[0]!;
+    const zweite = await a.request("/neu", { headers: { cookie: sitzung } });
+    expect(zweite.status).toBe(200);
+  });
+
+  it("weist ein gefaelschtes Sitzungs-Cookie ab", async () => {
+    const res = await app().request("/neu", { headers: { cookie: "sitzung=abc123" } });
+    expect(res.status).toBe(401);
+  });
+});
+
 describe("Icons und Manifest", () => {
   it("liefert Favicon, Manifest und Service Worker ohne Anmeldung", async () => {
     const a = app();
