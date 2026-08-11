@@ -83,14 +83,10 @@ export const MeldungsListe: FC<{
   return (
     <Layout title="Meldungen" aktiv="meldungen" betreiber>
       <h2 class="balken">Meldungen</h2>
-      <p class="zaehler dichter">
-        {gesamt} {gesamt === 1 ? "Meldung" : "Meldungen"}
-        {seiten > 1 ? ` — Seite ${seite} von ${seiten}` : ""}. Nummern zählen
-        chronologisch über den Gesamtbestand; Filtern erzeugt Lücken, keine
-        Umnummerierung.
-      </p>
 
       <form method="get" action="/admin/meldungen" class="filterzeile">
+        {/* Die Gesamtzahl der Treffer steht vor den Filtern, in der Zeile. */}
+        <span class="trefferzahl">{gesamt}</span>
         <select name="medium" aria-label="Medium">
           <option value="">alle Medien</option>
           {outlets.map((o) => (

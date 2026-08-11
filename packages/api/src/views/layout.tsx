@@ -614,9 +614,10 @@ const STYLES = `
     position: sticky; top: 0; z-index: 4;
     margin: 0 0 .6rem; padding: .35rem 0 .5rem;
     background: var(--papier); border-bottom: 1px solid var(--linie); }
-  /* Enge Nebenzeile (Meldungsliste): der Hinweis unter dem Balken braucht
-     keine Absatzluft. */
-  p.dichter { margin: .25rem 0 .4rem; }
+  /* Die Trefferzahl vor den Filtern: dicktengleich und ruhig, kein Wert mit
+     Bedeutung, nur die Antwort auf "wie viele sind das gerade?". */
+  .trefferzahl { font: 700 .95rem/1 var(--mono); color: var(--rand);
+    padding-right: .35rem; }
   .filterzeile select, .filterzeile input { width: auto; margin: 0; }
   .filterzeile input[type="search"] { flex: 1; min-width: 12rem; }
   /* Blaettern unter der Meldungsliste: dieselben Bleisatz-Kloetze wie die
