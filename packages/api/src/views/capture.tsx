@@ -327,7 +327,10 @@ const erkennungScript = (basis: string) => `
     if (!falsch.hasAttribute("readonly")) return;
     falsch.removeAttribute("readonly");
     falschZusatz.textContent = "bis zu ${QUOTE_MAX_LENGTH} Zeichen";
-    falsch.focus();
+    /* Kein focus(): der entsperrende Tipp soll noch nicht die Tastatur
+       oeffnen -- erst der zweite, bewusste Tipp schreibt. blur() nimmt den
+       Fokus zurueck, den der Tipp selbst gesetzt hat. */
+    falsch.blur();
   });
 
   /* Vorbefuellte Felder (Bookmarklet/Kurzbefehl: ?url=…&text=…) loesen kein

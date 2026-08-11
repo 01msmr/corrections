@@ -601,7 +601,7 @@ const STYLES = `
      erkennbar "uebernommen, nicht in Arbeit". Der Zeiger laedt zum
      Entsperren ein. */
   .feldzeile textarea[readonly] { cursor: pointer;
-    background: color-mix(in srgb, var(--feld) 55%, var(--papier));
+    background: color-mix(in srgb, var(--feld) 45%, var(--linie));
     color: color-mix(in srgb, var(--tinte) 72%, var(--feld)); }
   button.einfuegeknopf, button.einfuegeknopf:hover, button.einfuegeknopf:focus-visible,
   button.einfuegeknopf:active {
