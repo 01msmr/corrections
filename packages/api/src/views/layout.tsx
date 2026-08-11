@@ -642,16 +642,25 @@ const STYLES = `
     background: var(--papier); border-top: 1px solid var(--tinte);
     box-shadow: 0 -10px 16px -14px rgb(var(--schatten) / .48); }
 
-  /* Die Schale der Meldungsliste: Kopf, Filter, Blaettern und Fusszeile
-     stehen fest, dazwischen scrollt allein der Listenrumpf. Reines CSS --
-     kein Messen, kein doppeltes Kleben, kein reservierter Leerraum. */
-  body:has(.listenrumpf) { height: 100svh; overflow: hidden;
-    display: flex; flex-direction: column; padding-bottom: 0; }
-  body:has(.listenrumpf) .klebekopf { margin-bottom: .3rem; }
-  body:has(.listenrumpf) .blatt { flex: 1 1 auto; min-height: 0;
-    display: flex; flex-direction: column; width: 100%;
-    padding-top: 0; padding-bottom: 0; }
-  .listenrumpf { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  /* Die Meldungsliste scrollt wie jede Seite: erst zieht der Titel davon,
+     der klebende Kopf bleibt stehen -- und die Filterzeile klebt buendig
+     darunter (ihr top ist die gemessene Kopfhoehe, als CSS-Variable vom
+     Seitenskript gesetzt; der Kopf schrumpft schmal beim Scrollen).
+     Blaetterreihe und Fusszeile stehen fest am unteren Rand; das Blatt
+     reserviert genau deren gemessene Hoehe. */
+  body:has(.listenrumpf) { padding-bottom: 0; }
+  body:has(.listenrumpf) .klebekopf { margin-bottom: 0; }
+  body:has(.listenrumpf) .blatt { width: 100%;
+    padding-top: 0; padding-bottom: var(--leistehoehe, 6rem); }
+  body:has(.listenrumpf) .filterzeile { position: sticky;
+    top: var(--kopfhoehe, 4.6rem); z-index: 4; }
+  body:has(.listenrumpf) .seitenblaettern { position: fixed;
+    bottom: var(--fusshoehe, 2rem); left: 50%; transform: translateX(-50%);
+    width: min(100% - 2.5rem, var(--mass) - 2.5rem); z-index: 4; }
+  body:has(.listenrumpf) .fusszeile { position: fixed; bottom: 0;
+    left: 50%; transform: translateX(-50%); z-index: 4;
+    width: min(100% - 2.5rem, var(--mass) - 2.5rem);
+    margin: 0; background: var(--papier); }
   .listenrumpf table { margin-top: .25rem; }
   body:has(.listenrumpf) .blatt th,
   body:has(.listenrumpf) .blatt td { padding: .22rem .5rem; }

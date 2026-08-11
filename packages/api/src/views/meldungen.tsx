@@ -128,7 +128,27 @@ export const MeldungsListe: FC<{
      die feste Schale ist reines CSS (siehe .listenrumpf im Layout). */
   for (const auswahl of document.querySelectorAll(".filterzeile select")) {
     auswahl.addEventListener("change", () => auswahl.form.requestSubmit());
-  }`,
+  }
+
+  /* Drei gemessene Hoehen als CSS-Variablen: die Kopfhoehe fuer die
+     klebende Filterzeile (der Kopf schrumpft schmal beim Scrollen), die
+     Fusszeile fuer den Sitz der Blaetterreihe, beide zusammen fuer den
+     Platz, den das Blatt unten freihaelt. */
+  const wurzel = document.documentElement;
+  const kopf = document.querySelector(".klebekopf");
+  const reihe = document.querySelector(".seitenblaettern");
+  const fusszeile = document.querySelector(".fusszeile");
+  const messe = () => {
+    if (kopf) wurzel.style.setProperty("--kopfhoehe", kopf.getBoundingClientRect().height + "px");
+    const fuss = fusszeile ? fusszeile.getBoundingClientRect().height : 0;
+    wurzel.style.setProperty("--fusshoehe", fuss + "px");
+    const leiste = fuss + (reihe ? reihe.getBoundingClientRect().height : 0);
+    wurzel.style.setProperty("--leistehoehe", leiste + 4 + "px");
+  };
+  for (const ziel of [kopf, reihe, fusszeile]) {
+    if (ziel) new ResizeObserver(messe).observe(ziel);
+  }
+  messe();`,
         }}
       />
 
