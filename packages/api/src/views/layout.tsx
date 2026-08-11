@@ -613,13 +613,13 @@ const STYLES = `
   /* Die Kennung ist das, wonach spaeter gesucht wird — also im Raster und fett. */
   .kennung { font: 700 1.05em var(--mono); letter-spacing: .04em; }
 
-  /* Feste Aufteilung: alle Spalten gleich breit, unabhaengig davon, wie lang
-     die laengste Zelle gerade ist. Sonst wandern die Kanten mit dem Bestand
-     und keine zwei Tabellen der Seite fluchten. Die Mailvorschau bringt ihre
-     eigene Tabelle mit und bleibt davon unberuehrt. */
-  table { width: 100%; border-collapse: collapse; margin-top: 1rem;
-    table-layout: fixed; }
-  .mailvorschau table { table-layout: auto; }
+  table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+  /* Feste Aufteilung fuer die Auswertung: alle Spalten gleich breit,
+     unabhaengig davon, wie lang die laengste Zelle gerade ist -- sonst
+     wandern die Kanten mit dem Bestand. Verwaltungstabellen tragen dagegen
+     einen Griff und eine Schaltflaeche, die nur so breit sein sollen wie
+     noetig; dort bemisst der Browser die Spalten am Inhalt. */
+  table.gleichspaltig { table-layout: fixed; }
   th { font: 1rem/1.3 var(--mono); letter-spacing: .01em; color: var(--tinte); }
   th, td { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid var(--linie);
     vertical-align: middle; }
@@ -756,7 +756,10 @@ const STYLES = `
   /* Knoepfe in Tabellenzeilen sind Werkzeug, nicht Ziel der Seite: nuechtern,
      rechteckig, ueber die volle Zeilenhoehe -- der Rotstift kommt beim Zeigen.
      height:100% braucht die 1px-Hoehe an der Zelle, sonst loest es sich nicht auf. */
-  td.aktion { padding: 0; width: 1%; height: 1px; }
+  /* Die Schaltflaeche steht am rechten Rand der Zeile, die Angaben links --
+     dazwischen bleibt Luft, statt dass beides aneinanderklebt. */
+  td.aktion, th.aktion { padding: 0 0 0 2rem; width: 1%; height: 1px;
+    text-align: right; }
   td.aktion form { display: block; height: 100%; }
   table button {
     display: flex; align-items: center; margin: 0; padding: 0 .7rem; min-height: 0;

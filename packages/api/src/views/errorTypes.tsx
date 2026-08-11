@@ -76,7 +76,7 @@ export const ErrorTypeList: FC<{
           <th></th>
           <th>Bezeichnung</th>
           <th>Schlüssel</th>
-          <th></th>
+          <th class="aktion"></th>
         </tr>
       </thead>
       <tbody id="fehlerarten-liste">

@@ -260,7 +260,7 @@ export const BilanzSeite: FC<{
             Fehler stehen. Nach Anzahl sortiert entsteht deshalb keine Rangfolge der
             Sorgfalt, sondern eine der Lesegewohnheiten.
           </p>
-          <table class="sortierbar medienliste">
+          <table class="sortierbar medienliste gleichspaltig">
             <thead>
               <tr>
                 <th>Medium</th>

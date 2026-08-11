@@ -120,7 +120,7 @@ export const OutletList: FC<{
           <th>Name</th>
           <th>Domain</th>
           <th>Kontakt</th>
-          <th></th>
+          <th class="aktion"></th>
         </tr>
       </thead>
       <tbody>
@@ -178,7 +178,7 @@ export const OutletEdit: FC<{ outlet: OutletRecord }> = ({ outlet }) => (
       <thead>
         <tr>
           <th>Domain</th>
-          <th></th>
+          <th class="aktion"></th>
         </tr>
       </thead>
       <tbody>
