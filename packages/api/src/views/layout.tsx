@@ -781,9 +781,10 @@ const STYLES = `
     border: none; border-left: 1px solid var(--korrektur); border-radius: 0;
     transform: none; box-shadow: none;
   }
-  /* Gezogen wird nur am Griff vor der Zeile; der Trennstrich der Zeile beginnt
-     erst dahinter. */
-  .griff[draggable="true"] { cursor: grab; border-bottom-color: transparent; }
+  /* Gezogen wird die ganze Zeile; das Zeichen davor zeigt es an. Sein
+     Trennstrich bleibt aus, damit die Linie erst am Text beginnt. */
+  tbody tr[draggable="true"] { cursor: grab; }
+  tbody tr[draggable="true"] .griff { border-bottom-color: transparent; }
   tr.zieht { opacity: .4; }
   /* Einfuegemarke: eine karminrote Linie an der Kante, an der die gezogene
      Zeile beim Loslassen einsortiert wuerde. Als Innenschatten auf den Zellen,

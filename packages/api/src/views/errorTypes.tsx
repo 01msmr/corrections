@@ -1,7 +1,8 @@
 import type { FC } from "hono/jsx";
 
 /**
- * Sortieren durch Ziehen, ohne Bibliothek. Waehrend des Ziehens zeigt eine
+ * Sortieren durch Ziehen, ohne Bibliothek. Gezogen wird die ganze Zeile; das
+ * Zeichen am Anfang zeigt nur an, dass sie sich ziehen laesst. Waehrend des Ziehens zeigt eine
  * karminrote Einfuegemarke die Zielposition, die Quellzeile steht abgeschwaecht,
  * und den durchscheinenden Abzug unter dem Zeiger (Drag-Ghost) rendert der
  * Browser selbst. Verschoben wird erst beim Loslassen; dann geht die Id-Liste
@@ -18,14 +19,13 @@ const DRAG_SCRIPT = `
     for (const r of tbody.querySelectorAll("tr")) r.classList.remove("ziel-oben", "ziel-unten");
   };
   for (const zeile of tbody.querySelectorAll("tr")) {
-    const griff = zeile.querySelector(".griff");
-    griff.addEventListener("dragstart", (e) => {
+    zeile.addEventListener("dragstart", (e) => {
       gezogen = zeile;
       ausgangslage = reihen();
       zeile.classList.add("zieht");
       e.dataTransfer.effectAllowed = "move";
     });
-    griff.addEventListener("dragend", () => {
+    zeile.addEventListener("dragend", () => {
       zeile.classList.remove("zieht");
       marken();
       gezogen = null;
@@ -81,8 +81,8 @@ export const ErrorTypeList: FC<{
       </thead>
       <tbody id="fehlerarten-liste">
         {types.map((type) => (
-          <tr data-id={type.id} data-href={`/admin/fehlerarten/${type.id}`}>
-            <td class="griff" draggable="true" aria-hidden="true">≡</td>
+          <tr data-id={type.id} data-href={`/admin/fehlerarten/${type.id}`} draggable="true">
+            <td class="griff" aria-hidden="true">≡</td>
             <td>
               <a href={`/admin/fehlerarten/${type.id}`} draggable={false}>{type.label}</a>
             </td>
@@ -104,7 +104,7 @@ export const ErrorTypeList: FC<{
       </tbody>
     </table>
     <p id="sortier-status" class="zaehler" aria-live="polite">
-      Zum Umsortieren am Griff vor der Zeile ziehen.
+      Zum Umsortieren die Zeile ziehen.
     </p>
     <script dangerouslySetInnerHTML={{ __html: DRAG_SCRIPT }} />
 
