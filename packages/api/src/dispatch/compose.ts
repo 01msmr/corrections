@@ -63,6 +63,22 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/**
+ * Beide Fassungen mit Markern und fettem Teilsatz -- fuer die Mail und, aus
+ * derselben Quelle, fuer das Meldungs-Detail der Historie. Nutzertext wird
+ * innen maskiert; die Rueckgabe ist fertiges HTML.
+ */
+export function fassungenHtml(
+  quote: string,
+  suggestion: string,
+): { falsch: string; richtig: string } {
+  const diff = diffWords(quote, suggestion);
+  return {
+    falsch: renderSegments(diff.before, COLOR_BEFORE),
+    richtig: renderSegments(diff.after, COLOR_AFTER),
+  };
+}
+
 /** Grenzen der Teilsaetze: Satzzeichen, an denen ein Satzteil endet. */
 const TEILSATZ_GRENZE = /[,;.:!?\u2013\u2014]/;
 
@@ -206,7 +222,7 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
   const quote = neutralizeMetaMarkers(input.quoteBefore);
   const suggestion = neutralizeMetaMarkers(input.suggestionAfter);
   const comment = input.comment?.trim() ? neutralizeMetaMarkers(input.comment.trim()) : null;
-  const diff = diffWords(quote, suggestion);
+  const fassungen = fassungenHtml(quote, suggestion);
   const meta = metaLine(input);
 
   const intro = input.headline
@@ -322,10 +338,10 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
     linie,
     fahneHtml,
     beschriftung(`Falsch ist (${escapeHtml(input.errorTypeLabel)}):`),
-    zitat(renderSegments(diff.before, COLOR_BEFORE), COLOR_BEFORE),
+    zitat(fassungen.falsch, COLOR_BEFORE),
     fundstelleHtml(input, quote, beschriftung, schreibmaschine),
     beschriftung("Richtig wäre (meiner Einschätzung nach):"),
-    zitat(renderSegments(diff.after, COLOR_AFTER), COLOR_AFTER),
+    zitat(fassungen.richtig, COLOR_AFTER),
     linie,
     commentHtml,
     `<p style="${absatz}">Eine Rückmeldung wäre wunderbar.${input.ref ? "<br>Lassen Sie die Kennung am Ende des Betreffs bitte stehen, damit Ihre Antwort zugeordnet werden kann." : ""}</p>`,

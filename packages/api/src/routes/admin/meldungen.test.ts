@@ -5,6 +5,7 @@ import { createDb, runMigrations, type Db } from "../../db/client.js";
 import { corrections, errorTypes, outlets } from "../../db/schema.js";
 import { seed } from "../../db/seed.js";
 import type { Env } from "../../env.js";
+import { PALETTE } from "@korrektur/shared";
 import { createOutlet } from "../../repo/outlets.js";
 import { meldungenRoutes } from "./meldungen.js";
 
@@ -119,8 +120,15 @@ describe("Liste und Detail", () => {
     const detail = await (
       await app.request(`/admin/meldungen/${abgelehnt}`, { headers: { authorization: AUTH } })
     ).text();
-    expect(detail).toContain("Der Mietwgaen stand bereit.");
-    expect(detail).toContain("Der Mietwagen stand bereit.");
+    /* Wie in der Mail: Fehlstelle hell auf Karmin bzw. Gruen, der Teilsatz
+       darum fett. */
+    expect(detail).toContain(
+      `background:${PALETTE.korrektur};color:${PALETTE.papier};font-weight:700;padding:1px 4px">Mietwgaen</span>`,
+    );
+    expect(detail).toContain(
+      `background:${PALETTE.vorschlag};color:${PALETTE.papier};font-weight:700;padding:1px 4px">Mietwagen</span>`,
+    );
+    expect(detail).toMatch(/<strong style="font-weight:700">[^<]*stand bereit\./);
     expect(detail).toContain("Korrekturfahne:");
   });
 

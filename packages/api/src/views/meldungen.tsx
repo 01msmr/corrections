@@ -8,6 +8,7 @@ import type {
 } from "../repo/meldungen.js";
 import { AUSGAENGE } from "../repo/meldungen.js";
 import type { OutletRecord } from "../repo/outlets.js";
+import { fassungenHtml } from "../dispatch/compose.js";
 import { Layout } from "./layout.js";
 import { vergleicheFassungen } from "./vergleich.js";
 
@@ -167,8 +168,10 @@ export const MeldungsListe: FC<{
       {zeilen.length === 0 ? <p class="zaehler">Nichts gefunden.</p> : null}
       </div>
 
-      {seiten > 1 ? (
-        <nav class="seitenblaettern" aria-label="Seiten">
+      {/* Immer da, auch bei einer Seite oder leer: der Platz gehoert zur
+          Schale, das Blatt springt nicht, wenn ein Filter die Seitenzahl
+          aendert. */}
+      <nav class="seitenblaettern" aria-label="Seiten">
           {seite > 1 ? (
             <a class="knopf" href={blaetterHref(seite - 1)}>zurück</a>
           ) : (
@@ -195,7 +198,6 @@ export const MeldungsListe: FC<{
             <span class="seitenrand">vor</span>
           )}
         </nav>
-      ) : null}
     </Layout>
   );
 };
@@ -206,6 +208,9 @@ export const MeldungsAnsicht: FC<{ detail: MeldungsDetail; hinweis?: string | un
 }) => {
   const m = detail.meldung;
   const fahne = vergleicheFassungen(m.quoteBefore, m.suggestionAfter);
+  /* Dieselbe Auszeichnung wie in der Mail: Fehlstelle hell auf Karmin bzw.
+     Gruen, der Teilsatz darum fett. Eine Quelle (compose.ts), kein Nachbau. */
+  const fassungen = fassungenHtml(m.quoteBefore, m.suggestionAfter);
   return (
     <Layout title={`Meldung ${m.ref}`} aktiv="meldungen" betreiber>
       {hinweis ? <p class="hinweis">{hinweis}</p> : null}
@@ -242,12 +247,14 @@ export const MeldungsAnsicht: FC<{ detail: MeldungsDetail; hinweis?: string | un
 
       <h2>Falsch ist</h2>
       <blockquote class="anker">
-        {m.quotePrefix ? <span class="zaehler">…{m.quotePrefix}</span> : null}
-        <strong>{m.quoteBefore}</strong>
-        {m.quoteSuffix ? <span class="zaehler">{m.quoteSuffix}…</span> : null}
+        {m.quotePrefix ? <span class="zaehler">…{m.quotePrefix} </span> : null}
+        <span dangerouslySetInnerHTML={{ __html: fassungen.falsch }} />
+        {m.quoteSuffix ? <span class="zaehler"> {m.quoteSuffix}…</span> : null}
       </blockquote>
       <h2>Richtig wäre</h2>
-      <blockquote class="anker">{m.suggestionAfter}</blockquote>
+      <blockquote class="anker">
+        <span dangerouslySetInnerHTML={{ __html: fassungen.richtig }} />
+      </blockquote>
       {m.comment ? (
         <>
           <h2>Anmerkung</h2>
