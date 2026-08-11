@@ -268,6 +268,9 @@ const erkennungScript = (basis: string) => `
   const zeigeEinfuegen = () => {
     const moeglich = !!(navigator.clipboard && navigator.clipboard.readText);
     einfuegeknopf.hidden = !moeglich || falsch.value.trim().length > 0;
+    /* Mit dem Knopf verschwindet auch sein Hilfstext: sobald das Feld
+       gefuellt ist, hat er seinen Dienst getan. */
+    if (falsch.value.trim().length > 0) einfuegeHinweis.textContent = "";
   };
   zeigeEinfuegen();
   falsch.addEventListener("input", zeigeEinfuegen);
