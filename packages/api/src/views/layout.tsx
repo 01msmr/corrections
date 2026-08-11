@@ -632,15 +632,23 @@ const STYLES = `
      Inhaltsspalte. */
   .seitenblaettern { display: flex; flex-wrap: wrap; gap: .3rem .7rem;
     justify-content: center; align-items: center;
-    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    position: fixed; bottom: 2.1rem; left: 50%; transform: translateX(-50%);
     width: min(100% - 2.5rem, var(--mass) - 2.5rem); z-index: 4;
-    margin: 0; padding: .45rem 0 .4rem;
+    margin: 0; padding: .4rem 0 .35rem;
     background: var(--papier); border-top: 1px solid var(--linie);
     box-shadow: 0 -10px 16px -14px rgb(var(--schatten) / .4); }
-  /* Platz fuer die feste Reihe: die letzten Zeilen und die Fusszeile sollen
-     ueber ihr lesbar enden, nicht darunter. */
-  body:has(.seitenblaettern) .blatt { padding-bottom: 3.4rem; }
-  body:has(.seitenblaettern) .fussinhalt { padding-bottom: 3.4rem; }
+  /* Die Fusszeile gehoert mit in den festen Block, direkt unter die
+     Blaetterreihe -- nichts zieht hinter ihr durch. Das Seitenskript misst
+     ihre Hoehe und setzt die Reihe exakt darueber (2.1rem sind nur der
+     Rueckfall ohne Skript). Im Fluss bleibt lediglich so viel Innenrand,
+     dass die letzten Zeilen ueber dem Block lesbar enden. */
+  body:has(.seitenblaettern) .fusszeile { position: fixed; bottom: 0;
+    left: 50%; transform: translateX(-50%); z-index: 4;
+    width: min(100% - 2.5rem, var(--mass) - 2.5rem);
+    margin: 0; background: var(--papier); }
+  body:has(.seitenblaettern) .fussinhalt { padding: .25rem 0 .35rem;
+    border-top: 0; }
+  body:has(.seitenblaettern) .blatt { padding-bottom: 5.5rem; }
   /* Flach gehalten: die Knoepfe behalten ihre Masse, nur die Reihe verliert
      die zusaetzlichen Innenraender. */
   .seitenblaettern a.knopf, .seitenblaettern .seitenknopf-aktiv,

@@ -140,6 +140,25 @@ export const MeldungsListe: FC<{
     };
     new ResizeObserver(setzeKante).observe(kopf);
     setzeKante();
+  }
+
+  /* Unten dasselbe Spiel: Fusszeile fest am Boden, die Blaetterreihe exakt
+     darueber, und das Blatt reserviert genau die Hoehe des Blocks -- mehr
+     scrollbarer Leerraum entsteht nicht. */
+  const reihe = document.querySelector(".seitenblaettern");
+  const fusszeile = document.querySelector(".fusszeile");
+  const blatt = document.querySelector(".blatt");
+  if (reihe) {
+    const lege = () => {
+      const fussHoehe = fusszeile ? fusszeile.getBoundingClientRect().height : 0;
+      reihe.style.bottom = fussHoehe + "px";
+      if (blatt) {
+        blatt.style.paddingBottom = fussHoehe + reihe.getBoundingClientRect().height + 6 + "px";
+      }
+    };
+    new ResizeObserver(lege).observe(reihe);
+    if (fusszeile) new ResizeObserver(lege).observe(fusszeile);
+    lege();
   }`,
         }}
       />
