@@ -662,6 +662,10 @@ const STYLES = `
      die zusaetzlichen Innenraender. */
   .seitenblaettern a.knopf, .seitenblaettern .seitenknopf-aktiv,
   .seitenblaettern .seitenrand { margin-top: 0; }
+  /* zurueck und vor ruecken von den Seitenzahlen ab: Randsteine, keine
+     Glieder der Zahlenreihe. */
+  .seitenblaettern > :first-child { margin-right: 1.1rem; }
+  .seitenblaettern > :last-child { margin-left: 1.1rem; }
   .seitenblaettern a.knopf, .seitenblaettern .seitenknopf-aktiv {
     font-size: .95rem; padding: .5rem .8rem .42rem; min-height: 0; }
   /* Der Block ist ein <nav>: die Kopfzeilen-Regeln (nav a) wuerden hier
