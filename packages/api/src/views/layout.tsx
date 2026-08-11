@@ -791,7 +791,13 @@ const STYLES = `
      weil border-collapse Zeilenraender verschluckt. */
   tr.ziel-oben td { box-shadow: inset 0 2px 0 var(--korrektur); }
   tr.ziel-unten td { box-shadow: inset 0 -2px 0 var(--korrektur); }
-  .griff { color: var(--rand); user-select: none; width: 1.5rem; }
+  /* Das Ziehzeichen ist eine Einladung, kein Inhalt: in Ruhe zurueckgenommen,
+     unter dem Zeiger in voller Farbe -- so tritt es erst hervor, wenn die
+     Zeile gemeint ist. Groesser als der Text, damit es als Griff lesbar ist. */
+  .griff { color: var(--rand); user-select: none; width: 2rem;
+    font-size: 1.7rem; line-height: 1; text-align: center;
+    opacity: .33; transition: opacity .12s ease; }
+  tbody tr:hover .griff, tbody tr:focus-within .griff { opacity: 1; }
 
   /* Sortierbare Spaltenkoepfe: der Pfeil steht erst da, wenn nach dieser
      Spalte sortiert wurde -- vorher zeigt nur der Zeiger, dass sich klicken

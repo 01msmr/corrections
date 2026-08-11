@@ -85,29 +85,33 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
           <span class="zaehler">
             QR-Code abfotografieren.
             <br />
-            Skripte erlauben: folge dem Lionk in der Kurzbefehl-Fehlermeldung.
+            Skripte erlauben: folge dem Link in der Kurzbefehl-Fehlermeldung.
           </span>
         </p>
       </div>
 
       <h2>Der Hinweis an die Redaktion</h2>
       <p>
-        Die Fundstelle wird aus dem Artikel übernommen; der Nutzer berichtigt den Fehler und zusammen mit der Artikel-URL wird eien E‑Mail an die Redaktion erstellt. Eine Kennung am Ende des Betreffs ermöglicht die Zuordnung der Rückmeldung einer Redaktion.
+        Die Fundstelle wird aus dem Artikel übernommen; der Nutzer berichtigt den Fehler und zusammen mit der Artikel-URL wird eine E‑Mail an die Redaktion erstellt. Eine Kennung am Ende des Betreffs ermöglicht die Zuordnung der Rückmeldung einer Redaktion.
       </p>
 
       <h2>Warum</h2>
       <p>
-        Kleine Fehler können rasch behoben werden — wenn die Redaktion des Mediums davon Kenntnis hat. Dieses Web-App macht das Absenden einer Korrektur so einfach wie möglich und verfolgt zudem, welche Korrekturen getätigt wurden, und was Redaktionen
+        Kleine Fehler können rasch behoben werden — wenn die Redaktion des Mediums davon Kenntnis hat. Diese Web-App macht das Absenden einer Korrektur so einfach wie möglich und verfolgt zudem, welche Korrekturen getätigt wurden, und was Redaktionen
         daraus machen.
       </p>
 
       <h2 class="rubrik">Aus der Werkstatt</h2>
       <p>
-        Diese Web-App "Korrektuhren" (im Titel bewusst falsch geschrieben ;-) ist das Produkt einer Woche von mir und Claude. Es werden keine personenbezogenen Daten erhoben.
+        Diese Web-App „Korrektuhren“ (im Titel bewusst falsch geschrieben) ;-) ist das Produkt einer Woche von mir und Claude. Es werden keine personenbezogenen Daten erhoben.
       </p>
       <p>
         Fehlerkategorie und Schweregrad schlägt die Seite selbst vor: Sie vergleicht beide
         Fassungen und erkennt beides anhand von Regeln, wenn es eindeutig erscheint.
+      </p>
+      <p>
+        Der gesamte Quelltext liegt offen unter{" "}
+        <a href="https://github.com/01msmr/corrections">github.com/01msmr/corrections</a>.
       </p>
     </div>
     {/* Der Link laesst sich am Rechner schlecht antippen — kopieren hilft
