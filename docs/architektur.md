@@ -204,3 +204,76 @@ außerhalb von `constants.ts` — der Deploy bricht sonst ab.
 P3 (Antwort-Zuordnung per IMAP) und P5 (Artikel-Prüfungen per Cronjob) — solange
 sie fehlen, bleiben beide Quoten der Bilanz leer. Außerdem weiter offen: der
 Worker-Cronjob in Plesk und der verwaiste Deploy-Schlüssel in `authorized_keys`.
+
+## Ergänzungen (Stand 12. August 2026)
+
+### Meldungshistorie (`/admin/meldungen`)
+
+Nummerierte, filterbare Liste aller Meldungen samt Detailseite und dem
+ersten Schreiber des `outcome`-Felds (Plan
+`docs/superpowers/plans/2026-08-13-meldungshistorie.md`).
+
+- **Nummern** entstehen per `ROW_NUMBER()` über den ungefilterten
+  Gesamtbestand (`COALESCE(sent_at, created_at), id`) und bleiben beim
+  Filtern stehen — Filter erzeugen Lücken, keine Umnummerierung.
+- **Ausgänge:** `open` (ohne Rückmeldung), `acknowledged`, `corrected`,
+  `corrected_other` (anders korrigiert), `rejected` (als richtig benannt).
+  `corrected_other` kam ohne Migration hinzu — SQLite kennt die Enum nicht
+  als Constraint. `no_response` ist Altlast, nur noch lesbar.
+- **Nicht öffentlich, in der Tiefe verteidigt:** Der Router trägt seine
+  eigene `adminAuth`-Schicht zusätzlich zur `/admin/*`-Verdrahtung in
+  app.ts, begrenzt auf die eigenen Pfade (ein `use("*")` sperrte an der
+  Wurzel montiert die ganze Seite). Ein Test montiert ihn ohne die äußere
+  Schicht und erwartet 401; alle Antworten tragen `Cache-Control: no-store`.
+- **Detail** rendert Falsch/Richtig über `fassungenHtml` aus
+  `dispatch/compose.ts` — dieselbe Quelle wie die Mail (Fehlstelle hell auf
+  Karmin/Grün, umgebender Teilsatz fett), kein Nachbau.
+
+### Layout der Meldungsliste
+
+Scroll-Reihenfolge wie im Blatt: erst zieht der Zeitungstitel davon, der
+klebende Kopf bleibt, die Filterzeile klebt bündig darunter; unten stehen
+Blätterreihe und Fußzeile fest, dazwischen läuft allein die Liste.
+
+- Drei gemessene Höhen als CSS-Variablen (`--kopfhoehe`, `--fusshoehe`,
+  `--leistehoehe`), gesetzt per ResizeObserver **nach** `DOMContentLoaded`
+  — das Skript steht im Markup vor der Fußzeile; wer sie sofort suchte,
+  fände nichts (gelernt aus einer echten Überdeckung).
+- Blätterreihe in drei Höhenlagen des Bleisatzes: erhaben (Ziel),
+  eingedrückt (aktive Seite, kein Link), flach auf z = 0 (ziel-loses
+  zurück/vor). Der Innenrand der Reihe muss Hub (7px) und Kanten (5px)
+  der Klötze einschließen, sonst blitzen Zeilen um die Knöpfe durch.
+- **Schmal (≤ 48 rem):** Breite Tabellen (Medien, Kategorien, Meldungen)
+  liegen in einem Quer-Scroller (`.querblatt`) — die Tabelle scrollt IN
+  der Seite, nie die Seite selbst; auf der Meldungsliste wandern
+  Filterzeile und Tabelle gemeinsam. Der Scroller wird erst schmal zum
+  Scroll-Container, weil er sonst das Kleben der Filterzeile am Desktop
+  bräche. Die unteren Leisten laufen schmal randlos über die volle
+  Breite, sonst zöge Inhalt durch die seitlichen Streifen.
+
+### Antwort-Zuordnung (P3, Worker)
+
+Ein Gang durch den Posteingang (`inbox/postfach.ts`, Erkennung rein in
+`inbox/antworten.ts`, Schreiben in `repo/antworten.ts`):
+
+1. Eingangsbestätigungen → Papierkorb, zählen nicht als Antwort.
+2. Zuordnung, der sicherste Weg zuerst: Kennung `[K…]` am Betreffende →
+   Faden (`In-Reply-To` gegen unsere `message_id`) → **Titel**: die alten
+   Meldungen trugen den Artikeltitel als Betreff; der Weg gilt nur bei
+   genau einem Treffer UND passender Absender-Domain (Subdomains zählen).
+3. `response_event` idempotent über die Message-ID; `open` →
+   `acknowledged` mit Mail-Datum, ein gesetzter Ausgang bleibt unberührt.
+
+Gelesen wird ab dem UID-Cursor (`imap_cursor`): der erste Lauf sieht das
+ganze Postfach und holt die Alt-Antworten herein. Wechselt die
+UIDVALIDITY, beginnt der nächste Lauf von vorn — gefahrlos, weil das
+Vermerken idempotent ist. Voraussetzung im Betrieb: `IMAP_*` in Plesk und
+der stündliche Worker-Cron.
+
+### Sitzung nach Basic Auth
+
+Nach der ersten erfolgreichen Anmeldung setzt `adminAuth` ein
+Sitzungs-Cookie (90 Tage): HMAC über die Zugangsdaten — nicht erratbar,
+absichtlich deterministisch, ein Passwortwechsel macht alle Sitzungen
+ungültig, gespeichert wird nichts. iOS-Safari vergisst Basic-Auth-Zugänge
+sonst notorisch schnell.
