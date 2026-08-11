@@ -61,12 +61,17 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-/** Baut die Zitatzeile fuer den HTML-Teil; abweichende Woerter farbig und fett. */
+/**
+ * Baut die Zitatzeile fuer den HTML-Teil. Die Fehlerstelle traegt Grundfarbe
+ * statt Schriftfarbe -- helle Schrift auf Karmin (falsch) bzw. Gruen
+ * (richtig), wie ein Textmarker. Dieselbe Sprache wie die Korrekturfahne
+ * der Vorschau.
+ */
 function renderSegments(segments: DiffSegment[], color: string): string {
   return segments
     .map((s) =>
       s.changed
-        ? `<span style="color:${color};font-weight:700">${escapeHtml(s.text)}</span>`
+        ? `<span style="background:${color};color:${PALETTE.papier};font-weight:700;padding:1px 4px">${escapeHtml(s.text)}</span>`
         : escapeHtml(s.text),
     )
     .join("");
@@ -118,7 +123,7 @@ function fundstelleHtml(
   const vor = input.quotePrefix ?? "";
   const nach = input.quoteSuffix ?? "";
   if (!vor.trim() && !nach.trim()) return "";
-  const markiert = `<strong style="color:${COLOR_BEFORE}">${escapeHtml(quote)}</strong>`;
+  const markiert = `<strong style="background:${COLOR_BEFORE};color:${PALETTE.papier};padding:1px 4px">${escapeHtml(quote)}</strong>`;
   return (
     beschriftung("Im Artikel steht die Stelle hier:") +
     `<div style="${schreibmaschine};font-size:13px;line-height:1.7;color:${PALETTE.rand};margin:0 0 16px">` +

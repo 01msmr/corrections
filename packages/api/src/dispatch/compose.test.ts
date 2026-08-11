@@ -42,8 +42,12 @@ describe("composeMail", () => {
     const { html } = composeMail(INPUT);
     // Farben aus der Palette, nicht als Literal: sonst muss dieser Test bei
     // jeder Farbaenderung mit angefasst werden.
-    expect(html).toContain(`<span style="color:${PALETTE.korrektur};font-weight:700">4,2</span>`);
-    expect(html).toContain(`<span style="color:${PALETTE.vorschlag};font-weight:700">2,4</span>`);
+    expect(html).toContain(
+      `<span style="background:${PALETTE.korrektur};color:${PALETTE.papier};font-weight:700;padding:1px 4px">4,2</span>`,
+    );
+    expect(html).toContain(
+      `<span style="background:${PALETTE.vorschlag};color:${PALETTE.papier};font-weight:700;padding:1px 4px">2,4</span>`,
+    );
     // Der Rest des Satzes steht unmarkiert daneben, damit der Zusammenhang lesbar bleibt.
     expect(html).not.toContain(">Millionen</span>");
     expect(html).toContain("Millionen Menschen");
