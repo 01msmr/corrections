@@ -122,8 +122,21 @@ export const MeldungsListe: FC<{
           placeholder="Kennung, Überschrift, Adresse"
           aria-label="Suche"
         />
+        {/* Ohne JavaScript traegt der Knopf; mit schicken die Auswahlen
+            selbst ab und er tritt zurueck. Das Suchfeld schickt bewusst
+            nicht je Tastendruck -- dort bleibt die Eingabetaste der Weg. */}
         <button type="submit" class="zeilenknopf">Filtern</button>
       </form>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+  for (const auswahl of document.querySelectorAll(".filterzeile select")) {
+    auswahl.addEventListener("change", () => auswahl.form.requestSubmit());
+  }
+  const filterknopf = document.querySelector(".filterzeile button");
+  if (filterknopf) filterknopf.hidden = true;`,
+        }}
+      />
 
       <table class="sortierbar">
         <thead>
