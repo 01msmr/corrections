@@ -50,13 +50,27 @@ Medienverteilung mit Anteils-Segmenten, umschaltbar mit/ohne weiche
 Kategorien. Quoten nur mit n, Tabellen alphabetisch, keine Rankings. Ein
 Abschnitt erklärt, was die Zahlen nicht sagen.
 
+**Historie.** Nummerierte, filterbare Liste aller Meldungen mit Kennung
+und Ausgang (`/admin/meldungen`, nicht öffentlich, mit eigener Auth-Schicht
+zusätzlich zur äußeren — Verteidigung in der Tiefe). Die laufende Nummer
+zählt chronologisch über den Gesamtbestand und bleibt beim Filtern stehen.
+Das Detail zeigt beide Fassungen in der Mail-Auszeichnung, die
+Ereignisleiste (Antworten, Artikel-Prüfungen) und setzt den Ausgang:
+ohne Rückmeldung / Antwort erhalten / korrigiert wie vorgeschlagen /
+anders korrigiert / als richtig benannt.
+
 **Verwaltung.** Medien (Domains, Kontaktadressen) und Fehlerkategorien
 (sortierbar per Drag & Drop) hinter der Anmeldung; nach einmaliger
 Basic-Auth trägt ein Sitzungs-Cookie 90 Tage.
 
 **Worker.** Separater Prozess für wiederkehrende Aufgaben, per Cron
-aufgerufen; räumt u. a. Eingangsbestätigungen der Redaktionen aus dem
-Postfach in den Papierkorb.
+aufgerufen. Ein Gang durch den Posteingang: Eingangsbestätigungen wandern
+in den Papierkorb (zählen nicht als Antwort), echte Redaktionsantworten
+werden zugeordnet — über die Kennung im Betreff, den Faden (In-Reply-To)
+oder, für Meldungen aus der Zeit vor dem Projekt, über Artikeltitel plus
+Absender-Domain — und landen als Ereignis in der Historie; offene
+Meldungen wechseln auf „Antwort erhalten". Der erste Lauf liest das ganze
+Postfach (UID-Cursor), danach nur das Neue.
 
 **Backfill.** Drei Einmalwerkzeuge (`pnpm backfill:korpus|review|import`)
 holen über 1300 Alt-Meldungen aus dem Gesendet-Ordner in die Datenbank:
