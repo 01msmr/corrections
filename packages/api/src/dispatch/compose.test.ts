@@ -67,6 +67,19 @@ describe("composeMail", () => {
     expect(html).toContain("Der Anfang bleibt gleich,");
   });
 
+  it("fuehrt die Korrekturfahne auch in der Mail", () => {
+    const { html } = composeMail(INPUT);
+    expect(html).toContain("Korrekturfahne:");
+    expect(html).toContain(`<del style="color:${PALETTE.korrektur};text-decoration:line-through">4,2</del>`);
+    expect(html).toContain(`<ins style="color:${PALETTE.vorschlag};text-decoration:underline">2,4</ins>`);
+  });
+
+  it("stellt die Artikel-Adresse auf eine eigene Zeile", () => {
+    const { html, text } = composeMail(INPUT);
+    expect(html).toMatch(/siehe:<br>/);
+    expect(text).toMatch(/siehe:\n/);
+  });
+
   it("maskiert HTML-Sonderzeichen aus dem Nutzertext", () => {
     const { html } = composeMail({
       ...INPUT,

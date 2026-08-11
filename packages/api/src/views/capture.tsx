@@ -564,7 +564,8 @@ export const CapturePreview: FC<{
     </div>
     {veraendert ? (
       <p class="fahne">
-        <span class="zaehler">Korrekturfahne: </span>
+        <span class="zaehler">Korrekturfahne:</span>
+        <br />
         {fahne.map((stueck, i) => (
           <>
             {i > 0 ? " " : ""}

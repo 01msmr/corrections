@@ -1,4 +1,6 @@
 import { PALETTE, TILGUNG_STRICH, diffWords, type DiffSegment } from "@korrektur/shared";
+/* Reine Funktion; sie lebt bei den Ansichten, weil die Fahne dort entstand. */
+import { vergleicheFassungen } from "../views/vergleich.js";
 
 export interface ComposeInput {
   /** Kennung im Betreff; null bei Besucher-Hinweisen — niemand ordnet Antworten zu. */
@@ -208,7 +210,7 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
   const meta = metaLine(input);
 
   const intro = input.headline
-    ? ["es gibt einen Fehler im Artikel", `„${input.headline}“,`, `siehe: ${input.articleUrl}`]
+    ? ["es gibt einen Fehler im Artikel", `„${input.headline}“,`, "siehe:", input.articleUrl]
     : ["es gibt einen Fehler in diesem Artikel:", input.articleUrl];
 
   const lines = [
@@ -254,8 +256,8 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
   );
 
   const introHtml = input.headline
-    ? `es gibt einen Fehler im Artikel „${escapeHtml(input.headline)}“, siehe: <a href="${escapeHtml(input.articleUrl)}" style="color:${PALETTE.tinte}">${escapeHtml(input.articleUrl)}</a>`
-    : `es gibt einen Fehler in diesem Artikel: <a href="${escapeHtml(input.articleUrl)}" style="color:${PALETTE.tinte}">${escapeHtml(input.articleUrl)}</a>`;
+    ? `es gibt einen Fehler im Artikel „${escapeHtml(input.headline)}“, siehe:<br><a href="${escapeHtml(input.articleUrl)}" style="color:${PALETTE.tinte}">${escapeHtml(input.articleUrl)}</a>`
+    : `es gibt einen Fehler in diesem Artikel:<br><a href="${escapeHtml(input.articleUrl)}" style="color:${PALETTE.tinte}">${escapeHtml(input.articleUrl)}</a>`;
 
   // Formsprache der Anwendung, uebersetzt in Mail-taugliches HTML: nur
   // Inline-Stile, Tabellen-Wrapper fuer die Lesebreite (Outlook), und nur
@@ -287,6 +289,28 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
       : "",
   ];
 
+  /* Die Korrekturfahne wie in der Vorschau: getilgt in Karmin
+     durchgestrichen, eingesetzt in Gruen unterstrichen -- der kompakte
+     Blick auf den Unterschied, bevor die beiden Fassungen folgen. */
+  const fahneHtml = (() => {
+    const stuecke = vergleicheFassungen(quote, suggestion);
+    if (!stuecke.some((st) => st.art !== "gleich")) return "";
+    const zeile = stuecke
+      .map((st) => {
+        const inhalt = escapeHtml(st.text);
+        if (st.art === "getilgt")
+          return `<del style="color:${COLOR_BEFORE};text-decoration:line-through">${inhalt}</del>`;
+        if (st.art === "eingefuegt")
+          return `<ins style="color:${COLOR_AFTER};text-decoration:underline">${inhalt}</ins>`;
+        return inhalt;
+      })
+      .join(" ");
+    return (
+      beschriftung("Korrekturfahne:") +
+      `<div style="${schreibmaschine};font-size:14px;line-height:1.7;margin:0 0 16px">${zeile}</div>`
+    );
+  })();
+
   const commentHtml = comment
     ? `${beschriftung("Anmerkung:")}<p style="${absatz}">${escapeHtml(comment).replace(/\n/g, "<br>")}</p>`
     : "";
@@ -296,6 +320,7 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
     `<p style="${absatz}">Liebe ${escapeHtml(input.outletName)}-Redaktion,</p>`,
     `<p style="${absatz}">${introHtml}</p>`,
     linie,
+    fahneHtml,
     beschriftung(`Falsch ist (${escapeHtml(input.errorTypeLabel)}):`),
     zitat(renderSegments(diff.before, COLOR_BEFORE), COLOR_BEFORE),
     fundstelleHtml(input, quote, beschriftung, schreibmaschine),
