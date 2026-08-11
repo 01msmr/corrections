@@ -83,7 +83,7 @@ export const MeldungsListe: FC<{
   return (
     <Layout title="Meldungen" aktiv="meldungen" betreiber>
       <h2 class="balken">Meldungen</h2>
-      <p class="zaehler">
+      <p class="zaehler dichter">
         {gesamt} {gesamt === 1 ? "Meldung" : "Meldungen"}
         {seiten > 1 ? ` — Seite ${seite} von ${seiten}` : ""}. Nummern zählen
         chronologisch über den Gesamtbestand; Filtern erzeugt Lücken, keine
@@ -122,19 +122,29 @@ export const MeldungsListe: FC<{
           placeholder="Kennung, Überschrift, Adresse"
           aria-label="Suche"
         />
-        {/* Ohne JavaScript traegt der Knopf; mit schicken die Auswahlen
-            selbst ab und er tritt zurueck. Das Suchfeld schickt bewusst
-            nicht je Tastendruck -- dort bleibt die Eingabetaste der Weg. */}
-        <button type="submit" class="zeilenknopf">Filtern</button>
       </form>
       <script
         dangerouslySetInnerHTML={{
           __html: `
+  /* Kein Filtern-Knopf: die Auswahlen schicken sich selbst ab, das Suchfeld
+     schickt ueber die Eingabetaste. */
   for (const auswahl of document.querySelectorAll(".filterzeile select")) {
     auswahl.addEventListener("change", () => auswahl.form.requestSubmit());
   }
-  const filterknopf = document.querySelector(".filterzeile button");
-  if (filterknopf) filterknopf.hidden = true;`,
+
+  /* Die Filterzeile klebt direkt unter dem klebenden Kopf -- als ein Block,
+     nicht als zweites, eigenes Kleben. Der Kopf aendert seine Hoehe (schmal
+     weicht das Datum beim Scrollen), deshalb wird sie gemessen statt
+     geschaetzt. */
+  const kopf = document.querySelector(".klebekopf");
+  const filterzeile = document.querySelector(".filterzeile");
+  if (kopf && filterzeile) {
+    const setzeKante = () => {
+      filterzeile.style.top = kopf.getBoundingClientRect().height + "px";
+    };
+    new ResizeObserver(setzeKante).observe(kopf);
+    setzeKante();
+  }`,
         }}
       />
 
