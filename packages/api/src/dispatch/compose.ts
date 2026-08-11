@@ -61,20 +61,88 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/** Grenzen der Teilsaetze: Satzzeichen, an denen ein Satzteil endet. */
+const TEILSATZ_GRENZE = /[,;.:!?\u2013\u2014]/;
+
 /**
  * Baut die Zitatzeile fuer den HTML-Teil. Die Fehlerstelle traegt Grundfarbe
  * statt Schriftfarbe -- helle Schrift auf Karmin (falsch) bzw. Gruen
- * (richtig), wie ein Textmarker. Dieselbe Sprache wie die Korrekturfahne
- * der Vorschau.
+ * (richtig), wie ein Textmarker. Der Satzteil **um** die Stelle herum
+ * laeuft fett, die uebrigen Teilsaetze nicht: die unmittelbare Umgebung
+ * gibt den Halt, und die Marke selbst braucht kein eigenes Gewicht -- ihre
+ * Farbe traegt schon.
  */
 function renderSegments(segments: DiffSegment[], color: string): string {
-  return segments
-    .map((s) =>
-      s.changed
-        ? `<span style="background:${color};color:${PALETTE.papier};font-weight:700;padding:1px 4px">${escapeHtml(s.text)}</span>`
-        : escapeHtml(s.text),
-    )
-    .join("");
+  /* Zusammenhaengende Laeufe erst buendeln: der Diff liefert wortweise
+     Segmente, und jedes einzeln umschlossen ergaebe eine strong-Kette. */
+  const laeufe: { changed: boolean; text: string }[] = [];
+  for (const s of segments) {
+    const letzter = laeufe[laeufe.length - 1];
+    if (letzter && letzter.changed === s.changed) letzter.text += s.text;
+    else laeufe.push({ changed: s.changed, text: s.text });
+  }
+
+  /* Fettzonen bestimmen: der Text zerfaellt an den Satzzeichen in
+     Teilsaetze, und fett wird genau der Teilsatz, in dem eine Fehlstelle
+     liegt. Ein Komma innerhalb einer Marke ("4,2") teilt zwar auch -- beide
+     Haelften beruehren dann die Marke und werden gemeinsam fett. */
+  const volltext = laeufe.map((l) => l.text).join("");
+  const grenzen = [0];
+  for (let i = 0; i < volltext.length; i++) {
+    if (TEILSATZ_GRENZE.test(volltext[i] as string)) grenzen.push(i + 1);
+  }
+  grenzen.push(volltext.length);
+
+  const marken: [number, number][] = [];
+  let lauf_ab = 0;
+  for (const lauf of laeufe) {
+    if (lauf.changed) marken.push([lauf_ab, lauf_ab + lauf.text.length]);
+    lauf_ab += lauf.text.length;
+  }
+  const fett = (von: number, bis: number): boolean =>
+    marken.some(([a, b]) => a < bis && b > von);
+  const fettzonen: [number, number][] = [];
+  for (let g = 0; g + 1 < grenzen.length; g++) {
+    const von = grenzen[g] as number;
+    const bis = grenzen[g + 1] as number;
+    if (fett(von, bis)) {
+      const letzte = fettzonen[fettzonen.length - 1];
+      if (letzte && letzte[1] === von) letzte[1] = bis;
+      else fettzonen.push([von, bis]);
+    }
+  }
+  const istFett = (stelle: number): boolean =>
+    fettzonen.some(([a, b]) => stelle >= a && stelle < b);
+
+  const teile: string[] = [];
+  let ab = 0;
+  for (const lauf of laeufe) {
+    if (lauf.changed) {
+      teile.push(
+        `<span style="background:${color};color:${PALETTE.papier};padding:1px 4px">${escapeHtml(lauf.text)}</span>`,
+      );
+    } else {
+      /* Der Lauf kann eine Zonengrenze ueberspannen: stueckweise ausgeben. */
+      let rest = lauf.text;
+      let stelle = ab;
+      while (rest.length > 0) {
+        const zone = istFett(stelle);
+        let laenge = rest.length;
+        for (let i = 1; i < rest.length; i++) {
+          if (istFett(stelle + i) !== zone) {
+            laenge = i;
+            break;
+          }
+        }
+        const stueck = escapeHtml(rest.slice(0, laenge));
+        teile.push(zone ? `<strong style="font-weight:700">${stueck}</strong>` : stueck);
+        rest = rest.slice(laenge);
+        stelle += laenge;
+      }
+    }
+    ab += lauf.text.length;
+  }
+  return teile.join("");
 }
 
 function metaLine(input: ComposeInput): string {

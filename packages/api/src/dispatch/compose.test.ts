@@ -43,14 +43,29 @@ describe("composeMail", () => {
     // Farben aus der Palette, nicht als Literal: sonst muss dieser Test bei
     // jeder Farbaenderung mit angefasst werden.
     expect(html).toContain(
-      `<span style="background:${PALETTE.korrektur};color:${PALETTE.papier};font-weight:700;padding:1px 4px">4,2</span>`,
+      `<span style="background:${PALETTE.korrektur};color:${PALETTE.papier};padding:1px 4px">4,2</span>`,
     );
     expect(html).toContain(
-      `<span style="background:${PALETTE.vorschlag};color:${PALETTE.papier};font-weight:700;padding:1px 4px">2,4</span>`,
+      `<span style="background:${PALETTE.vorschlag};color:${PALETTE.papier};padding:1px 4px">2,4</span>`,
     );
+    // Der Teilsatz um die Marke laeuft fett, die Marke nicht: ihre Farbe
+    // traegt schon.
+    expect(html).toMatch(/<strong style="font-weight:700">[^<]*Millionen Menschen/);
     // Der Rest des Satzes steht unmarkiert daneben, damit der Zusammenhang lesbar bleibt.
     expect(html).not.toContain(">Millionen</span>");
-    expect(html).toContain("Millionen Menschen");
+  });
+
+  it("laesst Teilsaetze ohne Fehlstelle mager", () => {
+    /* Nur der Teilsatz um die Marke traegt Gewicht; was davor oder danach
+       steht, bleibt gewoehnlicher Text. */
+    const { html } = composeMail({
+      ...INPUT,
+      quoteBefore: "Der Anfang bleibt gleich, der Mietwgaen stand bereit.",
+      suggestionAfter: "Der Anfang bleibt gleich, der Mietwagen stand bereit.",
+    });
+    expect(html).toMatch(/<strong style="font-weight:700">[^<]*stand bereit\./);
+    expect(html).not.toMatch(/<strong style="font-weight:700">[^<]*Anfang bleibt gleich/);
+    expect(html).toContain("Der Anfang bleibt gleich,");
   });
 
   it("maskiert HTML-Sonderzeichen aus dem Nutzertext", () => {
