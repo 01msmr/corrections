@@ -649,6 +649,16 @@ const STYLES = `
   body:has(.seitenblaettern) .fussinhalt { padding: .25rem 0 .35rem;
     border-top: 0; }
   body:has(.seitenblaettern) .blatt { padding-bottom: 5.5rem; }
+  /* Die Meldungsliste ist ein Arbeitsblatt: vertikal dicht, aber mit Luft
+     zum Atmen -- knappe Zeilen, kein Gedraenge. Das Detail bleibt normal
+     gesetzt (es traegt keine Blaetterreihe). */
+  body:has(.seitenblaettern) h2.balken { margin-bottom: .45rem; }
+  body:has(.seitenblaettern) .blatt th,
+  body:has(.seitenblaettern) .blatt td { padding: .22rem .5rem; }
+  body:has(.seitenblaettern) .blatt table { margin-top: .4rem; }
+  body:has(.seitenblaettern) .filterzeile { padding: .3rem 0 .4rem; margin-bottom: .3rem; }
+  body:has(.seitenblaettern) .seitenblaettern { padding: .35rem 0 .3rem; }
+  body:has(.seitenblaettern) .fussinhalt { padding: .2rem 0 .3rem; }
   /* Flach gehalten: die Knoepfe behalten ihre Masse, nur die Reihe verliert
      die zusaetzlichen Innenraender. */
   .seitenblaettern a.knopf, .seitenblaettern .seitenknopf-aktiv,
