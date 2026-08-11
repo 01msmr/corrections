@@ -634,7 +634,11 @@ const STYLES = `
     justify-content: center; align-items: center;
     position: fixed; bottom: 2.1rem; left: 50%; transform: translateX(-50%);
     width: min(100% - 2.5rem, var(--mass) - 2.5rem); z-index: 4;
-    margin: 0; padding: .4rem 0 .35rem;
+    /* Der Innenrand muss die Klotz-Geometrie einschliessen: die Flaechen
+       schweben bis 7px ueber ihre Box (Zeigen), die Kanten reichen 5px
+       darunter -- sonst blitzen die Listenzeilen um die Knoepfe herum
+       durch, denn dort waere kein Papiergrund. */
+    margin: 0; padding: .55rem 0 .6rem;
     /* Die Kanten zum Scrollbereich ziehen in Tinte, oben wie unten: die
        festen Zonen sind damit klar vom laufenden Blatt getrennt. */
     background: var(--papier); border-top: 1px solid var(--tinte);
@@ -659,7 +663,6 @@ const STYLES = `
   body:has(.seitenblaettern) .blatt td { padding: .22rem .5rem; }
   body:has(.seitenblaettern) .blatt table { margin-top: .4rem; }
   body:has(.seitenblaettern) .filterzeile { padding: .3rem 0 .4rem; margin-bottom: .3rem; }
-  body:has(.seitenblaettern) .seitenblaettern { padding: .35rem 0 .3rem; }
   body:has(.seitenblaettern) .fussinhalt { padding: .2rem 0 .3rem; }
   /* Flach gehalten: die Knoepfe behalten ihre Masse, nur die Reihe verliert
      die zusaetzlichen Innenraender. */
