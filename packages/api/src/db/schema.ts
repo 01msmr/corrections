@@ -96,8 +96,12 @@ export const corrections = sqliteTable(
     /** Beleg (smtp, bcc) oder Behauptung (client) — trennt die Nenner (§15.2). */
     sendConfirmedBy: text("send_confirmed_by", { enum: ["smtp", "bcc", "client"] }),
 
+    /* corrected = wie vorgeschlagen, corrected_other = anders korrigiert,
+       rejected = als richtig benannt. SQLite kennt die Enum nicht als
+       Constraint; die Erweiterung brauchte deshalb keine Migration.
+       no_response ist Altlast: lesbar, wird aber nicht mehr vergeben. */
     outcome: text("outcome", {
-      enum: ["open", "acknowledged", "corrected", "rejected", "no_response"],
+      enum: ["open", "acknowledged", "corrected", "corrected_other", "rejected", "no_response"],
     })
       .notNull()
       .default("open"),
