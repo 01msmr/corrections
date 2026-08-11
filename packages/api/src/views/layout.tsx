@@ -658,7 +658,10 @@ const STYLES = `
   /* Die Meldungsliste ist ein Arbeitsblatt: vertikal dicht, aber mit Luft
      zum Atmen -- knappe Zeilen, kein Gedraenge. Das Detail bleibt normal
      gesetzt (es traegt keine Blaetterreihe). */
-  body:has(.seitenblaettern) h2.balken { margin-bottom: .45rem; }
+  /* Ohne Balken beginnt die Liste direkt unterm Kopf: der grosse
+     Kopfabstand entfaellt auf dieser Seite. */
+  body:has(.seitenblaettern) .klebekopf { margin-bottom: .4rem; }
+  body:has(.seitenblaettern) .blatt.ohne-titel { padding-top: 0; }
   body:has(.seitenblaettern) .blatt th,
   body:has(.seitenblaettern) .blatt td { padding: .22rem .5rem; }
   body:has(.seitenblaettern) .blatt table { margin-top: .4rem; }

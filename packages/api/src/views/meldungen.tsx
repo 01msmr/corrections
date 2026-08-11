@@ -82,8 +82,8 @@ export const MeldungsListe: FC<{
   };
   return (
     <Layout title="Meldungen" aktiv="meldungen" betreiber>
-      <h2 class="balken">Meldungen</h2>
-
+      {/* Keine Zwischenueberschrift: die aktive Marke in der Navigation
+          benennt die Seite schon, ein Balken doppelte nur. */}
       <form method="get" action="/admin/meldungen" class="filterzeile">
         {/* Die Gesamtzahl der Treffer steht vor den Filtern, in der Zeile. */}
         <span class="trefferzahl">{gesamt}</span>
