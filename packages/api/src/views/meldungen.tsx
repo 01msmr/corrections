@@ -85,6 +85,7 @@ export const MeldungsListe: FC<{
     <Layout title="Meldungen" aktiv="meldungen" betreiber>
       {/* Keine Zwischenueberschrift: die aktive Marke in der Navigation
           benennt die Seite schon, ein Balken doppelte nur. */}
+      <div class="listenrumpf querblatt">
       <form method="get" action="/admin/meldungen" class="filterzeile">
         {/* Die Gesamtzahl der Treffer steht vor den Filtern, in der Zeile. */}
         <span class="trefferzahl">{gesamt}</span>
@@ -158,7 +159,6 @@ export const MeldungsListe: FC<{
         }}
       />
 
-      <div class="listenrumpf">
       <table class="sortierbar">
         <thead>
           <tr>

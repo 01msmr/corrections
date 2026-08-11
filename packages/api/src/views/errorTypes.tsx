@@ -70,6 +70,7 @@ export const ErrorTypeList: FC<{
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
     <h2 class="balken">Kategorien</h2>
+    <div class="querblatt">
     <table>
       <thead>
         <tr>
@@ -103,6 +104,7 @@ export const ErrorTypeList: FC<{
         ))}
       </tbody>
     </table>
+    </div>
     <p id="sortier-status" class="zaehler" aria-live="polite">
       Zum Umsortieren die Zeile ziehen.
     </p>

@@ -114,6 +114,7 @@ export const OutletList: FC<{
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
     <h2 class="balken">Medien</h2>
+    <div class="querblatt">
     <table class="sortierbar">
       <thead>
         <tr>
@@ -154,6 +155,7 @@ export const OutletList: FC<{
         ))}
       </tbody>
     </table>
+    </div>
 
     <h2 class="balken">Neues Medium</h2>
     {vorgabeDomain ? (

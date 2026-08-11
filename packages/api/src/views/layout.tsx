@@ -662,6 +662,19 @@ const STYLES = `
     width: min(100% - 2.5rem, var(--mass) - 2.5rem);
     margin: 0; background: var(--papier); }
   .listenrumpf table { margin-top: .25rem; }
+  /* Breite Arbeits-Tabellen (Medien, Kategorien, Meldungen): am Telefon
+     scrollt der Inhalt IN der Seite quer, nie die Seite selbst. Auf der
+     Meldungsliste liegen Filter und Tabelle im selben Scroller und wandern
+     gemeinsam. Breit ist der Scroller unsichtbar (alles passt) -- und erst
+     schmal wird er zum Scroll-Container: sonst braeche er das Kleben der
+     Filterzeile auch am Desktop. */
+  @media (max-width: 48rem) {
+    .querblatt { overflow-x: auto; }
+    .querblatt table { width: max-content; min-width: 100%; }
+    .querblatt .filterzeile { flex-wrap: nowrap; min-width: max-content;
+      position: static; }
+    .querblatt .filterzeile input[type="search"] { min-width: 11rem; }
+  }
   body:has(.listenrumpf) .blatt th,
   body:has(.listenrumpf) .blatt td { padding: .22rem .5rem; }
   body:has(.listenrumpf) .fusszeile { margin-top: 0; }
