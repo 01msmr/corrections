@@ -319,11 +319,8 @@ const STYLES = `
     transform: none; box-shadow: none; border-color: var(--korrektur); }
   .treffer-zeile.stil { opacity: .72; }
   .trefferWechsel { display: block; font: 700 .85rem/1.4 var(--mono); }
-  /* Dieselbe Markersprache wie in der Korrekturfahne. */
-  .trefferWechsel del { background: var(--korrektur); color: var(--papier);
-    text-decoration: none; padding: .05em .18em; margin-right: .5em; }
-  .trefferWechsel ins { background: var(--vorschlag); color: var(--papier);
-    text-decoration: none; padding: .05em .18em; }
+  .trefferWechsel del { color: var(--korrektur); text-decoration-thickness: 2px; margin-right: .5em; }
+  .trefferWechsel ins { color: var(--vorschlag); text-decoration: none; }
   .trefferOft { font: .68rem/1 var(--sans); color: var(--rand); margin-left: .6em; }
   .trefferSatz { display: block; font-size: .8rem; color: var(--rand); margin-top: .15rem; }
   .trefferSatz mark { background: color-mix(in srgb, var(--korrektur) 18%, var(--papier));
@@ -776,13 +773,10 @@ const STYLES = `
      Getilgtes durchgestrichen in Karmin, Eingefuegtes unterstrichen in Gruen.
      Beide tragen Strich und Farbe -- keines der Mittel steht allein. */
   .fahne { font: 1.05rem/1.6 var(--mono); margin: 0 0 1rem; }
-  /* Die Fehlerstelle traegt Grundfarbe statt Schriftfarbe: hell auf Karmin
-     (falsch) bzw. auf Gruen (richtig) -- wie ein Textmarker, nicht wie
-     eingefaerbte Woerter. Striche eruebrigen sich damit. */
-  .fahne del { background: var(--korrektur); color: var(--papier);
-    text-decoration: none; padding: .05em .18em; }
-  .fahne ins { background: var(--vorschlag); color: var(--papier);
-    text-decoration: none; padding: .05em .18em; }
+  .fahne del { color: var(--korrektur); text-decoration: line-through;
+    text-decoration-thickness: 2px; }
+  .fahne ins { color: var(--vorschlag); text-decoration: underline;
+    text-decoration-thickness: 2px; }
   .mailvorschau { border: 1px solid var(--linie); margin: 0 0 1.5rem; overflow-x: auto; }
   /* Die ganze Zeile ist das Klickziel -- beim Zeigen fuellt sie sich einen Hauch
      dunkler, nicht invers. Formulare und Griff sind davon ausgenommen. */
