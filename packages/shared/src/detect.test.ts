@@ -2,6 +2,28 @@ import { describe, expect, it } from "vitest";
 import { detectErrorChar, detectErrorCount, detectErrorTypeKey, detectSeverity } from "./detect.js";
 
 describe("detectErrorTypeKey", () => {
+  it("erkennt ein fehlendes Leerzeichen (Zusammenschreibung)", () => {
+    expect(
+      detectErrorTypeKey("Kann die Bahn ihn wiederbeleben?", "Kann die Bahn ihn wieder beleben?"),
+    ).toBe("leerzeichen_fehlt");
+  });
+
+  it("erkennt ein ueberzaehliges Leerzeichen (Getrenntschreibung)", () => {
+    expect(detectErrorTypeKey("so wohl die einen", "sowohl die einen")).toBe(
+      "leerzeichen_zu_viel",
+    );
+  });
+
+  it("zaehlt fehlende Leerzeichen mit", () => {
+    expect(
+      detectErrorCount("erzog los", "er zog los", detectErrorTypeKey("erzog los", "er zog los")),
+    ).toBe(1);
+  });
+
+  it("gibt bei nur verschobenem Leerzeichen keinen Schluessel", () => {
+    expect(detectErrorTypeKey("wie derbeleben", "wieder beleben")).toBe(null);
+  });
+
   it("erkennt ein fehlendes Komma", () => {
     expect(
       detectErrorTypeKey("Er kam wie immer zu spät.", "Er kam, wie immer, zu spät."),

@@ -12,6 +12,8 @@ import { normalizeText } from "./text.js";
 export type DetectedErrorTypeKey =
   | "zeichen_fehlt"
   | "zeichen_zu_viel"
+  | "leerzeichen_fehlt"
+  | "leerzeichen_zu_viel"
   | "buchstabendreher"
   | "komma_fehlt"
   | "komma_zu_viel"
@@ -100,6 +102,17 @@ export function detectErrorTypeKey(falsch: string, richtig: string): DetectedErr
     return null; // verschobenes Satzzeichen: kein eindeutiger Schluessel
   }
 
+  // Nur Leerzeichen verschieden? Dann ist es Getrennt- oder
+  // Zusammenschreibung ("wiederbeleben" / "wieder beleben") — der Wort-Diff
+  // saehe hier ein Wort gegen zwei und traute sich nichts zu.
+  if (a.replace(/\s+/g, "") === b.replace(/\s+/g, "")) {
+    const leerA = (a.match(/\s+/g) ?? []).length;
+    const leerB = (b.match(/\s+/g) ?? []).length;
+    if (leerB > leerA) return "leerzeichen_fehlt";
+    if (leerB < leerA) return "leerzeichen_zu_viel";
+    return null; // verschobenes Leerzeichen: kein eindeutiger Schluessel
+  }
+
   const diff = diffWords(a, b);
   const inFalsch = geaenderteWoerter(diff.before);
   const inRichtig = geaenderteWoerter(diff.after);
@@ -176,6 +189,13 @@ export function detectErrorCount(
       const zeichenA = (a.match(SATZZEICHEN) ?? []).length;
       const zeichenB = (b.match(SATZZEICHEN) ?? []).length;
       const anzahl = Math.abs(zeichenB - zeichenA);
+      return anzahl > 0 ? anzahl : null;
+    }
+    case "leerzeichen_fehlt":
+    case "leerzeichen_zu_viel": {
+      const leerA = (a.match(/\s+/g) ?? []).length;
+      const leerB = (b.match(/\s+/g) ?? []).length;
+      const anzahl = Math.abs(leerB - leerA);
       return anzahl > 0 ? anzahl : null;
     }
     case "wort_fehlt":
@@ -278,6 +298,8 @@ export function detectSeverity(
     case "komma_zu_viel":
     case "zeichen_fehlt":
     case "zeichen_zu_viel":
+    case "leerzeichen_fehlt":
+    case "leerzeichen_zu_viel":
     case "buchstabendreher":
       return 1;
     case "wort_fehlt":
