@@ -983,8 +983,6 @@ const STYLES = `
     /* Die Hauptreihe weicht dem Aufklapper; die Verwaltungspille bleibt. */
     nav > a { display: none; }
     .navklapp { display: block; }
-    /* Meldungen steht schmal im Aufklapper, nicht doppelt in der Pille. */
-    .randressorts a[href="/admin/meldungen"] { display: none; }
     /* Umbruch VOR der Pille: das leere Pseudoelement fuellt die Zeile, die
        Pille kommt per order dahinter — sie behaelt dadurch ihre natuerliche
        Breite, statt sich ueber die ganze Zeile zu spannen. */
@@ -1217,6 +1215,11 @@ export const Layout: FC<
             <a href="/bilanz" aria-current={aktiv === "bilanz" ? "page" : undefined} draggable={false}>
               Bilanz
             </a>
+            {betreiber ? (
+              <a href="/admin/meldungen" aria-current={aktiv === "meldungen" ? "page" : undefined} draggable={false}>
+                Meldungen
+              </a>
+            ) : null}
             <a href="/" aria-current={aktiv === "ueber" ? "page" : undefined} draggable={false}>
               In eigener Sache
             </a>
@@ -1228,9 +1231,6 @@ export const Layout: FC<
               </a>
               <a href="/admin/fehlerarten" aria-current={aktiv === "fehlerarten" ? "page" : undefined} draggable={false}>
                 Kategorien
-              </a>
-              <a href="/admin/meldungen" aria-current={aktiv === "meldungen" ? "page" : undefined} draggable={false}>
-                Meldungen
               </a>
             </span>
             </nav>
