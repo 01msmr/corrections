@@ -1,6 +1,6 @@
 # Meldungshistorie Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Nummerierte, filterbare Liste aller Meldungen mit Kennung und Ausgang
 (`/admin/meldungen`), Detailseite je Meldung mit Ereignisleiste und dem
@@ -44,18 +44,18 @@ die Enum nicht als Constraint — die Erweiterung braucht keine Migration.
   `leseMeldung(db, id)`, `setzeAusgang(db, id, angaben)`,
   Typen `MeldungsZeile`, `MeldungsFilter`, `Ausgang`.
 
-- [ ] **Step 1: Failing Tests** — Nummern bleiben beim Filtern stabil (drei
+- [x] **Step 1: Failing Tests** — Nummern bleiben beim Filtern stabil (drei
   Meldungen, Filter auf Medium B ⇒ Nummer 2 bleibt 2); Filter Medium,
   Kategorie, Ausgang, Freitext (ref/Überschrift/URL, LIKE, maskiert);
   Seiten (limit/offset); `leseMeldung` liefert Ereignisse
   (`response_events` + `article_checks`) zeitlich sortiert; `setzeAusgang`
   schreibt outcome/respondedAt/correctedAt und lehnt unbekannte ids ab.
-- [ ] **Step 2: Implementierung** — Unterabfrage mit
+- [x] **Step 2: Implementierung** — Unterabfrage mit
   `ROW_NUMBER() OVER (ORDER BY COALESCE(sent_at, created_at), id) AS nummer`,
   außen Filter + `ORDER BY nummer DESC LIMIT :n OFFSET :o`; Join auf
   outlets/error_types für Namen. `setzeAusgang` als einzelnes UPDATE.
-- [ ] **Step 3: `pnpm exec vitest run packages/api/src/repo/meldungen.test.ts`** — PASS
-- [ ] **Step 4: Commit** `git commit -m "Meldungs-Repo: nummerierte Liste, Detail, Ausgang-Schreiber"`
+- [x] **Step 3: `pnpm exec vitest run packages/api/src/repo/meldungen.test.ts`** — PASS
+- [x] **Step 4: Commit** `git commit -m "Meldungs-Repo: nummerierte Liste, Detail, Ausgang-Schreiber"`
 
 ### Task 2: Ansichten
 
@@ -75,13 +75,13 @@ die Enum nicht als Constraint — die Erweiterung braucht keine Migration.
   „Antwort vom" / „korrigiert am", Hinweis: Eingangsbestätigungen zählen
   nicht als Antwort).
 
-- [ ] **Step 1:** Ansichten schreiben; Ausgänge als Text ohne Wertungsfarben:
+- [x] **Step 1:** Ansichten schreiben; Ausgänge als Text ohne Wertungsfarben:
   offen→„ohne Rückmeldung", acknowledged→„Antwort erhalten",
   corrected→„korrigiert wie vorgeschlagen", corrected_other→„anders
   korrigiert", rejected→„als richtig benannt"; `no_response` nur lesbar.
-- [ ] **Step 2:** Datumseingabe `<input type="date">`, Umrechnung zur UTC-Epoche
+- [x] **Step 2:** Datumseingabe `<input type="date">`, Umrechnung zur UTC-Epoche
   in der Route (12:00 UTC gegen Zeitzonenkippen).
-- [ ] **Step 3: Commit** mit Task 3 gemeinsam.
+- [x] **Step 3: Commit** mit Task 3 gemeinsam.
 
 ### Task 3: Routen und Verdrahtung
 
@@ -96,12 +96,12 @@ die Enum nicht als Constraint — die Erweiterung braucht keine Migration.
   ignoriert), `GET /admin/meldungen/:id` (404 bei unbekannt),
   `POST /admin/meldungen/:id/ausgang` (Redirect zurück aufs Detail).
 
-- [ ] **Step 1: Failing Tests** — Liste 200 mit Kennung + Nummer; Filter
+- [x] **Step 1: Failing Tests** — Liste 200 mit Kennung + Nummer; Filter
   wirkt; Detail zeigt beide Fassungen; POST setzt Ausgang und leitet um;
   alles hinter Auth (401 ohne); der Router allein montiert (ohne app.ts-
   Schicht) liefert ebenfalls 401; Antworten tragen no-store.
-- [ ] **Step 2: Implementieren + verdrahten**; Navi zeigt „Meldungen" nur
+- [x] **Step 2: Implementieren + verdrahten**; Navi zeigt „Meldungen" nur
   Betreibern (wie Medien|Kategorien).
-- [ ] **Step 3: Voll-Lauf** `pnpm exec vitest run && pnpm typecheck && pnpm lint` — PASS
-- [ ] **Step 4: Commit + Push**; Deploy abwarten, live gegen `/admin/meldungen`
+- [x] **Step 3: Voll-Lauf** `pnpm exec vitest run && pnpm typecheck && pnpm lint` — PASS
+- [x] **Step 4: Commit + Push**; Deploy abwarten, live gegen `/admin/meldungen`
   prüfen (401 ohne Zugang genügt als Beleg).

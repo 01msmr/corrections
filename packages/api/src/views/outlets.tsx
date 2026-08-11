@@ -130,7 +130,16 @@ export const OutletList: FC<{
               <a href={`/admin/redaktionen/${outlet.id}`} draggable={false}>{outlet.name}</a>
             </td>
             <td>{outlet.domains.join(", ")}</td>
-            <td>{outlet.contactEmails.length}</td>
+            {/* Die Adresse selbst statt einer blossen Anzahl; bei mehreren
+                steht die erste mit Auslassung, die volle Liste liegt im
+                title und damit unter dem Zeiger. */}
+            <td title={outlet.contactEmails.join(", ")}>
+              {outlet.contactEmails.length === 0
+                ? "—"
+                : outlet.contactEmails.length === 1
+                  ? outlet.contactEmails[0]
+                  : `${outlet.contactEmails[0]} …`}
+            </td>
             <td class="aktion">
               <form
                 class="inline"

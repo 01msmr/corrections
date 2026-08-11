@@ -288,6 +288,27 @@ const STYLES = `
     color: var(--tinte); }
   .randressorts a[aria-current="page"] {
     background: var(--balkengrund); color: var(--papier); }
+  /* Der Aufklapper der schmalen Navigation: die Zeile oben traegt den
+     aktiven Bereich wie die aktive Ressortmarke (hell auf Karmin), die
+     Liste faellt als Blatt darunter. */
+  .navklapp { display: none; position: relative;
+    font: 700 .85rem/1 var(--mono); letter-spacing: .03em; }
+  .navklapp summary { list-style: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: .5em;
+    background: var(--korrektur); color: var(--papier);
+    padding: .55rem .95rem .45rem; }
+  .navklapp summary::-webkit-details-marker { display: none; }
+  .klapppfeil { font-size: .8em; transition: transform .12s ease; }
+  .navklapp[open] .klapppfeil { transform: rotate(180deg); }
+  .klappliste { position: absolute; top: 100%; left: 0; min-width: 100%;
+    z-index: 7; background: var(--papier); border: 1px solid var(--linie);
+    box-shadow: 0 10px 22px -8px rgb(var(--schatten) / .35); }
+  .klappliste a { display: block; white-space: nowrap;
+    padding: .65rem .95rem .55rem; color: var(--rand);
+    text-decoration: none; border-bottom: 1px solid var(--linie); }
+  .klappliste a:last-child { border-bottom: none; }
+  .klappliste a:hover, .klappliste a:focus-visible {
+    background: var(--linie); color: var(--tinte); }
   nav a { font: 700 .95rem/1 var(--mono); letter-spacing: .03em;
     color: var(--rand); text-decoration: none; padding: .6rem .95rem .5rem;
     border-bottom: 2px solid transparent; }
@@ -585,6 +606,16 @@ const STYLES = `
   .knopftext { display: block; white-space: nowrap; }
   button, a.knopf { white-space: nowrap; }
   .taste { margin-left: .32em; font-size: 1.2em; opacity: .7; }
+  /* Filter der Meldungsliste: eine Reihe, die schmal umbricht. */
+  .filterzeile { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
+    margin: 0 0 1rem; }
+  .filterzeile select, .filterzeile input { width: auto; margin: 0; }
+  .filterzeile input[type="search"] { flex: 1; min-width: 12rem; }
+  .blaettern { display: flex; justify-content: space-between; margin-top: 1rem; }
+  /* Anker-Zitate im Meldungsdetail: die Fundstelle traegt Gewicht, der
+     Kontext die Nebenstimme. */
+  blockquote.anker { margin: 0 0 1rem; padding: .6rem .9rem;
+    border-left: 3px solid var(--linie); font: 1rem/1.6 var(--mono); }
   /* Der Einfuegeknopf steht links vor dem Fundstellen-Feld: ein
      Geisterknopf -- nur das Zeichen, kein Klotz, kein Rahmen. In Ruhe grau
      wie der Tabellen-Griff, unter dem Zeiger Tinte; er tritt erst hervor,
@@ -949,6 +980,11 @@ const STYLES = `
     nav { flex-wrap: wrap; justify-content: center; row-gap: .1rem; }
     nav a { white-space: nowrap; font-size: .72rem; padding: .55rem .7rem .45rem; }
     nav > a:first-child { margin-left: 0; }
+    /* Die Hauptreihe weicht dem Aufklapper; die Verwaltungspille bleibt. */
+    nav > a { display: none; }
+    .navklapp { display: block; }
+    /* Meldungen steht schmal im Aufklapper, nicht doppelt in der Pille. */
+    .randressorts a[href="/admin/meldungen"] { display: none; }
     /* Umbruch VOR der Pille: das leere Pseudoelement fuellt die Zeile, die
        Pille kommt per order dahinter — sie behaelt dadurch ihre natuerliche
        Breite, statt sich ueber die ganze Zeile zu spannen. */
@@ -1011,7 +1047,14 @@ const STYLES = `
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 `;
 
-export type Bereich = "neu" | "redaktionen" | "fehlerarten" | "bilanz" | "backfill" | "ueber";
+export type Bereich =
+  | "neu"
+  | "redaktionen"
+  | "fehlerarten"
+  | "meldungen"
+  | "bilanz"
+  | "backfill"
+  | "ueber";
 
 /**
  * Beschriftung der Navigationspunkte. Traegt die Seite denselben Titel wie ihr
@@ -1023,6 +1066,7 @@ const BEREICH_TITEL: Record<Bereich, string> = {
   neu: "Neue Korrektur",
   redaktionen: "Medien",
   fehlerarten: "Kategorien",
+  meldungen: "Meldungen",
   bilanz: "Bilanz",
   backfill: "Altbestand",
   ueber: "In eigener Sache",
@@ -1135,6 +1179,32 @@ export const Layout: FC<
         <div class="navzeile">
           <div class="kopfinhalt">
             <nav>
+            {/* Schmal ersetzt ein Aufklapper die Hauptreihe: oben steht der
+                aktive Bereich (im Rot der aktiven Marke), darunter klappen
+                die uebrigen aus. details/summary -- kein Skript, schliesst
+                sich durch die Navigation von selbst. Breit: unsichtbar. */}
+            <details class="navklapp">
+              <summary>
+                {aktiv ? BEREICH_TITEL[aktiv] : "Menü"}
+                <span class="klapppfeil" aria-hidden="true">▾</span>
+              </summary>
+              <div class="klappliste">
+                {(
+                  [
+                    { key: "neu", href: betreiber ? "/neu" : "/hinweis" },
+                    { key: "bilanz", href: "/bilanz" },
+                    ...(betreiber ? ([{ key: "meldungen", href: "/admin/meldungen" }] as const) : []),
+                    { key: "ueber", href: "/" },
+                  ] as const
+                )
+                  .filter((ziel) => ziel.key !== aktiv)
+                  .map((ziel) => (
+                    <a href={ziel.href} draggable={false}>
+                      {BEREICH_TITEL[ziel.key]}
+                    </a>
+                  ))}
+              </div>
+            </details>
             {betreiber ? (
               <a href="/neu" aria-current={aktiv === "neu" ? "page" : undefined} draggable={false}>
                 Neue Korrektur
@@ -1158,6 +1228,9 @@ export const Layout: FC<
               </a>
               <a href="/admin/fehlerarten" aria-current={aktiv === "fehlerarten" ? "page" : undefined} draggable={false}>
                 Kategorien
+              </a>
+              <a href="/admin/meldungen" aria-current={aktiv === "meldungen" ? "page" : undefined} draggable={false}>
+                Meldungen
               </a>
             </span>
             </nav>

@@ -5,6 +5,7 @@ import type { Db } from "./db/client.js";
 import type { Mailer } from "./dispatch/send.js";
 import type { Env } from "./env.js";
 import { errorTypeAdminRoutes } from "./routes/admin/errorTypes.js";
+import { meldungenRoutes } from "./routes/admin/meldungen.js";
 import { outletAdminRoutes } from "./routes/admin/outlets.js";
 import { backfillAdminRoutes } from "./routes/admin/backfill.js";
 import { bilanzRoutes } from "./routes/bilanz.js";
@@ -37,6 +38,8 @@ export function createApp(options: AppOptions): Hono {
     app.use(pfad, betreiberErkennung());
     app.use(pfad, adminAuth(options.env));
   }
+
+  app.route("/", meldungenRoutes({ db: options.db, env: options.env }));
 
   app.route(
     "/",
