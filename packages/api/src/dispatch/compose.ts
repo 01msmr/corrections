@@ -1,4 +1,4 @@
-import { diffWords, PALETTE, type DiffSegment } from "@korrektur/shared";
+import { PALETTE, TILGUNG_STRICH, diffWords, type DiffSegment } from "@korrektur/shared";
 
 export interface ComposeInput {
   /** Kennung im Betreff; null bei Besucher-Hinweisen — niemand ordnet Antworten zu. */
@@ -199,8 +199,14 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
     `<div style="${schreibmaschine};font-size:13px;color:${PALETTE.tinte};margin:0 0 2px">${text}</div>`;
   const linie = `<div style="border-top:1px solid ${PALETTE.linie};margin:20px 0">&nbsp;</div>`;
 
+  /* Die Wortmarke traegt den Filzstiftstrich des Titels (TILGUNG_STRICH,
+     eine Quelle fuer Kopf, Mail und Icons). Als data-URI-Hintergrund: Apple
+     Mail, Outlook (macOS) und Thunderbird zeigen ihn; Gmail und Outlook
+     (Windows) verwerfen data-URIs, dort steht das H ungestrichen -- der
+     Text darunter erklaert das Blatt ohnehin. Ein line-through als
+     Rueckfall schiede aus: wo beides laeuft, staenden zwei Striche. */
   const kopf = [
-    `<div style="text-align:center;font-family:Didot,'Bodoni 72',Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;letter-spacing:2px;color:${PALETTE.tinte}">KORREKTU<span style="text-decoration:line-through;text-decoration-color:${PALETTE.korrektur}">H</span>REN</div>`,
+    `<div style="text-align:center;font-family:Didot,'Bodoni 72',Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;letter-spacing:2px;color:${PALETTE.tinte}">KORREKTU<span style="background:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 ${TILGUNG_STRICH.breite} ${TILGUNG_STRICH.hoehe}%22 preserveAspectRatio=%22none%22%3E%3Cpath d=%22${TILGUNG_STRICH.pfad}%22 fill=%22${PALETTE.korrektur.replace("#", "%23")}%22/%3E%3C/svg%3E') center/100% 100% no-repeat;padding:2px 5px;margin:-2px -5px">H</span>REN</div>`,
     `<div style="background:${PALETTE.tinte};color:${PALETTE.papier};${schreibmaschine};font-size:11px;font-weight:700;letter-spacing:2px;text-align:center;padding:5px 8px;margin:10px 0 22px">BLATT ZUR TEXTPFLEGE &bull; UNABHÄNGIG &bull; ÜBERPARTEILICH</div>`,
     `<div style="${schreibmaschine};font-size:12px;font-weight:700;letter-spacing:2px;color:${PALETTE.korrektur};text-transform:uppercase;margin:0 0 4px">Korrektur</div>`,
     input.headline

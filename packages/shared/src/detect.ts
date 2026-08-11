@@ -23,6 +23,7 @@ export type DetectedErrorTypeKey =
   | "falsches_datum"
   | "falscher_name"
   | "falsche_wortwahl"
+  | "inhaltsfehler"
   | "satzbau";
 
 /* Satzzeichen im weiten Sinn: Interpunktion, Anfuehrungen, Gedankenstriche.
@@ -67,6 +68,22 @@ function istDreher(a: string, b: string): boolean {
   if (erste === undefined || zweite === undefined || zweite !== erste + 1) return false;
   return a[erste] === b[zweite] && a[zweite] === b[erste];
 }
+
+/**
+ * Personalpaare: ein Tausch innerhalb eines Paars schreibt die Aussage der
+ * falschen Person zu — das ist ein Inhaltsfehler, kein Wortwahl-Problem.
+ * Bewusst nur eindeutige Pronomen und Anreden; Artikel (der/die) bleiben
+ * draussen, dort waere jede Deutung geraten.
+ */
+const PERSONALIA = [
+  ["er", "sie"], ["ihm", "ihr"], ["ihn", "sie"], ["dessen", "deren"],
+  ["sein", "ihr"], ["seine", "ihre"], ["seinem", "ihrem"],
+  ["seinen", "ihren"], ["seiner", "ihrer"], ["seines", "ihres"],
+  ["herr", "frau"], ["herrn", "frau"],
+] as const;
+const PERSONALIA_SCHLUESSEL = new Set(
+  PERSONALIA.map((paar) => [...paar].sort().join("|")),
+);
 
 interface Geaendert {
   wort: string;
@@ -133,6 +150,10 @@ export function detectErrorTypeKey(falsch: string, richtig: string): DetectedErr
     if (/\d/.test(alt.wort) && /\d/.test(neu.wort)) {
       return istDatumswort(alt.wort) || istDatumswort(neu.wort) ? "falsches_datum" : "falsche_zahl";
     }
+    // Vor dem Dreher: "ihm" gegen "ihr" ist ein Personentausch, kein
+    // Tippfehler -- auch wenn sich nur ein Buchstabe unterscheidet.
+    const paar = [kern(alt.wort), kern(neu.wort)].sort().join("|");
+    if (PERSONALIA_SCHLUESSEL.has(paar)) return "inhaltsfehler";
     if (istDreher(alt.wort, neu.wort)) return "buchstabendreher";
     // Auch ein einzelnes ersetztes Zeichen ist fast immer ein Tippfehler,
     // kein bewusst anderes Wort -- Dreher ist die wahrscheinlichere Deutung.
@@ -310,6 +331,7 @@ export function detectSeverity(
     case "falsche_zahl":
     case "falsches_datum":
     case "falscher_name":
+    case "inhaltsfehler":
       return 3;
   }
 }

@@ -2,6 +2,22 @@ import { describe, expect, it } from "vitest";
 import { detectErrorChar, detectErrorCount, detectErrorTypeKey, detectSeverity } from "./detect.js";
 
 describe("detectErrorTypeKey", () => {
+  it("erkennt vertauschte Personalpronomen als Inhaltsfehler", () => {
+    expect(detectErrorTypeKey("Dann sagte er ab.", "Dann sagte sie ab.")).toBe("inhaltsfehler");
+    expect(detectErrorTypeKey("mit seiner Frau", "mit ihrer Frau")).toBe("inhaltsfehler");
+    /* "ihm" gegen "ihr": nur ein Buchstabe anders -- darf trotzdem kein
+       Buchstabendreher werden. */
+    expect(detectErrorTypeKey("Es gehört ihm.", "Es gehört ihr.")).toBe("inhaltsfehler");
+  });
+
+  it("stuft den Personentausch als schwer ein", () => {
+    expect(detectSeverity("Dann sagte er ab.", "Dann sagte sie ab.", "inhaltsfehler")).toBe(3);
+  });
+
+  it("laesst Nicht-Personalia unberuehrt", () => {
+    expect(detectErrorTypeKey("das Haus", "das Maus")).toBe("buchstabendreher");
+  });
+
   it("erkennt ein fehlendes Leerzeichen (Zusammenschreibung)", () => {
     expect(
       detectErrorTypeKey("Kann die Bahn ihn wiederbeleben?", "Kann die Bahn ihn wieder beleben?"),

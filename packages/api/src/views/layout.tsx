@@ -1,4 +1,4 @@
-import { PALETTE, PALETTE_DUNKEL } from "@korrektur/shared";
+import { PALETTE, PALETTE_DUNKEL, TILGUNG_STRICH } from "@korrektur/shared";
 import type { FC, PropsWithChildren } from "hono/jsx";
 
 /** Fuer Farben in data-URIs: "#rrggbb" -> "%23rrggbb". */
@@ -254,7 +254,7 @@ const STYLES = `
   .marke .tilgung::after, .klebemarke .tilgung::after {
     content: ""; position: absolute;
     left: -.22em; right: -.22em; top: -.15em; bottom: -.15em;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='26' viewBox='0 0 46 26' preserveAspectRatio='none'%3E%3Cpath d='M2.4 20.6C13.2 16.4 26.4 10.2 41.8 3.2c1.1-.5 1.9.6 1 1.3-2 1.5-4.6 3-8 4.8C25.6 14.4 13.4 20.4 4.4 24c-1.3.5-2.6-1.6-2-3.4z' fill='${uri(PALETTE.korrektur)}'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${TILGUNG_STRICH.breite}' height='${TILGUNG_STRICH.hoehe}' viewBox='0 0 ${TILGUNG_STRICH.breite} ${TILGUNG_STRICH.hoehe}' preserveAspectRatio='none'%3E%3Cpath d='${TILGUNG_STRICH.pfad}' fill='${uri(PALETTE.korrektur)}'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
   }
   nav { display: flex; gap: 0; flex-wrap: wrap; align-items: baseline;
     justify-content: center; width: 100%; }
@@ -319,8 +319,11 @@ const STYLES = `
     transform: none; box-shadow: none; border-color: var(--korrektur); }
   .treffer-zeile.stil { opacity: .72; }
   .trefferWechsel { display: block; font: 700 .85rem/1.4 var(--mono); }
-  .trefferWechsel del { color: var(--korrektur); text-decoration-thickness: 2px; margin-right: .5em; }
-  .trefferWechsel ins { color: var(--vorschlag); text-decoration: none; }
+  /* Dieselbe Markersprache wie in der Korrekturfahne. */
+  .trefferWechsel del { background: var(--korrektur); color: var(--papier);
+    text-decoration: none; padding: .05em .18em; margin-right: .5em; }
+  .trefferWechsel ins { background: var(--vorschlag); color: var(--papier);
+    text-decoration: none; padding: .05em .18em; }
   .trefferOft { font: .68rem/1 var(--sans); color: var(--rand); margin-left: .6em; }
   .trefferSatz { display: block; font-size: .8rem; color: var(--rand); margin-top: .15rem; }
   .trefferSatz mark { background: color-mix(in srgb, var(--korrektur) 18%, var(--papier));
@@ -773,10 +776,13 @@ const STYLES = `
      Getilgtes durchgestrichen in Karmin, Eingefuegtes unterstrichen in Gruen.
      Beide tragen Strich und Farbe -- keines der Mittel steht allein. */
   .fahne { font: 1.05rem/1.6 var(--mono); margin: 0 0 1rem; }
-  .fahne del { color: var(--korrektur); text-decoration: line-through;
-    text-decoration-thickness: 2px; }
-  .fahne ins { color: var(--vorschlag); text-decoration: underline;
-    text-decoration-thickness: 2px; }
+  /* Die Fehlerstelle traegt Grundfarbe statt Schriftfarbe: hell auf Karmin
+     (falsch) bzw. auf Gruen (richtig) -- wie ein Textmarker, nicht wie
+     eingefaerbte Woerter. Striche eruebrigen sich damit. */
+  .fahne del { background: var(--korrektur); color: var(--papier);
+    text-decoration: none; padding: .05em .18em; }
+  .fahne ins { background: var(--vorschlag); color: var(--papier);
+    text-decoration: none; padding: .05em .18em; }
   .mailvorschau { border: 1px solid var(--linie); margin: 0 0 1.5rem; overflow-x: auto; }
   /* Die ganze Zeile ist das Klickziel -- beim Zeigen fuellt sie sich einen Hauch
      dunkler, nicht invers. Formulare und Griff sind davon ausgenommen. */

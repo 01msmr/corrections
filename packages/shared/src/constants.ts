@@ -64,6 +64,18 @@ export const PALETTE = {
   licht: "255 255 255",
 } as const;
 
+/**
+ * Der Tilgungsstrich der Wortmarke: ein Filzstiftstrich, leicht gebogen,
+ * zur Spitze hin flacher. Eine Quelle fuer alle Verwender -- den Titelkopf
+ * (layout.tsx), die Mail (compose.ts) und die App-Icons
+ * (tools/iconsErzeugen.py liest diese Datei).
+ */
+export const TILGUNG_STRICH = {
+  breite: 46,
+  hoehe: 26,
+  pfad: "M2.4 20.6C13.2 16.4 26.4 10.2 41.8 3.2c1.1-.5 1.9.6 1 1.3-2 1.5-4.6 3-8 4.8C25.6 14.4 13.4 20.4 4.4 24c-1.3.5-2.6-1.6-2-3.4z",
+} as const;
+
 export const PALETTE_DUNKEL = {
   papier: "#16181b",
   tinte: "#e8e6e1",

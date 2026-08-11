@@ -42,7 +42,6 @@ from PIL import Image, ImageDraw, ImageFont
 
 STAMM = pathlib.Path(__file__).resolve().parent.parent
 KONSTANTEN = STAMM / "packages/shared/src/constants.ts"
-LAYOUT = STAMM / "packages/api/src/views/layout.tsx"
 ZIEL_TS = STAMM / "packages/api/src/views/icons.ts"
 
 SCHRIFT = pathlib.Path("/System/Library/Fonts/Supplemental/Bodoni 72.ttc")
@@ -72,22 +71,20 @@ def palette() -> dict[str, str]:
 def strichpfad() -> tuple[str, float, float]:
     """Holt die Filzstift-Form aus dem Stylesheet -- sie soll nur einmal existieren.
 
-    Im Titel steht sie als Data-URI in `.marke .tilgung::after`. Von dort
-    gelesen statt hier nachgezeichnet: aendert sich der Strich im Kopf,
-    aendert er sich auch im Icon.
+    Sie steht als TILGUNG_STRICH in den geteilten Konstanten -- derselben
+    Quelle, aus der auch Titelkopf und Mail zeichnen.
     """
-    quelle = LAYOUT.read_text(encoding="utf-8")
-    # An der Regel verankert: im Stylesheet stehen mehrere Data-URIs (Haken,
-    # Kreuz, Pfeil). Ohne Anker faende die Suche den erstbesten Pfad.
-    anfang = quelle.find(".marke .tilgung::after")
-    if anfang < 0:
-        raise SystemExit("Regel .marke .tilgung::after nicht gefunden")
-    block = quelle[anfang : quelle.index("}", anfang)]
-    kasten = re.search(r"viewBox='0 0 ([\d.]+) ([\d.]+)'", block)
-    pfad = re.search(r"%3Cpath d='([^']+)'", block)
-    if not kasten or not pfad:
-        raise SystemExit("Strich nicht in layout.tsx gefunden -- Data-URI veraendert?")
-    return pfad.group(1), float(kasten.group(1)), float(kasten.group(2))
+    quelle = KONSTANTEN.read_text(encoding="utf-8")
+    block_start = quelle.find("export const TILGUNG_STRICH")
+    if block_start < 0:
+        raise SystemExit("TILGUNG_STRICH nicht in constants.ts gefunden")
+    block = quelle[block_start : quelle.index("} as const;", block_start)]
+    pfad = re.search(r'pfad: "([^"]+)"', block)
+    breite = re.search(r"breite: ([\d.]+)", block)
+    hoehe = re.search(r"hoehe: ([\d.]+)", block)
+    if not pfad or not breite or not hoehe:
+        raise SystemExit("TILGUNG_STRICH unvollstaendig")
+    return pfad.group(1), float(breite.group(1)), float(hoehe.group(1))
 
 
 def zahlen(text: str) -> list[float]:
