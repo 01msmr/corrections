@@ -616,8 +616,21 @@ const STYLES = `
      eingedrueckter Klotz da — dieselbe Vertiefung wie ein gedrueckter
      Knopf, aber dauerhaft und ohne Ziel. An den Raendern stehen zurueck/vor
      ohne Klotz, wenn es dort nicht weitergeht. */
+  /* Die Blaetterreihe klebt am unteren Rand, solange die Liste scrollt, und
+     parkt an ihrem Platz, sobald das Listenende erreicht ist -- sticky, auf
+     allen Geraeten: die Reihe ist flach genug, dass sie auch auf dem Telefon
+     keinen nennenswerten Platz nimmt. Der Grund deckt die durchlaufenden
+     Zeilen ab, die Haarlinie trennt. */
   .seitenblaettern { display: flex; flex-wrap: wrap; gap: .35rem .8rem;
-    justify-content: center; align-items: center; margin-top: 1.75rem; }
+    justify-content: center; align-items: center;
+    position: sticky; bottom: 0; z-index: 4;
+    margin-top: 1.25rem; padding: .55rem 0 .5rem;
+    background: var(--papier); border-top: 1px solid var(--linie);
+    box-shadow: 0 -10px 16px -14px rgb(var(--schatten) / .4); }
+  /* Flach gehalten: die Knoepfe behalten ihre Masse, nur die Reihe verliert
+     die zusaetzlichen Innenraender. */
+  .seitenblaettern a.knopf, .seitenblaettern .seitenknopf-aktiv,
+  .seitenblaettern .seitenrand { margin-top: 0; }
   .seitenblaettern a.knopf, .seitenblaettern .seitenknopf-aktiv {
     font-size: .95rem; padding: .5rem .8rem .42rem; min-height: 0; }
   /* Der Block ist ein <nav>: die Kopfzeilen-Regeln (nav a) wuerden hier
