@@ -130,6 +130,20 @@ describe("Liste und Detail", () => {
   });
 });
 
+describe("Blaettern", () => {
+  it("zeigt die aktive Seite eingedrueckt und ohne Link", async () => {
+    for (let i = 0; i < 202; i++) meldung({ sentAt: JETZT + i });
+    const html = await (
+      await app.request("/admin/meldungen?seite=2", { headers: { authorization: AUTH } })
+    ).text();
+    expect(html).toContain('class="seitenblaettern"');
+    expect(html).toContain('<span class="seitenknopf-aktiv" aria-current="page">2</span>');
+    expect(html).not.toContain('">2</a>');
+    expect(html).toContain(">zurück</a>");
+    expect(html).toContain(">vor</a>");
+  });
+});
+
 describe("Ausgang setzen", () => {
   it("schreibt Ausgang samt Daten und leitet aufs Detail zurueck", async () => {
     const id = meldung();

@@ -1,0 +1,80 @@
+import { createId } from "@paralleldrive/cuid2";
+import { sql } from "drizzle-orm";
+import type { Db } from "../db/client.js";
+import { corrections, responseEvents } from "../db/schema.js";
+import { normBetreff, type AntwortKandidat } from "../inbox/antworten.js";
+
+/**
+ * Schreibseite der Antwort-Zuordnung (P3). Die Erkennung ist rein und liegt
+ * in inbox/antworten.ts; hier stehen Laden der Kandidaten und das
+ * idempotente Vermerken.
+ */
+
+export function ladeAntwortKandidaten(db: Db): AntwortKandidat[] {
+  const zeilen = db.all<{
+    id: string;
+    ref: string;
+    messageId: string | null;
+    headline: string | null;
+    domains: string | null;
+  }>(sql`
+    SELECT c.id, c.ref, c.message_id AS messageId, c.headline,
+      (SELECT GROUP_CONCAT(d.domain, ' ') FROM outlet_domains d WHERE d.outlet_id = c.outlet_id) AS domains
+    FROM corrections c
+  `);
+  return zeilen.map((z) => ({
+    id: z.id,
+    ref: z.ref,
+    messageId: z.messageId ? z.messageId.replace(/[<>]/g, "").trim() || null : null,
+    headlineNorm: z.headline ? normBetreff(z.headline) || null : null,
+    domains: (z.domains ?? "")
+      .split(" ")
+      .map((d) => d.toLowerCase().trim())
+      .filter((d) => d.length > 0),
+  }));
+}
+
+export interface AntwortVermerk {
+  receivedAt: number;
+  rawMessageId: string | null;
+  fromAddr: string | null;
+  excerpt: string | null;
+}
+
+/**
+ * Haelt eine Antwort als Ereignis fest — idempotent ueber die Message-ID
+ * der Antwort, damit derselbe Postfach-Durchlauf sie nicht doppelt vermerkt.
+ * Steht die Meldung auf "ohne Rueckmeldung", wird sie zu "Antwort erhalten"
+ * mit dem Mail-Datum; ein bereits gesetzter Ausgang bleibt unangetastet —
+ * was aus der Antwort folgt, entscheidet der Betreiber im Detail.
+ */
+export function vermerkeAntwort(db: Db, correctionId: string, mail: AntwortVermerk): boolean {
+  if (mail.rawMessageId) {
+    const bekannt = db.get<{ anzahl: number }>(sql`
+      SELECT COUNT(*) AS anzahl FROM response_events
+      WHERE raw_message_id = ${mail.rawMessageId}
+    `);
+    if ((bekannt?.anzahl ?? 0) > 0) return false;
+  }
+
+  db.insert(responseEvents)
+    .values({
+      id: createId(),
+      correctionId,
+      kind: "reply",
+      receivedAt: mail.receivedAt,
+      rawMessageId: mail.rawMessageId,
+      fromAddr: mail.fromAddr,
+      excerpt: mail.excerpt,
+    })
+    .run();
+
+  db.update(corrections)
+    .set({ outcome: "acknowledged", respondedAt: mail.receivedAt })
+    .where(
+      sql`${corrections.id} = ${correctionId} AND ${corrections.outcome} IN ('open', 'no_response')`,
+    )
+    .run();
+
+  return true;
+}

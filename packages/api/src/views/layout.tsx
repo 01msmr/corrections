@@ -611,7 +611,23 @@ const STYLES = `
     margin: 0 0 1rem; }
   .filterzeile select, .filterzeile input { width: auto; margin: 0; }
   .filterzeile input[type="search"] { flex: 1; min-width: 12rem; }
-  .blaettern { display: flex; justify-content: space-between; margin-top: 1rem; }
+  /* Blaettern unter der Meldungsliste: dieselben Bleisatz-Kloetze wie die
+     freistehenden Knoepfe, nur kleiner. Die aktive Seite steht als
+     eingedrueckter Klotz da — dieselbe Vertiefung wie ein gedrueckter
+     Knopf, aber dauerhaft und ohne Ziel. An den Raendern stehen zurueck/vor
+     ohne Klotz, wenn es dort nicht weitergeht. */
+  .seitenblaettern { display: flex; flex-wrap: wrap; gap: .35rem .8rem;
+    justify-content: center; align-items: center; margin-top: 1.75rem; }
+  .seitenblaettern a.knopf, .seitenblaettern .seitenknopf-aktiv {
+    font-size: .95rem; padding: .5rem .8rem .42rem; min-height: 0; }
+  .seitenknopf-aktiv { display: inline-flex; margin-top: .5rem;
+    font: 700 .95rem/1 var(--mono); letter-spacing: .03em;
+    background: var(--rand); color: var(--papier);
+    border: 2px solid transparent; border-radius: 0;
+    background-clip: padding-box;
+    box-shadow: ${klotzKanten(5, true)}, inset 9px 10px 12px -5px rgb(var(--schatten) / .4); }
+  .seitenrand { font: 700 .95rem/1 var(--mono); letter-spacing: .03em;
+    color: var(--linie); margin-top: .5rem; }
   /* Anker-Zitate im Meldungsdetail: die Fundstelle traegt Gewicht, der
      Kontext die Nebenstimme. */
   blockquote.anker { margin: 0 0 1rem; padding: .6rem .9rem;

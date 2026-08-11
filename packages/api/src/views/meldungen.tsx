@@ -46,6 +46,19 @@ function datumsWert(epoche: number | null): string {
 
 const SCHWERE: Record<number, string> = { 1: "leicht", 2: "mittel", 3: "schwer" };
 
+/** Erste, letzte und die Nachbarn der aktuellen Seite; dazwischen "…". */
+function seitenfenster(seite: number, seiten: number): (number | "…")[] {
+  const eintraege: (number | "…")[] = [];
+  for (let p = 1; p <= seiten; p++) {
+    if (p === 1 || p === seiten || Math.abs(p - seite) <= 2) {
+      eintraege.push(p);
+    } else if (eintraege[eintraege.length - 1] !== "…") {
+      eintraege.push("…");
+    }
+  }
+  return eintraege;
+}
+
 export const MeldungsListe: FC<{
   zeilen: MeldungsZeile[];
   gesamt: number;
@@ -147,10 +160,33 @@ export const MeldungsListe: FC<{
       {zeilen.length === 0 ? <p class="zaehler">Nichts gefunden.</p> : null}
 
       {seiten > 1 ? (
-        <p class="blaettern">
-          {seite > 1 ? <a href={blaetterHref(seite - 1)}>← neuere</a> : <span />}
-          {seite < seiten ? <a href={blaetterHref(seite + 1)}>ältere →</a> : <span />}
-        </p>
+        <nav class="seitenblaettern" aria-label="Seiten">
+          {seite > 1 ? (
+            <a class="knopf" href={blaetterHref(seite - 1)}>zurück</a>
+          ) : (
+            <span class="seitenrand">zurück</span>
+          )}
+          {seitenfenster(seite, seiten).map((eintrag) =>
+            eintrag === "…" ? (
+              <span class="zaehler">…</span>
+            ) : eintrag === seite ? (
+              /* Die aktive Seite ist kein Ziel: eingedrueckter Klotz, kein
+                 Link. */
+              <span class="seitenknopf-aktiv" aria-current="page">
+                {eintrag}
+              </span>
+            ) : (
+              <a class="knopf" href={blaetterHref(eintrag)}>
+                {eintrag}
+              </a>
+            ),
+          )}
+          {seite < seiten ? (
+            <a class="knopf" href={blaetterHref(seite + 1)}>vor</a>
+          ) : (
+            <span class="seitenrand">vor</span>
+          )}
+        </nav>
       ) : null}
     </Layout>
   );
