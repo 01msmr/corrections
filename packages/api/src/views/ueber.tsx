@@ -83,64 +83,32 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
             <KurzbefehlQr />
           </button>
           <span class="zaehler">
-            Mit der iPhone-Kamera abfotografieren.
+            QR-Code abfotografieren.
             <br />
-            Skripte erlauben: Einstellungen → Kurzbefehle → Erweitert.
+            Skripte erlauben: folge dem Lionk in der Kurzbefehl-Fehlermeldung.
           </span>
         </p>
       </div>
 
-      <h2>Der Weg eines Hinweises</h2>
+      <h2>Der Hinweis an die Redaktion</h2>
       <p>
-        Die Fundstelle wandert wortgetreu aus dem Artikel herüber, die berichtigte Fassung
-        stellt sich daneben, und gemeinsam gehen beide als höfliche E‑Mail auf die Reise zur
-        Redaktion. Jede Mail trägt am Ende des Betreffs eine kleine Kennung — bleibt sie in
-        der Antwort stehen, finden Rückmeldung und Korrektur später ganz von selbst wieder
-        zueinander.
+        Die Fundstelle wird aus dem Artikel übernommen; der Nutzer berichtigt den Fehler und zusammen mit der Artikel-URL wird eien E‑Mail an die Redaktion erstellt. Eine Kennung am Ende des Betreffs ermöglicht die Zuordnung der Rückmeldung einer Redaktion.
       </p>
 
       <h2>Warum</h2>
       <p>
-        Die meisten Fehler in Artikeln sind winzig: ein verirrtes Komma, zwei vertauschte
-        Buchstaben, eine verdrehte Zahl. Sie wären rasch behoben — wenn sie nur jemand
-        meldet. Dieses kleine Werkzeug macht das Melden so mühelos wie möglich und bewahrt
-        zugleich sorgfältig auf, welche Hinweise gerade unterwegs sind und was Redaktionen
-        stillschweigend daraus gemacht haben. Denn Texte werden besser, wo jemand aufmerksam
-        liest.
+        Kleine Fehler können rasch behoben werden — wenn die Redaktion des Mediums davon Kenntnis hat. Dieses Web-App macht das Absenden einer Korrektur so einfach wie möglich und verfolgt zudem, welche Korrekturen getätigt wurden, und was Redaktionen
+        daraus machen.
       </p>
 
       <h2 class="rubrik">Aus der Werkstatt</h2>
       <p>
-        Hinter dieser Seite steckt wohltuend wenig: ein kleines Programm auf einem
-        gemieteten Webserver und eine einzelne, sorgsam gehütete Datei als Ablage. Keine
-        Konten bei Drittdiensten, keine Besucherzählung, keine Cookies — erhoben wird
-        nur, was das Blatt selbst braucht.
+        Diese Web-App "Korrektuhren" (im Titel bewusst falsch geschrieben ;-) ist das Produkt einer Woche von mir und Claude. Es werden keine Daten gespeichert und auch keine Cookies — erhoben wird
+        nur, was zwingend erforderlich ist.
       </p>
       <p>
-        Beim Absenden holt sich das Programm den Artikel ein einziges Mal von der
-        Zeitungsseite und merkt sich genau, wo die Fundstelle steht — so lässt sich später
-        in aller Ruhe nachsehen, ob die Stelle inzwischen berichtigt wurde. Verschickt wird
-        über ein ganz gewöhnliches E‑Mail‑Postfach; die Kennung im Betreff ist der dünne
-        Faden, an dem Antwort und Korrektur wieder zusammenfinden.
-      </p>
-      <p>
-        Auch Kategorie und Schweregrad schlägt die Seite selbst vor: Sie vergleicht beide
-        Fassungen geduldig Wort für Wort — fehlt ein Komma, sind zwei Buchstaben verdreht,
-        stimmt eine Zahl nicht? Dahinter steckt keine künstliche Intelligenz, sondern eine
-        Handvoll nachvollziehbarer Regeln, gebaut wie Korrekturzeichen: klein und klar. Und
-        wo sie sich nicht sicher sind, schlagen sie lieber gar nichts vor.
-      </p>
-      <p>
-        Der gesamte Quelltext liegt offen unter{" "}
-        <a href="https://github.com/01msmr/corrections">github.com/01msmr/corrections</a> —
-        für alle, die nachlesen möchten.
-      </p>
-
-      <p>
-        <span class="zaehler">
-          Erfassung und Verwaltung sind nicht öffentlich; diese Menüpunkte fragen nach
-          einem Zugang.
-        </span>
+        Fehlerkategorie und Schweregrad schlägt die Seite selbst vor: Sie vergleicht beide
+        Fassungen und erkennt beides anhand von Regeln, wenn es eindeutig erscheint.
       </p>
     </div>
     {/* Der Link laesst sich am Rechner schlecht antippen — kopieren hilft
