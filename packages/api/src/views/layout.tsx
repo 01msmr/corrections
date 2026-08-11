@@ -585,6 +585,9 @@ const STYLES = `
   .knopftext { display: block; white-space: nowrap; }
   button, a.knopf { white-space: nowrap; }
   .taste { margin-left: .32em; font-size: 1.2em; opacity: .7; }
+  /* Die Einfuegezeile haengt am Feld darueber, nicht am naechsten Absatz. */
+  .einfuegezeile { margin: .35rem 0 0; }
+  .einfuegezeile button { font-size: .85rem; padding: .4rem .8rem .36rem; }
   /* Knoepfe im Fliesstext sind keine Formularabschluesse: sie stehen mitten
      im Absatz, tragen deshalb kleinere Schrift und ihre Beschriftung mittig
      statt unten rechts. Mittig heisst hier optisch -- zentriert wird die

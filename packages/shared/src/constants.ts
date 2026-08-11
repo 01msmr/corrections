@@ -26,8 +26,19 @@ export const SEGMENT_MINDEST_ANZAHL = 3;
 /** z-Wert für das 95-%-Wilson-Intervall (§9.4). */
 export const CONFIDENCE_Z = 1.959964;
 
-/** Obergrenze für zitierte Fundstellen, Zitatrecht (§12). */
-export const QUOTE_MAX_LENGTH = 200;
+/**
+ * Obergrenze für zitierte Fundstellen.
+ *
+ * Die Grenze ist selbst gesetzt, nicht gesetzlich: das Zitat geht an die
+ * Redaktion, die den Text geschrieben hat, und in die nicht-öffentliche
+ * Historie -- eine öffentliche Wiedergabe im Sinne des § 51 UrhG ist das
+ * nicht. Sie steht trotzdem, weil eine Fundstelle eine Stelle sein soll und
+ * kein Absatz: 280 Zeichen fassen auch lange Sätze.
+ *
+ * Sollte je eine öffentliche Liste dazukommen, ist das der Moment, die Zahl
+ * neu zu prüfen -- `PublicCorrection` führt `quoteBefore`.
+ */
+export const QUOTE_MAX_LENGTH = 280;
 
 /** Zeichen vor und nach der Fundstelle je Kontext-Anker (§8.1). */
 export const ANCHOR_LENGTH = 48;

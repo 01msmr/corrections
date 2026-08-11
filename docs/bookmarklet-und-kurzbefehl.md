@@ -13,10 +13,10 @@ Fundstelle: `GET /neu?url=…&text=…` (Betreiber, hinter Basic Auth). Für den
 Text im Artikel markieren, dann das Lesezeichen klicken:
 
 ```
-javascript:(()=>{const t=String(getSelection()).trim().slice(0,200);location.href='https://korrekturen.msmr.co/neu?url='+encodeURIComponent(location.href)+'&text='+encodeURIComponent(t)})()
+javascript:(()=>{const t=String(getSelection()).trim().slice(0,280);location.href='https://korrekturen.msmr.co/neu?url='+encodeURIComponent(location.href)+'&text='+encodeURIComponent(t)})()
 ```
 
-- Die Auswahl wird auf 200 Zeichen gekürzt (QUOTE_MAX_LENGTH des Formulars).
+- Die Auswahl wird auf 280 Zeichen gekürzt (QUOTE_MAX_LENGTH des Formulars).
 - Beim ersten Aufruf fragt der Browser einmal nach dem Admin-Zugang.
 - Die berichtigte Fassung startet im Formular als Kopie der Fundstelle.
 
@@ -41,7 +41,7 @@ Vorbefüllung als **base64url** im Parameter `?b=` — dessen Alphabet
 1. **JavaScript auf Webseite ausführen**
 
    ```javascript
-   const auswahl = String(getSelection()).trim().slice(0, 200);
+   const auswahl = String(getSelection()).trim().slice(0, 280);
    const nutzlast = JSON.stringify({ u: location.href, t: auswahl });
    const b64 = btoa(unescape(encodeURIComponent(nutzlast)))
      .replace(/\+/g, "-")
@@ -51,6 +51,42 @@ Vorbefüllung als **base64url** im Parameter `?b=` — dessen Alphabet
    ```
 
 2. **URL öffnen** — Eingabe: „JavaScript-Ergebnis“
+
+## Aus einer Nachrichten-App (SPIEGEL und andere)
+
+Dort gibt es kein Safari, also auch kein „JavaScript auf Webseite ausführen“.
+Die Vorbefüllung kommt deshalb über zwei getrennte Parameter:
+
+| Parameter | Inhalt |
+|---|---|
+| `url` | Adresse des Artikels — derselbe Parameter wie beim Bookmarklet |
+| `q` | die markierte Stelle, **base64url** |
+
+Warum `q` und nicht das vorhandene `text`: `text` reist prozentkodiert, und
+genau die löst die „URL öffnen“-Aktion wieder auf — die Adresse reißt dann am
+ersten Leerzeichen der Auswahl ab. Und warum kein JSON in `b` wie in Safari:
+Kurzbefehle können Text nicht für JSON escapen; ein Anführungszeichen in der
+Auswahl — in Zitaten die Regel — machte es unlesbar. Ein eigenes Feld hat
+beide Probleme nicht.
+
+**Kurzbefehl (Markierung teilen).** Eingabetyp *Text und URLs*, „Im Share
+Sheet anzeigen“ an:
+
+1. **Text codieren** → Base64, Eingabe: Teilen-Eingabe (die Markierung)
+2. **Text ersetzen**: `+` → `-`
+3. **Text ersetzen**: `/` → `_`
+4. **Text ersetzen** (regulärer Ausdruck): `=+$` → *(leer)*
+5. **URL öffnen**: `https://korrekturen.msmr.co/hinweis?url=[Artikeladresse]&q=[Ergebnis]`
+
+Die Schritte 2–4 machen aus gewöhnlichem Base64 die URL-sichere Fassung;
+ohne sie zerlegt die „URL öffnen“-Aktion die Adresse an `+` und `/`.
+
+Kommt keine Markierung mit, genügt `?url=` allein: das Formular öffnet sich mit
+ausgefüllter Adresse, und „Artikel auf Fehler durchsehen“ arbeitet schon —
+dafür reicht die Adresse. Im leeren Fundstellen-Feld steht dann zusätzlich
+ein Knopf, der die Zwischenablage übernimmt.
+
+Kommen `b` und `url` zusammen, gilt `b`.
 
 Der alte Kurzbefehl (Wörterbuch `RedNAME`/`RedMAIL`, eigener Mailversand) ist
 damit abgelöst; seine Stammdaten leben in `packages/api/src/db/medien.json`

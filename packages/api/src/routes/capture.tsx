@@ -24,14 +24,38 @@ import { CaptureForm, CapturePreview, CaptureResult } from "../views/capture.js"
  * Vorbefuellung aus der Query: bevorzugt der Base64-Parameter `b`
  * (base64url-kodiertes JSON {u, t}) — noetig, weil die "URL oeffnen"-Aktion
  * der iOS-Kurzbefehle Prozent-Kodierung wieder aufloest und die URL dann am
- * ersten Leerzeichen der Auswahl abreisst. `url`/`text` bleiben fuer das
- * Bookmarklet erhalten. Unlesbares wird ignoriert, nie beanstandet.
+ * ersten Leerzeichen der Auswahl abreisst.
+ *
+ * `url` + `q` ist der Weg aus Nachrichten-Apps (SPIEGEL und andere): dort
+ * gibt es kein Safari, also kein Skript in der Seite. Die Adresse reist
+ * unveraendert in `url` -- demselben Parameter wie beim Bookmarklet --, die
+ * markierte Stelle in `q` als base64url.
+ *
+ * Warum `q` und nicht das vorhandene `text`: `text` reist prozentkodiert,
+ * und genau die loest die "URL oeffnen"-Aktion der Kurzbefehle wieder auf --
+ * die Adresse reisst dann am ersten Leerzeichen der Auswahl ab. Und warum
+ * kein zweites JSON in `b`: Kurzbefehle koennen Text nicht fuer JSON
+ * escapen; ein Anfuehrungszeichen in der Auswahl -- in Zitaten die Regel --
+ * machte es unlesbar. Ein eigenes Feld hat beide Probleme nicht.
+ *
+ * `url`/`text` bleiben fuer das Bookmarklet erhalten. Unlesbares wird
+ * ignoriert, nie beanstandet.
  */
+/** base64url -> Text. Leer, wenn nichts oder Unlesbares ankommt. */
+function ausBase64url(wert: string | undefined): string {
+  if (!wert) return "";
+  try {
+    return Buffer.from(wert.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
+  } catch {
+    return "";
+  }
+}
+
 function leseVorbefuellung(c: Parameters<Handler>[0]): { url: string; quote: string } {
   const b = c.req.query("b");
   if (b) {
     try {
-      const json = Buffer.from(b.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
+      const json = ausBase64url(b);
       const gelesen = z
         .object({ u: z.string().optional(), t: z.string().optional() })
         .safeParse(JSON.parse(json));
@@ -42,7 +66,11 @@ function leseVorbefuellung(c: Parameters<Handler>[0]): { url: string; quote: str
       /* unlesbar -> leeres Formular */
     }
   }
-  return { url: c.req.query("url") ?? "", quote: c.req.query("text") ?? "" };
+  const q = c.req.query("q");
+  return {
+    url: c.req.query("url") ?? "",
+    quote: q ? ausBase64url(q).trim() : (c.req.query("text") ?? ""),
+  };
 }
 
 export function captureRoutes(

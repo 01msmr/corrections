@@ -157,6 +157,35 @@ describe("Base64-Vorbefuellung (?b=)", () => {
   it("ignoriert unlesbare b-Parameter, statt zu scheitern", async () => {
     expect((await app().request("/hinweis?b=%%%kaputt")).status).toBe(200);
   });
+
+  it("nimmt die markierte Stelle als q entgegen (App-Weg)", async () => {
+    /* base64url, weil Anfuehrungszeichen in Zitaten die Regel sind -- als
+       JSON zusammengesetzt zerbraeche daran die Vorbefuellung, und
+       prozentkodiert loest die "URL oeffnen"-Aktion sie wieder auf. */
+    const stelle = 'Er sagte: "Der Mietwgaen steht bereit."\nUnd ging.';
+    const q = Buffer.from(stelle, "utf8").toString("base64url");
+    const html = await (
+      await app().request(`/hinweis?url=${encodeURIComponent("https://www.spiegel.de/a-1.html")}&q=${q}`)
+    ).text();
+    expect(html).toContain('value="https://www.spiegel.de/a-1.html"');
+    expect(html).toContain("Der Mietwgaen steht bereit.");
+  });
+
+  it("laesst ohne q die Fundstelle leer -- die Adresse steht trotzdem", async () => {
+    const html = await (
+      await app().request("/hinweis?url=" + encodeURIComponent("https://www.spiegel.de/a-1.html"))
+    ).text();
+    expect(html).toContain('value="https://www.spiegel.de/a-1.html"');
+    expect(html).toMatch(/id="quoteBefore"[^>]*><\/textarea>/);
+  });
+
+  it("laesst b vor url gelten, wenn beides mitkommt", async () => {
+    const b64 = Buffer.from(JSON.stringify({ u: "https://aus-b.test/x", t: "Fundstelle" }), "utf8")
+      .toString("base64url");
+    const html = await (await app().request(`/hinweis?b=${b64}&url=https://aus-url.test/y`)).text();
+    expect(html).toContain('value="https://aus-b.test/x"');
+    expect(html).not.toContain("aus-url.test");
+  });
 });
 
 describe("Icons und Manifest", () => {

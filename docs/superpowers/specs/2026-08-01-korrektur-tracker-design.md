@@ -220,7 +220,7 @@ corrections
   created_at, dispatch_mode ('smtp' | 'mailto')
   article_url, article_url_canon, outlet_id, headline, published_at
   error_type_id fk, severity (1..3)
-  quote_before (≤200 Zeichen, wortgleich)
+  quote_before (≤280 Zeichen, wortgleich)
   quote_prefix, quote_suffix, quote_position_hint
   anchor_quality ('exact' | 'context' | 'none')
   suggestion_after, comment
@@ -641,7 +641,9 @@ Inhalte.
 
 ## 12. Recht und Datenschutz
 
-- **Zitatrecht (§ 51 UrhG):** `quote_before` ≤ 200 Zeichen, immer mit Quellenangabe und
+- **Zitat:** `quote_before` ≤ 280 Zeichen (selbst gesetzte Grenze — das Zitat
+  geht an die Redaktion des Textes und in die nicht-öffentliche Historie, nicht
+  an die Öffentlichkeit), immer mit Quellenangabe und
   Link. Der bei einem Check beobachtete *neue* Text ist ein weiteres Zitat: intern
   speichern ist nötig und unproblematisch, öffentlich erscheint höchstens das Paar
   „vorher / nachher" innerhalb derselben Grenze — oder nur das Urteil („Vorschlag

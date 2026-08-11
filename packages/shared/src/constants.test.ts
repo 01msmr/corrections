@@ -13,7 +13,7 @@ describe("constants", () => {
     expect(MATURITY_DAYS).toBe(14);
     expect(MIN_N_FOR_RATE).toBe(10);
     expect(CONFIDENCE_Z).toBeCloseTo(1.96, 2);
-    expect(QUOTE_MAX_LENGTH).toBe(200);
+    expect(QUOTE_MAX_LENGTH).toBe(280);
     expect(ANCHOR_LENGTH).toBe(48);
   });
 

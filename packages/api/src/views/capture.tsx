@@ -259,6 +259,31 @@ const erkennungScript = (basis: string) => `
       .finally(() => { pruefKnopf.disabled = false; });
   });
 
+  /* Die Zwischenablage laesst sich nur auf ausdrueckliche Handlung lesen,
+     nie von selbst — und iOS fragt zusaetzlich nach. Der Knopf steht
+     deshalb da, wo die Handlung hingehoert, und nur solange das Feld leer
+     ist. */
+  const einfuegezeile = document.getElementById("einfuegezeile");
+  const einfuegeHinweis = document.getElementById("einfuege-hinweis");
+  const zeigeEinfuegen = () => {
+    const moeglich = !!(navigator.clipboard && navigator.clipboard.readText);
+    einfuegezeile.hidden = !moeglich || falsch.value.trim().length > 0;
+  };
+  zeigeEinfuegen();
+  falsch.addEventListener("input", zeigeEinfuegen);
+  document.getElementById("aus-zwischenablage").addEventListener("click", () => {
+    navigator.clipboard.readText().then(
+      (text) => {
+        const gekuerzt = text.trim().slice(0, ${QUOTE_MAX_LENGTH});
+        if (!gekuerzt) { setzeHinweis(einfuegeHinweis, "Die Zwischenablage ist leer.", false); return; }
+        falsch.value = gekuerzt;
+        falsch.dispatchEvent(new Event("input", { bubbles: true }));
+        falsch.focus();
+      },
+      () => { setzeHinweis(einfuegeHinweis, "Kein Zugriff — bitte von Hand einfügen.", false); },
+    );
+  });
+
   /* Vorbefuellte Felder (Bookmarklet/Kurzbefehl: ?url=…&text=…) loesen kein
      input-Ereignis aus — Ueberschrift und Kategorie deshalb einmal beim
      Laden anstossen. */
@@ -347,6 +372,18 @@ export const CaptureForm: FC<{
           <textarea id="quoteBefore" name="quoteBefore" required maxlength={QUOTE_MAX_LENGTH}>
             {quote}
           </textarea>
+          {/* Aus Nachrichten-Apps kommt nur die Adresse (?u=), nie die
+              Auswahl. Wer die Stelle dort kopiert hat, holt sie hiermit
+              herein. Der Knopf steht nur da, solange das Feld leer ist --
+              kam die Fundstelle schon mit (?b=), waere er ueberfluessig.
+              Ohne Leserecht auf die Zwischenablage blendet ihn das Skript
+              aus; von Hand einfuegen geht ohnehin. */}
+          <p class="einfuegezeile" id="einfuegezeile" hidden>
+            <button type="button" id="aus-zwischenablage" class="zeilenknopf">
+              Aus der Zwischenablage
+            </button>{" "}
+            <span id="einfuege-hinweis" class="zaehler" aria-live="polite" />
+          </p>
         </div>
 
         <div class="feld">

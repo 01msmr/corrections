@@ -1,3 +1,4 @@
+import { QUOTE_MAX_LENGTH } from "@korrektur/shared";
 import type { FC } from "hono/jsx";
 import { AppleIcon, Layout } from "./layout.js";
 
@@ -123,7 +124,7 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
      wieder auf und schneidet am ersten Leerzeichen ab. */
   const lesezeichen =
     "javascript:(()=>{" +
-    "const t=String(getSelection()).trim().slice(0,200);" +
+    "const t=String(getSelection()).trim().slice(0,${QUOTE_MAX_LENGTH});" +
     "const b=btoa(unescape(encodeURIComponent(JSON.stringify({u:location.href,t}))))" +
     ".replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');" +
     "location.href='" + location.origin + ziel + "?b='+b})()";
