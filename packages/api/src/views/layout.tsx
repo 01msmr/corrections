@@ -613,7 +613,7 @@ const STYLES = `
   .filterzeile { display: flex; flex-wrap: wrap; gap: .4rem .5rem; align-items: center;
     position: sticky; top: 0; z-index: 4;
     margin: 0 0 .6rem; padding: .35rem 0 .5rem;
-    background: var(--papier); border-bottom: 1px solid var(--linie); }
+    background: var(--papier); border-bottom: 1px solid var(--tinte); }
   /* Die Trefferzahl vor den Filtern: dicktengleich und ruhig, kein Wert mit
      Bedeutung, nur die Antwort auf "wie viele sind das gerade?". */
   .trefferzahl { font: 700 .95rem/1 var(--mono); color: var(--rand);
@@ -635,7 +635,9 @@ const STYLES = `
     position: fixed; bottom: 2.1rem; left: 50%; transform: translateX(-50%);
     width: min(100% - 2.5rem, var(--mass) - 2.5rem); z-index: 4;
     margin: 0; padding: .4rem 0 .35rem;
-    background: var(--papier); border-top: 1px solid var(--linie);
+    /* Die Kanten zum Scrollbereich ziehen in Tinte, oben wie unten: die
+       festen Zonen sind damit klar vom laufenden Blatt getrennt. */
+    background: var(--papier); border-top: 1px solid var(--tinte);
     box-shadow: 0 -10px 16px -14px rgb(var(--schatten) / .4); }
   /* Die Fusszeile gehoert mit in den festen Block, direkt unter die
      Blaetterreihe -- nichts zieht hinter ihr durch. Das Seitenskript misst
