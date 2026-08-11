@@ -585,9 +585,31 @@ const STYLES = `
   .knopftext { display: block; white-space: nowrap; }
   button, a.knopf { white-space: nowrap; }
   .taste { margin-left: .32em; font-size: 1.2em; opacity: .7; }
-  /* Die Einfuegezeile haengt am Feld darueber, nicht am naechsten Absatz. */
-  .einfuegezeile { margin: .35rem 0 0; }
-  .einfuegezeile button { font-size: .85rem; padding: .4rem .8rem .36rem; }
+  /* Der Einfuegeknopf steht links vor dem Fundstellen-Feld: ein
+     Geisterknopf -- nur das Zeichen, kein Klotz, kein Rahmen. In Ruhe grau
+     wie der Tabellen-Griff, unter dem Zeiger Tinte; er tritt erst hervor,
+     wenn man ihn meint. Die Ruecksetzungen heben die Bleisatz-Gestalt der
+     freistehenden Knoepfe auf. */
+  .feldzeile { position: relative; }
+  button.einfuegeknopf, button.einfuegeknopf:hover, button.einfuegeknopf:focus-visible,
+  button.einfuegeknopf:active {
+    background: none; transform: none; box-shadow: none; }
+  button.einfuegeknopf {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2rem; height: 2rem;
+    margin: 0 0 .25rem; padding: .3rem; border: 0; min-height: 0;
+    color: var(--rand); cursor: pointer; transition: color .12s ease; }
+  /* display schlaegt das hidden-Attribut -- ausdruecklich wieder herstellen. */
+  button.einfuegeknopf[hidden] { display: none; }
+  button.einfuegeknopf:hover, button.einfuegeknopf:focus-visible { color: var(--tinte); }
+  button.einfuegeknopf .navicon { width: 1.15rem; height: 1.15rem; margin: 0; }
+  /* Sobald links vom Blatt Rand frei ist, haengt der Knopf dort: vor dem
+     Feld, nicht in dessen Spalte -- das Feld behaelt die volle Breite.
+     Schmaler steht er ueber dem Feld, denn dort gibt es keinen Rand. */
+  @media (min-width: 78rem) {
+    button.einfuegeknopf { position: absolute; top: .1rem;
+      right: calc(100% + .45rem); margin: 0; }
+  }
   /* Knoepfe im Fliesstext sind keine Formularabschluesse: sie stehen mitten
      im Absatz, tragen deshalb kleinere Schrift und ihre Beschriftung mittig
      statt unten rechts. Mittig heisst hier optisch -- zentriert wird die
@@ -1020,7 +1042,7 @@ function datumKurz(): string {
    License - https://fontawesome.com/license/free (Icons: CC BY 4.0)
    Copyright 2024 Fonticons, Inc. — Pfade byteidentisch aus svgs/solid/
    uebernommen (solid/file-pen.svg, solid/envelope-open-text.svg,
-   brands/apple.svg), als inline SVG statt
+   solid/paste.svg, brands/apple.svg), als inline SVG statt
    Webfont (Projektregel: keine Webfonts). */
 export const FilePenIcon: FC = () => (
   <svg class="navicon" viewBox="0 0 576 512" aria-hidden="true">
@@ -1030,6 +1052,11 @@ export const FilePenIcon: FC = () => (
 export const AppleIcon: FC = () => (
   <svg class="navicon schmal" viewBox="0 0 384 512" aria-hidden="true">
     <path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+  </svg>
+);
+export const PasteIcon: FC = () => (
+  <svg class="navicon" viewBox="0 0 512 512" aria-hidden="true">
+    <path fill="currentColor" d="M160 0c-23.7 0-44.4 12.9-55.4 32L48 32C21.5 32 0 53.5 0 80L0 400c0 26.5 21.5 48 48 48l144 0 0-272c0-44.2 35.8-80 80-80l48 0 0-16c0-26.5-21.5-48-48-48l-56.6 0C204.4 12.9 183.7 0 160 0zM272 128c-26.5 0-48 21.5-48 48l0 272 0 16c0 26.5 21.5 48 48 48l192 0c26.5 0 48-21.5 48-48l0-220.1c0-12.7-5.1-24.9-14.1-33.9l-67.9-67.9c-9-9-21.2-14.1-33.9-14.1L320 128l-48 0zM160 40a24 24 0 1 1 0 48 24 24 0 1 1 0-48z" />
   </svg>
 );
 export const EnvelopeOpenTextIcon: FC = () => (

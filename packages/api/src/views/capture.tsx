@@ -1,7 +1,7 @@
 import { istZaehlbareFehlerart, QUOTE_MAX_LENGTH } from "@korrektur/shared";
 import type { FC } from "hono/jsx";
 import type { ErrorTypeRecord } from "../repo/errorTypes.js";
-import { EnvelopeOpenTextIcon, FilePenIcon, Layout } from "./layout.js";
+import { EnvelopeOpenTextIcon, FilePenIcon, Layout, PasteIcon } from "./layout.js";
 import { vergleicheFassungen } from "./vergleich.js";
 
 /**
@@ -263,15 +263,15 @@ const erkennungScript = (basis: string) => `
      nie von selbst — und iOS fragt zusaetzlich nach. Der Knopf steht
      deshalb da, wo die Handlung hingehoert, und nur solange das Feld leer
      ist. */
-  const einfuegezeile = document.getElementById("einfuegezeile");
+  const einfuegeknopf = document.getElementById("aus-zwischenablage");
   const einfuegeHinweis = document.getElementById("einfuege-hinweis");
   const zeigeEinfuegen = () => {
     const moeglich = !!(navigator.clipboard && navigator.clipboard.readText);
-    einfuegezeile.hidden = !moeglich || falsch.value.trim().length > 0;
+    einfuegeknopf.hidden = !moeglich || falsch.value.trim().length > 0;
   };
   zeigeEinfuegen();
   falsch.addEventListener("input", zeigeEinfuegen);
-  document.getElementById("aus-zwischenablage").addEventListener("click", () => {
+  einfuegeknopf.addEventListener("click", () => {
     navigator.clipboard.readText().then(
       (text) => {
         const gekuerzt = text.trim().slice(0, ${QUOTE_MAX_LENGTH});
@@ -369,21 +369,28 @@ export const CaptureForm: FC<{
             </span>
             <span class="zaehler">bis zu {QUOTE_MAX_LENGTH} Zeichen</span>
           </label>
-          <textarea id="quoteBefore" name="quoteBefore" required maxlength={QUOTE_MAX_LENGTH}>
-            {quote}
-          </textarea>
-          {/* Aus Nachrichten-Apps kommt nur die Adresse (?u=), nie die
-              Auswahl. Wer die Stelle dort kopiert hat, holt sie hiermit
-              herein. Der Knopf steht nur da, solange das Feld leer ist --
-              kam die Fundstelle schon mit (?b=), waere er ueberfluessig.
-              Ohne Leserecht auf die Zwischenablage blendet ihn das Skript
-              aus; von Hand einfuegen geht ohnehin. */}
-          <p class="einfuegezeile" id="einfuegezeile" hidden>
-            <button type="button" id="aus-zwischenablage" class="zeilenknopf">
-              Aus der Zwischenablage
-            </button>{" "}
-            <span id="einfuege-hinweis" class="zaehler" aria-live="polite" />
-          </p>
+          {/* Aus Nachrichten-Apps kommt oft nur die Adresse, nie die
+              Auswahl. Wer die Stelle dort kopiert hat, holt sie mit dem
+              Knopf links vor dem Feld herein. Er steht nur da, solange das
+              Feld leer ist -- kam die Fundstelle schon mit (?b=/?q=), waere
+              er ueberfluessig. Ohne Leserecht auf die Zwischenablage blendet
+              ihn das Skript aus; von Hand einfuegen geht ohnehin. */}
+          <div class="feldzeile">
+            <button
+              type="button"
+              id="aus-zwischenablage"
+              class="einfuegeknopf"
+              aria-label="Aus der Zwischenablage einfügen"
+              title="Aus der Zwischenablage einfügen"
+              hidden
+            >
+              <PasteIcon />
+            </button>
+            <textarea id="quoteBefore" name="quoteBefore" required maxlength={QUOTE_MAX_LENGTH}>
+              {quote}
+            </textarea>
+          </div>
+          <span id="einfuege-hinweis" class="zaehler" aria-live="polite" />
         </div>
 
         <div class="feld">
