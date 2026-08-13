@@ -703,7 +703,11 @@ const STYLES = `
   body:has(.listenrumpf) .seitenblaettern { position: fixed;
     bottom: var(--fusshoehe, 2rem); left: 50%; transform: translateX(-50%);
     width: min(100% - 2.5rem, var(--mass) - 2.5rem); z-index: 4; }
-  body:has(.listenrumpf) .fusszeile { position: fixed; bottom: 0;
+  /* Die Fusszeile steht auf jeder Seite fest am unteren Rand -- eine Regel
+     fuer alle (Entscheidung vom 13.8.2026). Unter der Liste war sie das
+     schon; sie bekommt dadurch keine zweite Fixierung, sondern dieselbe.
+     Was sich unterscheidet, steht weiter unten: Linie und Luft oben. */
+  .fusszeile { position: fixed; bottom: 0;
     left: 50%; transform: translateX(-50%); z-index: 4;
     width: min(100% - 2.5rem, var(--mass) - 2.5rem);
     margin: 0; background: var(--papier); }
@@ -719,8 +723,7 @@ const STYLES = `
        Breite: die zentrierte Spaltenbreite liesse links und rechts
        1.25rem-Streifen frei, durch die der scrollende Inhalt
        vorbeizoege. */
-    body:has(.listenrumpf) .seitenblaettern,
-    body:has(.listenrumpf) .fusszeile {
+    body:has(.listenrumpf) .seitenblaettern, .fusszeile {
       width: 100%; max-width: none; left: 0; transform: none; }
     .querblatt { overflow-x: auto; }
     .querblatt table { width: max-content; min-width: 100%; }
@@ -730,8 +733,11 @@ const STYLES = `
   }
   body:has(.listenrumpf) .blatt th,
   body:has(.listenrumpf) .blatt td { padding: .22rem .5rem; }
-  body:has(.listenrumpf) .fusszeile { margin-top: 0; }
-  body:has(.listenrumpf) .fussinhalt { padding: .2rem 0 .3rem; border-top: 0; }
+  /* Unter dem Text derselbe Weissraum wie ueberall (.6rem, siehe
+     .fussinhalt) -- so steht die Herkunftszeile auf jeder Seite gleich
+     hoch ueber der Unterkante (Entscheidung vom 13.8.2026). Oben bleibt
+     es knapp: darueber liegt die Blaetterreihe. */
+  body:has(.listenrumpf) .fussinhalt { padding: .2rem 0 .6rem; border-top: 0; }
 
   /* Flach gehalten: die Knoepfe behalten ihre Masse, nur die Reihe verliert
      die zusaetzlichen Innenraender. */
@@ -930,26 +936,17 @@ const STYLES = `
   /* Ganz unten, unter dem Blatt: ein leiser Hinweis auf die Herkunft. Er
      klebt nicht und draengt sich nicht vor -- eine Zeile im Ton eines
      Impressums, abgesetzt durch eine feine Linie. */
-  .fusszeile { margin-top: 3.5rem; }
 
-  /* Fest am unteren Rand — aber ausdruecklich nur, wo keine Liste steht:
-     unter der Meldungsliste ist die Zeile schon zusammen mit der
-     Blaetterreihe fixiert (oben), und daran wird nichts angeruehrt. Die
-     paar wiederholten Angaben sind der Preis dafuer, dass die beiden Faelle
-     einander nicht beruehren (Entscheidung vom 13.8.2026).
-     Ueber der Zeile bleibt ein schmaler Streifen Papier, damit der
-     scrollende Text die Linie nicht beruehrt. */
-  body:not(:has(.listenrumpf)) .fusszeile { position: fixed; bottom: 0;
-    left: 50%; transform: translateX(-50%); z-index: 4;
-    width: min(100% - 2.5rem, var(--mass) - 2.5rem);
-    margin: 0; padding-top: .5rem; background: var(--papier); }
+  /* Fixiert ist die Zeile fuer alle Seiten gleich (siehe oben). Hier steht
+     nur, was sich unterscheidet -- und zwar allein oberhalb des Textes:
+     ein schmaler Streifen Papier, damit der scrollende Satz die Linie
+     nicht beruehrt. Unter der Liste liegt darueber die Blaetterreihe, die
+     den Streifen nicht braucht. */
+  body:not(:has(.listenrumpf)) .fusszeile { padding-top: .5rem; }
   /* Der Inhalt endet ueber der festen Zeile, nicht darunter: etwas mehr
-     als ihre gemessene Hoehe (56px), damit die letzte Zeile frei steht. */
+     als ihre Hoehe, damit die letzte Zeile frei steht. Unter der Liste
+     besorgt das die gemessene Leistenhoehe am Blatt. */
   body:not(:has(.listenrumpf)) { padding-bottom: 4rem; }
-  @media (max-width: 48rem) {
-    body:not(:has(.listenrumpf)) .fusszeile {
-      width: 100%; max-width: none; left: 0; transform: none; }
-  }
   /* Der Strich sitzt am inneren Kasten, nicht am aeusseren: sonst liefe er
      um den Innenabstand des Blattes breiter als alles darueber. */
   /* Unter der Zeile bleibt nur ein schmaler Rand: die Seite soll dort enden,
@@ -1411,14 +1408,16 @@ export const Layout: FC<
                 Neue Korrektur
               </a>
             )}
-            <a href="/bilanz" aria-current={aktiv === "bilanz" ? "page" : undefined} draggable={false}>
-              Bilanz
-            </a>
+            {/* Meldungen vor Bilanz: erst die einzelnen Faelle, dann die
+                Zusammenfassung (Entscheidung vom 13.8.2026). */}
             {betreiber ? (
               <a href="/admin/meldungen" aria-current={aktiv === "meldungen" ? "page" : undefined} draggable={false}>
                 Meldungen
               </a>
             ) : null}
+            <a href="/bilanz" aria-current={aktiv === "bilanz" ? "page" : undefined} draggable={false}>
+              Bilanz
+            </a>
             <a href="/" aria-current={aktiv === "ueber" ? "page" : undefined} draggable={false}>
               In eigener Sache
             </a>
