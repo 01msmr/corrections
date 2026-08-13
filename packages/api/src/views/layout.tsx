@@ -950,14 +950,14 @@ const STYLES = `
     left: 0; transform: none; width: 100%; max-width: none; padding: 0;
     animation: fussschatten linear both;
     animation-timeline: scroll(root);
-    /* Spiegelbild des Kopfes: waechst mit dem ersten untergescrollten
-       Pixel und bleibt dann an. */
-    animation-range: 0 4rem; }
+    /* Voll, solange Inhalt hinter der Zeile liegt; verklingt auf den
+       letzten 4rem und ist ganz unten aus. */
+    animation-range: calc(100% - 4rem) 100%; }
   /* In den Keyframes, nicht in der Regel: so bleibt der Schatten aus, wo
      die Seite gar nicht scrollt -- dann verdeckt die Zeile nichts. */
   @keyframes fussschatten {
-    from { box-shadow: 0 -6px 16px -14px rgb(var(--schatten) / 0); }
-    to { box-shadow: 0 -12px 26px -6px rgb(var(--schatten) / .55); }
+    from { box-shadow: 0 -12px 26px -6px rgb(var(--schatten) / .55); }
+    to { box-shadow: 0 -6px 16px -14px rgb(var(--schatten) / 0); }
   }
   /* Der Text haelt Abstand vom Rand, die Linie darueber nicht. Ueber und
      unter dem Text liegt derselbe Weissraum (.6rem): die Zeile sitzt in
