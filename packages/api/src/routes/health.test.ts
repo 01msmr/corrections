@@ -37,6 +37,7 @@ describe("GET /healthz", () => {
   it("antwortet mit 200 und Status ok", async () => {
     const res = await app().request("/healthz");
     expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ status: "ok" });
+    /* anstoss sagt, ob WORKER_TOKEN angekommen ist -- nie das Wort selbst. */
+    await expect(res.json()).resolves.toEqual({ status: "ok", anstoss: "kein token" });
   });
 });

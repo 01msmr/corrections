@@ -11,7 +11,7 @@ import { backfillAdminRoutes } from "./routes/admin/backfill.js";
 import { bilanzRoutes } from "./routes/bilanz.js";
 import { internRoutes } from "./routes/intern.js";
 import { captureRoutes } from "./routes/capture.js";
-import { health } from "./routes/health.js";
+import { healthRoutes } from "./routes/health.js";
 import { iconRoutes } from "./routes/icons.js";
 import { ueberRoutes } from "./routes/ueber.js";
 
@@ -27,7 +27,7 @@ export function createApp(options: AppOptions): Hono {
   const now = options.now ?? (() => Math.floor(Date.now() / 1000));
   const app = new Hono();
 
-  app.route("/", health);
+  app.route("/", healthRoutes(options.env));
   /* Vor der Auth: Browser holen Favicon und Manifest ohne Anmeldung, sonst
      bliebe der Tab im Verwaltungsbereich leer. */
   app.route("/", iconRoutes());
