@@ -18,7 +18,7 @@
     "backfill:korpus": "pnpm --filter @korrektur/backfill korpus",
     "backfill:review": "pnpm --filter @korrektur/backfill review",
     "backfill:import": "node --import tsx packages/api/src/tools/backfillImportCli.ts",
-    "bundle": "esbuild packages/api/src/web.ts packages/api/src/worker.ts packages/api/src/tools/backfillImportCli.ts --bundle --platform=node --format=cjs --target=node22 --outdir=build --out-extension:.js=.js && node -e \"const fs=require('node:fs'); fs.mkdirSync('build/tmp',{recursive:true}); fs.writeFileSync('build/package.json', JSON.stringify({type:'commonjs'})+'\\n')\""
+    "bundle": "esbuild packages/api/src/web.ts packages/api/src/worker.ts packages/api/src/tools/backfillImportCli.ts --bundle --platform=node --format=cjs --target=node22 --outdir=build --out-extension:.js=.js && node -e \"const fs=require('node:fs'); fs.mkdirSync('build/tmp',{recursive:true}); fs.writeFileSync('build/package.json', JSON.stringify({type:'commonjs',scripts:{worker:'node worker.js'}})+'\\n')\""
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
