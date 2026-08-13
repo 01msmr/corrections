@@ -29,6 +29,31 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+/* Der Worker laeuft als geplante Aufgabe, ausserhalb des Passenger-Prozesses:
+   dort reicht Plesk seine Variablen nicht durch. Er prueft deshalb nur, was
+   er selbst braucht -- so muessen Admin- und SMTP-Zugaenge fuer ihn nirgends
+   ein zweites Mal liegen. */
+const workerEnvSchema = envSchema.pick({
+  DATABASE_PATH: true,
+  MIGRATIONS_DIR: true,
+  IMAP_HOST: true,
+  IMAP_PORT: true,
+  IMAP_USER: true,
+  IMAP_PASSWORD: true,
+  IMAP_TRASH: true,
+});
+
+export type WorkerEnv = z.infer<typeof workerEnvSchema>;
+
+export function loadWorkerEnv(source: Record<string, string | undefined> = process.env): WorkerEnv {
+  const parsed = workerEnvSchema.safeParse(source);
+  if (!parsed.success) {
+    const fields = parsed.error.issues.map((i) => i.path.join(", "));
+    throw new Error(`Unvollständige oder ungültige Umgebung: ${fields.join(", ")}`);
+  }
+  return parsed.data;
+}
+
 export function loadEnv(source: Record<string, string | undefined> = process.env): Env {
   const parsed = envSchema.safeParse(source);
   if (!parsed.success) {

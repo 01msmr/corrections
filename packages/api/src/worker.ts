@@ -1,7 +1,7 @@
 import { eq, isNotNull } from "drizzle-orm";
 import { createDb, runMigrations } from "./db/client.js";
 import { corrections, imapCursor } from "./db/schema.js";
-import { loadEnv } from "./env.js";
+import { loadWorkerEnv } from "./env.js";
 import { findeZuordnung } from "./inbox/antworten.js";
 import { verarbeitePosteingang } from "./inbox/postfach.js";
 import { ladeAntwortKandidaten, vermerkeAntwort } from "./repo/antworten.js";
@@ -15,7 +15,7 @@ import { ladeAntwortKandidaten, vermerkeAntwort } from "./repo/antworten.js";
  * Spaeter: Artikel-Checks (P5).
  */
 async function main(): Promise<void> {
-  const env = loadEnv();
+  const env = loadWorkerEnv();
 
   if (!env.IMAP_HOST) {
     console.log(

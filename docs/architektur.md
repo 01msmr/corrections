@@ -267,8 +267,16 @@ Ein Gang durch den Posteingang (`inbox/postfach.ts`, Erkennung rein in
 Gelesen wird ab dem UID-Cursor (`imap_cursor`): der erste Lauf sieht das
 ganze Postfach und holt die Alt-Antworten herein. Wechselt die
 UIDVALIDITY, beginnt der nächste Lauf von vorn — gefahrlos, weil das
-Vermerken idempotent ist. Voraussetzung im Betrieb: `IMAP_*` in Plesk und
-der stündliche Worker-Cron.
+Vermerken idempotent ist.
+
+**Betrieb.** Plesk reicht seine Umgebungsvariablen nur an den
+Passenger-Prozess durch — ein manueller Lauf oder eine geplante Aufgabe
+sieht sie nicht. Der Worker prüft deshalb nur, was er selbst braucht
+(`loadWorkerEnv`: Datenbank, Migrationen, `IMAP_*`) und liest sie aus
+einer `.env` im Anwendungsstamm; Admin- und SMTP-Zugänge liegen für ihn
+nirgends ein zweites Mal. Gestartet wird er über `npm run worker` —
+Plesks „Skript ausführen" und die geplante Aufgabe verstehen denselben
+Namen.
 
 ### Sitzung nach Basic Auth
 

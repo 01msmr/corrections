@@ -1,5 +1,5 @@
 import { ImapFlow } from "imapflow";
-import type { Env } from "../env.js";
+import type { WorkerEnv } from "../env.js";
 import type { EingehendeMail } from "./antworten.js";
 import { istEingangsbestaetigung } from "./bestaetigung.js";
 
@@ -40,7 +40,7 @@ export interface PosteingangRueckrufe {
 }
 
 export async function verarbeitePosteingang(
-  env: Env,
+  env: WorkerEnv,
   abUid: number,
   rueckrufe: PosteingangRueckrufe,
 ): Promise<PosteingangErgebnis | null> {
@@ -86,8 +86,9 @@ export async function verarbeitePosteingang(
         const inReplyTo = nachricht.envelope?.inReplyTo?.replace(/[<>]/g, "").trim() || null;
         const absender = nachricht.envelope?.from?.[0]?.address ?? null;
 
-        /* Eigene Kopien sind weder Bestaetigung noch Antwort. */
-        if (absender && absender.toLowerCase() === env.MAIL_FROM.toLowerCase()) continue;
+        /* Eigene Kopien sind weder Bestaetigung noch Antwort. Verglichen
+           wird mit dem gelesenen Postfach: aus ihm senden wir auch. */
+        if (absender && absender.toLowerCase() === env.IMAP_USER?.toLowerCase()) continue;
 
         if (
           istEingangsbestaetigung({ betreff, textAnfang, inReplyTo }, rueckrufe.bekannteMessageIds)
