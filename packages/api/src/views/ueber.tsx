@@ -1,4 +1,4 @@
-import { QUOTE_MAX_LENGTH } from "@korrektur/shared";
+import { ARTIKEL_MAX_LENGTH, QUOTE_MAX_LENGTH } from "@korrektur/shared";
 import type { FC } from "hono/jsx";
 import { AppleIcon, Layout } from "./layout.js";
 
@@ -119,15 +119,22 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
         __html: `
   const ziel = ${betreiber ? '"/neu"' : '"/hinweis"'};
   /* Das Lesezeichen wird aus der aufgerufenen Adresse gebaut, damit es auch
-     lokal stimmt. Der markierte Text reist als base64url im Parameter b —
-     die "URL oeffnen"-Aktion der Kurzbefehle loest Prozentkodierung sonst
-     wieder auf und schneidet am ersten Leerzeichen ab. */
+     lokal stimmt. Es schickt ein Formular per POST statt einer Adresse:
+     Neben Fundstelle und Adresse reist der Artikeltext der geoeffneten
+     Seite mit, und der passt in keine URL. Das loest die Bezahlschranke am
+     Schreibtisch von selbst -- wer angemeldet liest, sieht den Text, den
+     der Server nie bekommt. */
   const lesezeichen =
     "javascript:(()=>{" +
     "const t=String(getSelection()).trim().slice(0,${QUOTE_MAX_LENGTH});" +
-    "const b=btoa(unescape(encodeURIComponent(JSON.stringify({u:location.href,t}))))" +
-    ".replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');" +
-    "location.href='" + location.origin + ziel + "?b='+b})()";
+    "const a=document.querySelector('article,main')||document.body;" +
+    "const x=(a.innerText||'').trim().slice(0,${ARTIKEL_MAX_LENGTH});" +
+    "const f=document.createElement('form');f.method='post';" +
+    "f.action='" + location.origin + ziel + "/vorbefuellen';" +
+    "[['url',location.href],['text',t],['artikelText',x]].forEach(p=>{" +
+    "const i=document.createElement('input');i.type='hidden';" +
+    "i.name=p[0];i.value=p[1];f.append(i)});" +
+    "document.body.append(f);f.submit()})()";
 
   const lesezeichenHinweis = document.getElementById("lesezeichen-hinweis");
   document.getElementById("kopiere-lesezeichen").addEventListener("click", () => {

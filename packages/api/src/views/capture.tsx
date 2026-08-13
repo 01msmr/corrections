@@ -397,6 +397,9 @@ const erkennungScript = (basis: string) => `
      Laden anstossen. */
   if (url.value.trim()) ueberschriftHolen();
   if (falsch.value.trim() && richtig.value.trim()) pruefen();
+  /* Kam der Artikeltext schon mit (Lesezeichen), steht er hier als Zeile
+     statt als Textklotz -- wie nach dem Einfuegen von Hand. */
+  zeigeArtikeltextStand();
 `;
 
 const Zeichen: FC<{ art: "url" | "titel" | "falsch" | "richtig" | "notiz"; titel: string }> = ({
@@ -411,11 +414,22 @@ export const CaptureForm: FC<{
   idempotencyKey: string;
   url: string;
   quote: string;
+  /** Artikeltext vom Lesezeichen (Bezahlschranke): dann steht der Block offen. */
+  artikelText?: string;
   fehler?: string | undefined;
   fehlendeRedaktion?: { host: string; zurueck: string } | undefined;
   /** "/neu" (Betreiber) oder "/hinweis" (Besucher) — steuert Action und Helfer-Endpunkte. */
   basis?: "/neu" | "/hinweis";
-}> = ({ errorTypes, idempotencyKey, url, quote, fehler, fehlendeRedaktion, basis = "/neu" }) => (
+}> = ({
+  errorTypes,
+  idempotencyKey,
+  url,
+  quote,
+  artikelText = "",
+  fehler,
+  fehlendeRedaktion,
+  basis = "/neu",
+}) => (
   <Layout title="Neue Korrektur" aktiv="neu" betreiber={basis === "/neu"}>
     {fehlendeRedaktion ? (
       <FehlendeRedaktion host={fehlendeRedaktion.host} zurueck={fehlendeRedaktion.zurueck} />
@@ -460,14 +474,16 @@ export const CaptureForm: FC<{
             Einfuegen wieder zu: sonst draengt ein Textklotz die eigentliche
             Arbeit nach unten. Ein eigenes Feld, kein Teil des Pruefblocks --
             dessen Trefferfarbe gilt den Fundstellen, nicht diesem Text. */}
-        <div class="feld" id="artikeltext-block" hidden>
+        <div class="feld" id="artikeltext-block" hidden={artikelText.length === 0}>
           <label for="artikelText">
             <span id="artikeltext-grund" />
             <button type="button" id="artikeltext-entfernen" class="textknopf" hidden>
               entfernen
             </button>
           </label>
-          <textarea id="artikelText" name="artikelText" rows={6} />
+          <textarea id="artikelText" name="artikelText" rows={6}>
+            {artikelText}
+          </textarea>
           <span class="zaehler" id="artikeltext-fuss">
             wird nur zum Prüfen und Verankern benutzt, nicht gespeichert
           </span>

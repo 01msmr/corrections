@@ -200,6 +200,34 @@ describe("Base64-Vorbefuellung (?b=)", () => {
     expect(html2).toContain('value="https://beispiel.de/artikel"');
   });
 
+  it("nimmt den Artikeltext des Bookmarklets per POST entgegen", async () => {
+    /* Am Schreibtisch liest das Lesezeichen den Text aus der angemeldeten
+       Seite. Per GET ginge er nicht: eine Adresse fasst keinen Artikel. */
+    const artikelText = "Ein Absatz aus dem angemeldeten Artikel. ".repeat(30);
+    const res = await app().request("/hinweis/vorbefuellen", {
+      method: "POST",
+      body: new URLSearchParams({
+        url: "https://www.spiegel.de/politik/a-1?sara_ref=x",
+        text: "Regierungschef  eines Bundeslands",
+        artikelText,
+      }),
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+    });
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    /* Dieselbe Vorbefuellung wie ueber die Adresse: gekuerzt und geglaettet. */
+    expect(html).toContain('value="https://spiegel.de/politik/a-1"');
+    expect(html).toContain("Regierungschef eines Bundeslands");
+    expect(html).toContain("Ein Absatz aus dem angemeldeten Artikel.");
+    /* Mit Text ist der Block offen -- nicht erst nach einer Pruefung. */
+    expect(html).not.toMatch(/id="artikeltext-block"[^>]*hidden/);
+  });
+
+  it("laesst den Artikeltext-Block ohne Text zu", async () => {
+    const html = await (await app().request("/hinweis?url=https://x.test/a")).text();
+    expect(html).toMatch(/id="artikeltext-block"[^>]*hidden/);
+  });
+
   it("glaettet doppelte Leerzeichen in der Fundstelle", async () => {
     /* Verlinkungssymbole im Artikel verschwinden im Reintext und
        hinterlassen doppelte Leerzeichen. */

@@ -44,6 +44,14 @@ export const QUOTE_MAX_LENGTH = 280;
 export const ANCHOR_LENGTH = 48;
 
 /**
+ * Obergrenze für einen mitgelieferten Artikeltext (Lesezeichen, Einfügen).
+ * Grosszügig: die Rechtschreibprüfung nimmt ohnehin nur die ersten 18 000
+ * Zeichen, das Verankern braucht aber die ganze Länge. Die Grenze hält nur
+ * ausufernde Übertragungen ab — ein Artikel bleibt weit darunter.
+ */
+export const ARTIKEL_MAX_LENGTH = 200_000;
+
+/**
  * Die Farbwelt der Anwendung, an genau einer Stelle. Oberflaeche (CSS-Variablen
  * in layout.tsx) und Mail (Inline-Stile in compose.ts) fragen dieselben Werte
  * ab -- die Mail kennt nur die helle Fassung, weil ihr Papierton fest steht.

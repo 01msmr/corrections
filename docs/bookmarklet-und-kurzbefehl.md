@@ -12,7 +12,8 @@ Die Vorbefüllung kennt drei Parameterformen:
 
 | Parameter | Inhalt | Verwender |
 |---|---|---|
-| `url` + `text` | Adresse und Fundstelle, prozentkodiert | Bookmarklet (Desktop-Browser) |
+| POST `url` + `text` + `artikelText` | an `/neu/vorbefuellen` bzw. `/hinweis/vorbefuellen` | Bookmarklet (Desktop-Browser) |
+| `url` + `text` | Adresse und Fundstelle, prozentkodiert | älteres Bookmarklet |
 | `url` + `q` | Adresse unverändert, Fundstelle **base64url** | der eine Kurzbefehl (unten) |
 | `b` | JSON `{u, t}` als base64url | älterer Safari-Kurzbefehl |
 
@@ -26,12 +27,21 @@ Tipp entsperrt, erst der zweite schreibt.
 
 ## Bookmarklet (Desktop)
 
-Text im Artikel markieren, dann das Lesezeichen klicken:
+Text im Artikel markieren, dann das Lesezeichen klicken. Den fertigen Code
+gibt der Knopf auf „In eigener Sache" in die Zwischenablage — er wird dort
+aus der aufgerufenen Adresse gebaut, damit er auch lokal stimmt:
 
 ```
-javascript:(()=>{const t=String(getSelection()).trim().slice(0,280);location.href='https://korrekturen.msmr.co/neu?url='+encodeURIComponent(location.href)+'&text='+encodeURIComponent(t)})()
+javascript:(()=>{const t=String(getSelection()).trim().slice(0,280);const a=document.querySelector('article,main')||document.body;const x=(a.innerText||'').trim().slice(0,200000);const f=document.createElement('form');f.method='post';f.action='https://korrekturen.msmr.co/neu/vorbefuellen';[['url',location.href],['text',t],['artikelText',x]].forEach(p=>{const i=document.createElement('input');i.type='hidden';i.name=p[0];i.value=p[1];f.append(i)});document.body.append(f);f.submit()})()
 ```
 
+- **Es schickt ein Formular per POST, keine Adresse.** Nur so reist der
+  Artikeltext der geöffneten Seite mit — er passt in keine URL. Damit löst
+  sich die Bezahlschranke am Schreibtisch von selbst: Wer angemeldet liest,
+  sieht den Text, den der Server nie bekommt. Er dient dem Prüfen und dem
+  Verankern und wird nicht gespeichert.
+- Der Text kommt aus `article` oder `main`, ersatzweise aus dem ganzen
+  `body`, und ist auf ARTIKEL_MAX_LENGTH (200 000 Zeichen) begrenzt.
 - Die Auswahl wird auf 280 Zeichen gekürzt (QUOTE_MAX_LENGTH des Formulars).
 - Beim ersten Aufruf fragt der Browser einmal nach dem Admin-Zugang; danach
   trägt eine Sitzung 90 Tage.
@@ -45,6 +55,12 @@ In Apps — SPIEGEL und andere — gibt es kein Safari, also auch kein
 „JavaScript auf Webseite ausführen". Dieser Kurzbefehl kommt ohne aus und
 funktioniert dadurch überall gleich. Benutzung: **Stelle markieren →
 Kopieren → Artikel/Seite teilen → Kurzbefehl antippen.**
+
+**Er bleibt unverändert** — auch nachdem das Bookmarklet den Artikeltext
+mitschickt. Ohne Skript in der Seite kommt der Kurzbefehl nicht an den Text;
+hinter einer Bezahlschranke bleibt auf dem Telefon das Einfügefeld im
+Formular der Weg. Wer die App verlässt („Im Browser öffnen"), ist wieder auf
+dem Bookmarklet-Weg.
 
 Kopfzeile: „Im Share Sheet anzeigen" **an** · Empfangen **Safari-Webseiten
 und URLs** · wenn keine Eingabe: **Fortfahren**.

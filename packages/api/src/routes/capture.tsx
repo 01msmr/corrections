@@ -175,6 +175,28 @@ export function captureRoutes(
     );
   });
 
+  /**
+   * Das Lesezeichen liefert den Artikeltext aus der angemeldeten Seite --
+   * per POST, weil eine Adresse keinen Artikel fasst. Nur ein vorbefuelltes
+   * Formular, keine Nebenwirkung: kein Datensatz, keine Kennung.
+   */
+  const vorbefuellenHandler = (basis: "/neu" | "/hinweis"): Handler => async (c) => {
+    const body = await c.req.parseBody();
+    const lies = (name: string): string => (typeof body[name] === "string" ? body[name] : "");
+    return c.html(
+      <CaptureForm
+        errorTypes={listErrorTypes(deps.db)}
+        idempotencyKey={createId()}
+        url={gekuerzteAdresse(lies("url"))}
+        quote={glaetteFundstelle(lies("text").trim())}
+        artikelText={lies("artikelText").trim()}
+        basis={basis}
+      />,
+    );
+  };
+  app.post("/neu/vorbefuellen", vorbefuellenHandler("/neu"));
+  app.post("/hinweis/vorbefuellen", vorbefuellenHandler("/hinweis"));
+
   /** Holt die Ueberschrift, sobald die URL im Formular steht. */
   const ueberschriftHandler: Handler = async (c) => {
     const body = await c.req.parseBody();
