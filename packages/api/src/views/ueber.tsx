@@ -32,8 +32,9 @@ const KurzbefehlQr: FC = () => (
  */
 const LESEZEICHEN_HINWEIS = [
   "1. Neues Lesezeichen anlegen",
-  "2. Als Adresse/URL das Kopierte einsetzen",
-  "3. Benennen, etwa „Korrektur“",
+  "2. Adresse kopieren: Knopf „JavaScript für das Bookmarklet“",
+  "3. Zwischenablage in Adress-/URL-Feld einfügen",
+  "4. Benennen, etwa „Korrektur“",
   "",
   "Es muss im selben Tab öffnen. In Vivaldi hilft ein Kürzel.",
 ].join("\n");
