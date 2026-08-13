@@ -1,5 +1,6 @@
 import { PALETTE, PALETTE_DUNKEL, TILGUNG_STRICH } from "@korrektur/shared";
 import type { FC, PropsWithChildren } from "hono/jsx";
+import { raw } from "hono/html";
 
 /** Fuer Farben in data-URIs: "#rrggbb" -> "%23rrggbb". */
 const uri = (hex: string): string => hex.replace("#", "%23");
@@ -948,17 +949,20 @@ const STYLES = `
   body:not(:has(.listenrumpf)) .fusszeile {
     left: 0; transform: none; width: 100%; max-width: none; padding: 0;
     animation: fussschatten linear both;
-    animation-timeline: scroll(root);
-    animation-range: calc(100% - 8rem) calc(100% - 4rem); }
-  /* Der Schatten trennt nur, solange etwas zu trennen ist: er weicht, wenn
-     das Seitenende in Sicht kommt -- gespiegelt zum Kopf, dessen Schatten
-     erscheint, sobald der Titel aus dem Bild ist. Steht der Schatten in den
-     Keyframes und nicht in der Regel, bleibt er auch dort aus, wo die Seite
-     gar nicht scrollt: dann ist die Zeitachse untaetig, und die Zeile
-     verdeckt ohnehin nichts. */
+    animation-timeline: scroll(root); }
+  /* Der Schatten kommt mit der ersten Bewegung und geht am Seitenende
+     wieder (Entscheidung vom 13.8.2026): er trennt nur, solange etwas
+     unter der Zeile liegt. Die Marken stehen in Prozent der Scrollstrecke
+     statt als Rechnung vom Ende her -- letztere wertet der Browser bei
+     Scroll-Zeitachsen nicht zuverlaessig aus (gemessen: Zeitachse bei
+     100%, Animation blieb bei 16%). Steht der Schatten in den Keyframes
+     und nicht in der Regel, bleibt er dort aus, wo die Seite gar nicht
+     scrollt: dann ist die Zeitachse untaetig, und die Zeile verdeckt
+     ohnehin nichts. */
   @keyframes fussschatten {
-    from { box-shadow: 0 -12px 26px -6px rgb(var(--schatten) / .55); }
-    to { box-shadow: 0 -6px 16px -14px rgb(var(--schatten) / 0); }
+    0% { box-shadow: 0 -6px 16px -14px rgb(var(--schatten) / 0); }
+    4%, 96% { box-shadow: 0 -12px 26px -6px rgb(var(--schatten) / .55); }
+    100% { box-shadow: 0 -6px 16px -14px rgb(var(--schatten) / 0); }
   }
   /* Der Text haelt Abstand vom Rand, die Linie darueber nicht. Ueber und
      unter dem Text liegt derselbe Weissraum (.6rem): die Zeile sitzt in
@@ -1345,6 +1349,12 @@ export const Layout: FC<
 }) => {
   const ohneTitel = aktiv !== undefined && BEREICH_TITEL[aktiv] === title;
   return (
+  <>
+  {/* Ohne DOCTYPE laufen alle Seiten im Quirks-Modus: dann scrollt der
+      body statt des Wurzelelements, und scroll(root) -- die Zeitachse der
+      beiden Schatten -- hat keine Strecke. Er steht hier einmal, damit ihn
+      keine Ansicht vergessen kann. */}
+  {raw("<!DOCTYPE html>")}
   <html lang="de">
     <head>
       <meta charset="utf-8" />
@@ -1577,5 +1587,6 @@ export const Layout: FC<
       />
     </body>
   </html>
+  </>
   );
 };
