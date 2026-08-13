@@ -947,10 +947,24 @@ const STYLES = `
      Zeile die Blaetterreihe, und die waere der falsche Ort dafuer. */
   body:not(:has(.listenrumpf)) .fusszeile {
     left: 0; transform: none; width: 100%; max-width: none; padding: 0;
-    box-shadow: 0 -12px 26px -6px rgb(var(--schatten) / .55); }
-  /* Der Text haelt Abstand vom Rand, die Linie darueber nicht. */
+    animation: fussschatten linear both;
+    animation-timeline: scroll(root);
+    animation-range: calc(100% - 8rem) calc(100% - 4rem); }
+  /* Der Schatten trennt nur, solange etwas zu trennen ist: er weicht, wenn
+     das Seitenende in Sicht kommt -- gespiegelt zum Kopf, dessen Schatten
+     erscheint, sobald der Titel aus dem Bild ist. Steht der Schatten in den
+     Keyframes und nicht in der Regel, bleibt er auch dort aus, wo die Seite
+     gar nicht scrollt: dann ist die Zeitachse untaetig, und die Zeile
+     verdeckt ohnehin nichts. */
+  @keyframes fussschatten {
+    from { box-shadow: 0 -12px 26px -6px rgb(var(--schatten) / .55); }
+    to { box-shadow: 0 -6px 16px -14px rgb(var(--schatten) / 0); }
+  }
+  /* Der Text haelt Abstand vom Rand, die Linie darueber nicht. Ueber und
+     unter dem Text liegt derselbe Weissraum (.6rem): die Zeile sitzt in
+     ihrem Streifen mittig, statt nach unten zu rutschen. */
   body:not(:has(.listenrumpf)) .fussinhalt {
-    padding-left: 1.25rem; padding-right: 1.25rem; }
+    padding: .6rem 1.25rem; }
   /* Der Inhalt endet ueber der festen Zeile, nicht darunter: etwas mehr
      als ihre Hoehe, damit die letzte Zeile frei steht. Unter der Liste
      besorgt das die gemessene Leistenhoehe am Blatt. */
