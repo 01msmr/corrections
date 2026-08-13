@@ -938,11 +938,19 @@ const STYLES = `
      Impressums, abgesetzt durch eine feine Linie. */
 
   /* Fixiert ist die Zeile fuer alle Seiten gleich (siehe oben). Hier steht
-     nur, was sich unterscheidet -- und zwar allein oberhalb des Textes:
-     ein schmaler Streifen Papier, damit der scrollende Satz die Linie
-     nicht beruehrt. Unter der Liste liegt darueber die Blaetterreihe, die
-     den Streifen nicht braucht. */
-  body:not(:has(.listenrumpf)) .fusszeile { padding-top: .5rem; }
+     nur, was sich unterscheidet: unten laeuft die Zeile ueber die volle
+     Seitenbreite und traegt denselben Schatten wie der klebende Kopf, nur
+     nach oben geworfen -- dieselbe Geometrie, dasselbe Grau
+     (Entscheidung vom 13.8.2026). Die Trennlinie sitzt ohne Abstand am
+     oberen Rand, dort, wo der Schatten ansetzt: sie ist die Grenze.
+     Unter der Liste bleibt alles, wie es ist -- dort liegt ueber der
+     Zeile die Blaetterreihe, und die waere der falsche Ort dafuer. */
+  body:not(:has(.listenrumpf)) .fusszeile {
+    left: 0; transform: none; width: 100%; max-width: none; padding: 0;
+    box-shadow: 0 -12px 26px -6px rgb(var(--schatten) / .55); }
+  /* Der Text haelt Abstand vom Rand, die Linie darueber nicht. */
+  body:not(:has(.listenrumpf)) .fussinhalt {
+    padding-left: 1.25rem; padding-right: 1.25rem; }
   /* Der Inhalt endet ueber der festen Zeile, nicht darunter: etwas mehr
      als ihre Hoehe, damit die letzte Zeile frei steht. Unter der Liste
      besorgt das die gemessene Leistenhoehe am Blatt. */
