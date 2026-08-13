@@ -39,6 +39,21 @@ export interface PosteingangRueckrufe {
   ) => boolean;
 }
 
+/**
+ * Fehler aus imapflow tragen die Serverantwort an sich; ohne sie steht in der
+ * Ausgabe nur "Command failed". Passwoerter sind darin nicht enthalten --
+ * imapflow schwaerzt den Befehlstext.
+ */
+export function fehlerDetails(fehler: unknown): Record<string, string> {
+  if (typeof fehler !== "object" || fehler === null) return {};
+  const details: Record<string, string> = {};
+  for (const feld of ["responseStatus", "responseText", "serverResponseCode", "executedCommand"]) {
+    const wert: unknown = Reflect.get(fehler, feld);
+    if (typeof wert === "string" && wert.length > 0) details[feld] = wert;
+  }
+  return details;
+}
+
 export async function verarbeitePosteingang(
   env: WorkerEnv,
   abUid: number,

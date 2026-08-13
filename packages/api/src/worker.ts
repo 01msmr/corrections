@@ -3,7 +3,7 @@ import { createDb, runMigrations } from "./db/client.js";
 import { corrections, imapCursor } from "./db/schema.js";
 import { loadWorkerEnv } from "./env.js";
 import { findeZuordnung } from "./inbox/antworten.js";
-import { verarbeitePosteingang } from "./inbox/postfach.js";
+import { fehlerDetails, verarbeitePosteingang } from "./inbox/postfach.js";
 import { ladeAntwortKandidaten, vermerkeAntwort } from "./repo/antworten.js";
 
 /**
@@ -85,6 +85,13 @@ async function main(): Promise<void> {
 }
 
 main().catch((fehler: unknown) => {
-  console.error(JSON.stringify({ level: "error", msg: "worker gescheitert", fehler: String(fehler) }));
+  console.error(
+    JSON.stringify({
+      level: "error",
+      msg: "worker gescheitert",
+      fehler: String(fehler),
+      ...fehlerDetails(fehler),
+    }),
+  );
   process.exitCode = 1;
 });
