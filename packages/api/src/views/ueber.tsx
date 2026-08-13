@@ -1,6 +1,6 @@
 import { ARTIKEL_MAX_LENGTH, QUOTE_MAX_LENGTH } from "@korrektur/shared";
 import type { FC } from "hono/jsx";
-import { AppleIcon, Layout } from "./layout.js";
+import { AppleIcon, CopyIcon, InfoIcon, Layout } from "./layout.js";
 
 /**
  * Die Startseite. Oeffentlich, weil sie erklaert, was ein Empfaenger einer
@@ -25,6 +25,19 @@ const KurzbefehlQr: FC = () => (
   </svg>
 );
 
+/**
+ * Was nach dem Kopieren zu tun ist — drei Handgriffe, danach der eine
+ * Stolperstein. Steht im Hinweis am i, nicht als Absatz auf der Seite: man
+ * macht es einmal.
+ */
+const LESEZEICHEN_HINWEIS = [
+  "1. Neues Lesezeichen anlegen",
+  "2. Als Adresse/URL das Kopierte einsetzen",
+  "3. Benennen, etwa „Korrektur“",
+  "",
+  "Es muss im selben Tab öffnen. In Vivaldi hilft ein Kürzel.",
+].join("\n");
+
 export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) => (
   <Layout title="In eigener Sache" aktiv="ueber" betreiber={betreiber}>
     <div class="prosa">
@@ -34,6 +47,10 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
       </p>
       <h2 class="rubrik">In eigener Sache</h2>
 
+      {/* Der Abschnitt haelt zusammen: so steht der QR-Block in derselben
+          Spalte wie das, wovon er handelt, statt allein oben in der zweiten
+          zu landen (Entscheidung vom 13.8.2026). */}
+      <div class="zusammenhalt">
       <h2>Schneller melden</h2>
       <p>
         Wer beim Lesen eine Stelle markiert und dann teilt, bekommt das Formular mit
@@ -45,29 +62,34 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
         : ein Lesezeichen, das keine Seite öffnet, sondern ein kleines Skript auf der
         gerade offenen Seite ausführt.
       </p>
-      <p>
+      {/* Das Kopierzeichen sagt, was der Knopf tut; was danach zu tun ist,
+          traegt das i daneben — sonst stuende ein Absatz Anleitung fuer
+          einen Handgriff da, den man einmal macht. */}
+      <p class="knopfzeile">
         <button type="button" id="kopiere-lesezeichen" class="zeilenknopf">
-          <span class="knopftext">JavaScript für das Bookmarklet</span>
-        </button>{" "}
+          <span class="knopftext">
+            JavaScript für das Bookmarklet <CopyIcon />
+          </span>
+        </button>
+        <span
+          class="infozeichen"
+          tabindex={0}
+          role="note"
+          data-hinweis={LESEZEICHEN_HINWEIS}
+          aria-label={LESEZEICHEN_HINWEIS}
+        >
+          <InfoIcon />
+        </span>
         <span id="lesezeichen-hinweis" class="zaehler" aria-live="polite" />
       </p>
-      <p class="zaehler">
-        Neues Lesezeichen anlegen, das Kopierte als Adresse einsetzen, benennen — etwa
-        „Korrektur“. Öffnet der Browser Lesezeichen in einem neuen Tab, hat das Skript
-        keinen Artikel mehr vor sich; in Vivaldi hilft ein Spitzname wie{" "}
-        <code>kor</code>. Mehr dazu in{" "}
-        <a
-          href="https://github.com/01msmr/corrections/blob/main/docs/bookmarklet-und-kurzbefehl.md"
-          target="_blank"
-          rel="noopener"
-        >
-          der Anleitung im Quellcode
-        </a>
-        .
-      </p>
 
-      <div class="zusammenhalt">
-        <p>
+      {/* Der Code links, was zu ihm gehoert rechts daneben: Knopf oben,
+          Bildunterschrift darunter (Entscheidung vom 13.8.2026). */}
+      <div class="qr-zeile">
+        <button type="button" id="qr-schalter" class="qrschalter" aria-expanded="false">
+          <KurzbefehlQr />
+        </button>
+        <div class="qr-neben">
           <a
             class="knopf zeilenknopf"
             href="https://www.icloud.com/shortcuts/84f1ff381c1140b1b07711738869d1b7"
@@ -75,20 +97,16 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
             rel="noopener"
           >
             <span class="knopftext">
-              <AppleIcon /> Kurzbefehl beziehen
+              <AppleIcon /> Kurzbefehl beziehen (iOS)
             </span>
           </a>
-        </p>
-        <p class="qr-zeile">
-          <button type="button" id="qr-schalter" class="qrschalter" aria-expanded="false">
-            <KurzbefehlQr />
-          </button>
           <span class="zaehler">
             QR-Code abfotografieren.
             <br />
             Skripte erlauben: folge dem Link in der Kurzbefehl-Fehlermeldung.
           </span>
-        </p>
+        </div>
+      </div>
       </div>
 
       <h2>Der Hinweis an die Redaktion</h2>

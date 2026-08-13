@@ -358,6 +358,47 @@ const STYLES = `
      Umbruch; der Text schrumpft stattdessen mit der Spalte. */
   .qr-zeile { display: flex; align-items: center; gap: .9rem; }
   .qr-zeile .zaehler { min-width: 0; }
+  /* Neben dem Code stehen Knopf und Bildunterschrift untereinander; der
+     Knopf traegt seine eigene Breite, nicht die der Spalte. */
+  .qr-neben { display: flex; flex-direction: column; align-items: flex-start;
+    gap: .7rem; min-width: 0; }
+
+  /* Das i traegt seinen Hinweis selbst: beim Zeigen und beim Tastatur-Fokus,
+     damit er nicht nur der Maus gehoert. Der Kasten haengt am Zeichen, ist
+     aber breiter als es — deshalb die feste Breite statt einer, die vom
+     Zeichen erbt. */
+  /* Knopf und Zeichen auf einer Grundlinie mittig, mit Luft dazwischen --
+     das Zeichen soll neben dem Knopf stehen, nicht an ihm kleben. */
+  .knopfzeile { display: flex; align-items: center; gap: 1.15rem;
+    flex-wrap: wrap; }
+
+  .infozeichen { position: relative; display: inline-flex; align-items: center;
+    color: var(--rand); cursor: help; }
+  /* 80 % groesser als ein Zeichen im Fliesstext (.85em): es steht allein,
+     ohne Beschriftung, und muss von selbst auffindbar sein. */
+  .infozeichen .navicon { width: 1.53em; height: 1.53em; margin-right: 0; top: 0; }
+  .infozeichen:hover, .infozeichen:focus { color: var(--tinte); }
+  .infozeichen::after { content: attr(data-hinweis);
+    position: absolute; left: 0; top: calc(100% + .45rem); z-index: 5;
+    width: min(22rem, 78vw); padding: .6rem .75rem;
+    background: var(--papier); color: var(--tinte);
+    border: 1px solid var(--linie); border-left: 4px solid var(--rand);
+    /* Kraeftiger Schatten: der Kasten liegt ueber dem Satz und muss sich
+       deutlich von ihm abheben. */
+    border-radius: 4px; box-shadow: 0 8px 22px -8px rgb(var(--schatten) / .9);
+    font: 400 .78rem/1.55 var(--sans); text-align: left;
+    /* Die Schritte stehen zeilenweise: die Umbrueche kommen aus dem
+       data-Attribut und muessen erhalten bleiben. */
+    white-space: pre-line;
+    /* Nicht display:none: so bleibt der Text fuer Vorlesesoftware da und
+       der Kasten laesst sich weich einblenden. */
+    opacity: 0; visibility: hidden; transition: opacity .12s ease; }
+  /* Auch bei :focus, nicht nur :focus-visible -- auf dem Telefon gibt es
+     kein Zeigen; dort oeffnet der Tipp den Hinweis. */
+  .infozeichen:hover::after, .infozeichen:focus::after {
+    opacity: 1; visibility: visible; }
+  /* Am rechten Spaltenrand liefe der Kasten sonst aus dem Satzspiegel. */
+  .infozeichen:last-child::after { left: auto; right: 0; }
   .qr { width: 100%; height: auto; display: block;
     background: var(--papier); padding: .35rem; border: 1px solid var(--linie); border-radius: 3px; }
   /* Der Code ist ein Schalter, kein Knopf im Bleisatz: er traegt nichts als
@@ -1235,6 +1276,19 @@ export const PasteIcon: FC = () => (
 export const EnvelopeOpenTextIcon: FC = () => (
   <svg class="navicon" viewBox="0 0 512 512" aria-hidden="true">
     <path fill="currentColor" d="M215.4 96L144 96l-36.2 0L96 96l0 8.8L96 144l0 40.4 0 89L.2 202.5c1.6-18.1 10.9-34.9 25.7-45.8L48 140.3 48 96c0-26.5 21.5-48 48-48l76.6 0 49.9-36.9C232.2 3.9 243.9 0 256 0s23.8 3.9 33.5 11L339.4 48 416 48c26.5 0 48 21.5 48 48l0 44.3 22.1 16.4c14.8 10.9 24.1 27.7 25.7 45.8L416 273.4l0-89 0-40.4 0-39.2 0-8.8-11.8 0L368 96l-71.4 0-81.3 0zM0 448L0 242.1 217.6 403.3c11.1 8.2 24.6 12.7 38.4 12.7s27.3-4.4 38.4-12.7L512 242.1 512 448s0 0 0 0c0 35.3-28.7 64-64 64L64 512c-35.3 0-64-28.7-64-64c0 0 0 0 0 0zM176 160l160 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-160 0c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64l160 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-160 0c-8.8 0-16-7.2-16-16s7.2-16 16-16z" />
+  </svg>
+);
+
+export const CopyIcon: FC = () => (
+  <svg class="navicon" viewBox="0 0 448 512" aria-hidden="true">
+    <path fill="currentColor" d="M208 0L332.1 0c12.7 0 24.9 5.1 33.9 14.1l67.9 67.9c9 9 14.1 21.2 14.1 33.9L448 336c0 26.5-21.5 48-48 48l-192 0c-26.5 0-48-21.5-48-48l0-288c0-26.5 21.5-48 48-48zM48 128l80 0 0 64-64 0 0 256 192 0 0-32 64 0 0 48c0 26.5-21.5 48-48 48L48 512c-26.5 0-48-21.5-48-48L0 176c0-26.5 21.5-48 48-48z" />
+  </svg>
+);
+/* Traegt selbst den Hinweis: das Zeichen ist der Anker, der Text steht im
+   data-Attribut und erscheint beim Zeigen wie beim Tastatur-Fokus. */
+export const InfoIcon: FC = () => (
+  <svg class="navicon" viewBox="0 0 512 512" aria-hidden="true">
+    <path fill="currentColor" d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336l24 0 0-64-24 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l48 0c13.3 0 24 10.7 24 24l0 88 8 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-80 0c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z" />
   </svg>
 );
 
