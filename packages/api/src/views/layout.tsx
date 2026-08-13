@@ -211,8 +211,8 @@ const STYLES = `
      faellt tiefer und deutlich kraeftiger als zuvor — er trennt, statt nur
      anzudeuten. */
   @keyframes kopfschatten {
-    from { box-shadow: 0 6px 16px -14px rgb(var(--schatten) / 0); }
-    to { box-shadow: 0 12px 26px -6px rgb(var(--schatten) / .55); }
+    from { box-shadow: 0 -48px 16px 40px rgb(var(--schatten) / 0); }
+    to { box-shadow: 0 -34px 26px 40px rgb(var(--schatten) / .55); }
   }
   /* Schmal gibt das Datum beim Scrollen seine Zeile frei (siehe Medienblock);
      der Kopf schrumpft dabei um genau diese Zeile. */
@@ -956,8 +956,8 @@ const STYLES = `
   /* In den Keyframes, nicht in der Regel: so bleibt der Schatten aus, wo
      die Seite gar nicht scrollt -- dann verdeckt die Zeile nichts. */
   @keyframes fussschatten {
-    from { box-shadow: 0 -12px 26px -6px rgb(var(--schatten) / .55); }
-    to { box-shadow: 0 -6px 16px -14px rgb(var(--schatten) / 0); }
+    from { box-shadow: 0 34px 26px 40px rgb(var(--schatten) / .55); }
+    to { box-shadow: 0 48px 16px 40px rgb(var(--schatten) / 0); }
   }
   /* Der Text haelt Abstand vom Rand, die Linie darueber nicht. Ueber und
      unter dem Text liegt derselbe Weissraum (.6rem): die Zeile sitzt in
