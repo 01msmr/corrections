@@ -964,7 +964,7 @@ const STYLES = `
      unter dem Text liegt derselbe Weissraum (.6rem): die Zeile sitzt in
      ihrem Streifen mittig, statt nach unten zu rutschen. */
   body:not(:has(.listenrumpf)) .fussinhalt {
-    padding: .6rem 1.25rem; }
+    padding: .5625rem 1.25rem; /* 9px */ }
   /* Der Inhalt endet ueber der festen Zeile, nicht darunter: etwas mehr
      als ihre Hoehe, damit die letzte Zeile frei steht. Unter der Liste
      besorgt das die gemessene Leistenhoehe am Blatt. */
