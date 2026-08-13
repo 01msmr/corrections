@@ -79,17 +79,30 @@ export function vermerkeAntwort(db: Db, correctionId: string, mail: AntwortVerme
   return true;
 }
 
+/** Ein Ereignis, wie es vor dem Loeschen weggeschrieben wird. */
+export interface BestaetigungsZeile {
+  id: string;
+  correctionId: string;
+  ref: string;
+  receivedAt: number;
+  rawMessageId: string | null;
+  fromAddr: string | null;
+  excerpt: string | null;
+  outcomeVorher: string;
+  respondedAtVorher: number | null;
+}
+
 /** Ereignisse, deren Auszug auf eine Eingangsbestaetigung passt. */
-function bestaetigungsEreignisse(
-  db: Db,
-  passt: (text: string) => boolean,
-): { id: string; correctionId: string }[] {
+function bestaetigungsEreignisse(db: Db, passt: (text: string) => boolean): BestaetigungsZeile[] {
   return db
-    .all<{ id: string; correctionId: string; excerpt: string | null }>(
-      sql`SELECT id, correction_id AS correctionId, excerpt FROM response_events`,
-    )
-    .filter((zeile) => zeile.excerpt !== null && passt(zeile.excerpt))
-    .map((zeile) => ({ id: zeile.id, correctionId: zeile.correctionId }));
+    .all<BestaetigungsZeile>(sql`
+      SELECT e.id, e.correction_id AS correctionId, c.ref,
+             e.received_at AS receivedAt, e.raw_message_id AS rawMessageId,
+             e.from_addr AS fromAddr, e.excerpt,
+             c.outcome AS outcomeVorher, c.responded_at AS respondedAtVorher
+      FROM response_events e JOIN corrections c ON c.id = e.correction_id
+    `)
+    .filter((zeile) => zeile.excerpt !== null && passt(zeile.excerpt));
 }
 
 /** Zaehlt sie, ohne etwas zu aendern. */
@@ -112,7 +125,7 @@ export function zaehleBestaetigungen(
 export function nimmBestaetigungenZurueck(
   db: Db,
   passt: (text: string) => boolean,
-): { geloescht: number; wiederOffen: number } {
+): { geloescht: number; wiederOffen: number; zeilen: BestaetigungsZeile[] } {
   const treffer = bestaetigungsEreignisse(db, passt);
   let wiederOffen = 0;
 
@@ -132,5 +145,5 @@ export function nimmBestaetigungenZurueck(
     if (geaendert.changes > 0) wiederOffen += 1;
   }
 
-  return { geloescht: treffer.length, wiederOffen };
+  return { geloescht: treffer.length, wiederOffen, zeilen: treffer };
 }

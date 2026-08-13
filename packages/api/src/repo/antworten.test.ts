@@ -136,7 +136,12 @@ describe("Bestaetigungen zuruecknehmen", () => {
       fromAddr: "leserservice@spiegel.de",
       excerpt: "Gern sichten und bearbeiten wir Ihren Hinweis.",
     });
-    expect(nimmBestaetigungenZurueck(db, passt)).toEqual({ geloescht: 1, wiederOffen: 1 });
+    const weg = nimmBestaetigungenZurueck(db, passt);
+    expect(weg.geloescht).toBe(1);
+    expect(weg.wiederOffen).toBe(1);
+    /* Weggeschrieben, bevor geloescht wird: das Netz unter dem Eingriff. */
+    expect(weg.zeilen[0]?.rawMessageId).toBe("bestaetigung@spiegel.de");
+    expect(weg.zeilen[0]?.outcomeVorher).toBe("acknowledged");
 
     expect(db.select().from(responseEvents).all()).toHaveLength(0);
     const zeile = db.select().from(corrections).all()[0];
@@ -158,7 +163,7 @@ describe("Bestaetigungen zuruecknehmen", () => {
       fromAddr: "leserservice@spiegel.de",
       excerpt: "Wir haben die Stelle korrigiert.",
     });
-    expect(nimmBestaetigungenZurueck(db, passt)).toEqual({ geloescht: 1, wiederOffen: 0 });
+    expect(nimmBestaetigungenZurueck(db, passt)).toMatchObject({ geloescht: 1, wiederOffen: 0 });
     expect(db.select().from(corrections).all()[0]?.outcome).toBe("acknowledged");
   });
 });
