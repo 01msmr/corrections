@@ -9,6 +9,7 @@ import { meldungenRoutes } from "./routes/admin/meldungen.js";
 import { outletAdminRoutes } from "./routes/admin/outlets.js";
 import { backfillAdminRoutes } from "./routes/admin/backfill.js";
 import { bilanzRoutes } from "./routes/bilanz.js";
+import { internRoutes } from "./routes/intern.js";
 import { captureRoutes } from "./routes/capture.js";
 import { health } from "./routes/health.js";
 import { iconRoutes } from "./routes/icons.js";
@@ -57,6 +58,7 @@ export function createApp(options: AppOptions): Hono {
       },
     }),
   );
+  app.route("/", internRoutes(options.db, options.env));
   app.route("/", outletAdminRoutes(options.db, now));
   app.route("/", errorTypeAdminRoutes(options.db, now));
   // Einmalwerkzeug: nach dem Altbestand-Import kann diese Zeile entfallen (§11.5).

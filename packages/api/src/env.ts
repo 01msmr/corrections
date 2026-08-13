@@ -20,6 +20,8 @@ const envSchema = z.object({
   IMAP_USER: z.string().min(1).optional(),
   IMAP_PASSWORD: z.string().min(1).optional(),
   IMAP_TRASH: z.string().min(1).default("Trash"),
+  /* Losungswort fuer /intern/posteingang. Ohne ihn gibt es die Route nicht. */
+  WORKER_TOKEN: z.string().min(16).optional(),
   /* Rechtschreib- und Grammatikpruefung. Vorgabe ist die oeffentliche API;
      eine eigene Instanz (LGPL, Docker) traegt man hier ein, ohne Code zu
      aendern. */

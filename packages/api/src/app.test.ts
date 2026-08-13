@@ -21,13 +21,13 @@ const ENV = {
 
 type FetchArticle = Parameters<typeof createApp>[0]["fetchArticle"];
 
-function app(ueber: { fetchArticle?: FetchArticle } = {}) {
+function app(ueber: { fetchArticle?: FetchArticle; env?: Env } = {}) {
   const db = createDb(":memory:");
   runMigrations(db);
   applyViews(db);
   seed(db);
   return createApp({
-    env: ENV,
+    env: ueber.env ?? ENV,
     db,
     mailer: createJsonMailer(ENV.MAIL_FROM),
     fetchArticle: ueber.fetchArticle ?? (async () => ({ ok: false, status: null, reason: "network" })),
@@ -437,5 +437,23 @@ describe("Fehlerpruefung (/pruefen)", () => {
       headers: { ...FORM, "x-forwarded-for": "198.51.100.2" },
     });
     expect(andere.status).toBe(200);
+  });
+});
+
+/* Fuer geplante Aufgaben gibt es auf dem Server keine Node-Laufzeit; Plesk
+   kann aber eine Adresse abrufen. Diese Route stoesst denselben Gang an
+   (Entscheidung vom 14.8.2026). */
+describe("Interner Anstoss (/intern/posteingang)", () => {
+  it("bleibt ohne Token verschlossen", async () => {
+    const a = app();
+    expect((await a.request("/intern/posteingang")).status).toBe(404);
+    expect((await a.request("/intern/posteingang?token=falsch")).status).toBe(404);
+  });
+
+  it("laeuft mit richtigem Token und meldet, dass IMAP fehlt", async () => {
+    const a = app({ env: { ...ENV, WORKER_TOKEN: "geheimes-losungswort" } });
+    const res = await a.request("/intern/posteingang?token=geheimes-losungswort");
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({ hinweis: "IMAP nicht konfiguriert" });
   });
 });

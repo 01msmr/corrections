@@ -274,9 +274,15 @@ Passenger-Prozess durch — ein manueller Lauf oder eine geplante Aufgabe
 sieht sie nicht. Der Worker prüft deshalb nur, was er selbst braucht
 (`loadWorkerEnv`: Datenbank, Migrationen, `IMAP_*`) und liest sie aus
 einer `.env` im Anwendungsstamm; Admin- und SMTP-Zugänge liegen für ihn
-nirgends ein zweites Mal. Gestartet wird er über `npm run worker` —
-Plesks „Skript ausführen" und die geplante Aufgabe verstehen denselben
-Namen.
+nirgends ein zweites Mal. Gestartet wird er über `npm run worker` (Plesks „Skript ausführen").
+
+**Stündlich.** Geplante Aufgaben können den Worker *nicht* starten: In ihrer
+Umgebung gibt es keine Node-Laufzeit (`/.nodenv/shims/node` greift ins Leere,
+`PATH` ist `/usr/bin:/bin`). Stattdessen ruft Plesk stündlich
+`/intern/posteingang?token=…` ab — derselbe Gang, angestoßen im laufenden
+Webprozess, der seine Umgebung von Plesk hat. Ohne `WORKER_TOKEN` gibt es die
+Route nicht; ein falscher Token bekommt 404, damit ihre Existenz nichts
+verrät. Ein zweiter Abruf während eines laufenden Gangs bekommt 409.
 
 ### Sitzung nach Basic Auth
 
