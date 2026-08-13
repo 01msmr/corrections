@@ -8,6 +8,8 @@ const TRACKING_PARAMS = [
   /^utm_/i,
   /^pk_/i,
   /^at_/i,
+  // SPIEGEL-App: Teilen haengt sara_ref an, Kampagnen sara_ecid.
+  /^sara_/i,
   // Durchgaengig als Regex mit i-Flag: normale Zeichenketten vergleicht
   // normalize-url case-sensitiv, dann bliebe "?FBCLID=1" stehen und derselbe
   // Artikel bekaeme je nach Schreibweise zwei verschiedene Dedupe-Schluessel.

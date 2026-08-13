@@ -2,7 +2,6 @@ import { istZaehlbareFehlerart, QUOTE_MAX_LENGTH } from "@korrektur/shared";
 import type { FC } from "hono/jsx";
 import type { ErrorTypeRecord } from "../repo/errorTypes.js";
 import { EnvelopeOpenTextIcon, FilePenIcon, Layout, PasteIcon } from "./layout.js";
-import { vergleicheFassungen } from "./vergleich.js";
 
 /**
  * Wird gezeigt, wenn fuer die Domain keine Kontaktadresse hinterlegt ist.
@@ -302,7 +301,8 @@ const erkennungScript = (basis: string) => `
   einfuegeknopf.addEventListener("click", () => {
     ablageLesen().then(
       (text) => {
-        const gekuerzt = text.trim().slice(0, ${QUOTE_MAX_LENGTH});
+        /* Doppelte Leerzeichen: Reste entfernter Verlinkungssymbole. */
+        const gekuerzt = text.trim().replace(/ {2,}/g, " ").slice(0, ${QUOTE_MAX_LENGTH});
         if (!gekuerzt) { setzeHinweis(einfuegeHinweis, "Die Zwischenablage ist leer.", false); return; }
         falsch.value = gekuerzt;
         falsch.dispatchEvent(new Event("input", { bubbles: true }));
@@ -547,12 +547,7 @@ export const CapturePreview: FC<{
   werte: Record<string, string>;
   /** Besucher-Modus: statt Senden-Knopf oeffnet dieser Link das Mail-Programm. */
   mailtoHref?: string | undefined;
-}> = ({ an, subject, mailHtml, werte, mailtoHref }) => {
-  /* Die Fahne entsteht serverseitig aus den durchgereichten Fassungen; sie
-     erscheint nur, wenn die beiden sich tatsaechlich unterscheiden. */
-  const fahne = vergleicheFassungen(werte["quoteBefore"] ?? "", werte["suggestionAfter"] ?? "");
-  const veraendert = fahne.some((stueck) => stueck.art !== "gleich");
-  return (
+}> = ({ an, subject, mailHtml, werte, mailtoHref }) => (
   <Layout title="Vorschau" aktiv="neu" betreiber={!mailtoHref}>
     <div class="mailkopf">
       <div>
@@ -562,24 +557,8 @@ export const CapturePreview: FC<{
         <span class="zaehler">Betreff:</span> {subject}
       </div>
     </div>
-    {veraendert ? (
-      <p class="fahne">
-        <span class="zaehler">Korrekturfahne:</span>
-        <br />
-        {fahne.map((stueck, i) => (
-          <>
-            {i > 0 ? " " : ""}
-            {stueck.art === "gleich" ? (
-              stueck.text
-            ) : stueck.art === "getilgt" ? (
-              <del>{stueck.text}</del>
-            ) : (
-              <ins>{stueck.text}</ins>
-            )}
-          </>
-        ))}
-      </p>
-    ) : null}
+    {/* Die Korrekturfahne steht in der Mail selbst (composeMail) -- die
+        Vorschau zeigt die Mail, wie sie rausgeht, und wiederholt nichts. */}
     {/* Inhalt stammt aus composeMail; alle Nutzereingaben sind dort maskiert. */}
     <div class="mailvorschau" dangerouslySetInnerHTML={{ __html: mailHtml }} />
     {mailtoHref ? (
@@ -622,8 +601,7 @@ export const CapturePreview: FC<{
       }}
     />
   </Layout>
-  );
-};
+);
 
 export const CaptureResult: FC<{
   ref: string;

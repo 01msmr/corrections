@@ -16,8 +16,12 @@ Die Vorbefüllung kennt drei Parameterformen:
 | `url` + `q` | Adresse unverändert, Fundstelle **base64url** | der eine Kurzbefehl (unten) |
 | `b` | JSON `{u, t}` als base64url | älterer Safari-Kurzbefehl |
 
-Kommen `b` und `url` zusammen, gilt `b`. Eine vorbefüllte Fundstelle ist im
-Formular gegen versehentliches Tippen gesperrt — grau hinterlegt, der erste
+Kommen `b` und `url` zusammen, gilt `b`. Die Adresse kürzt der Server selbst:
+kanonische Form, und alles ab dem `?` entfällt — Teilen-Anhängsel wie
+`?sara_ref=…` (SPIEGEL-App) muss kein Kurzbefehl abtrennen. Doppelte
+Leerzeichen in der Fundstelle (Reste entfernter Verlinkungssymbole) glättet
+er ebenfalls. Eine vorbefüllte
+Fundstelle ist im Formular gegen versehentliches Tippen gesperrt — grau hinterlegt, der erste
 Tipp entsperrt, erst der zweite schreibt.
 
 ## Bookmarklet (Desktop)

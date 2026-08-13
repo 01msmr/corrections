@@ -167,8 +167,37 @@ describe("Base64-Vorbefuellung (?b=)", () => {
     const html = await (
       await app().request(`/hinweis?url=${encodeURIComponent("https://www.spiegel.de/a-1.html")}&q=${q}`)
     ).text();
-    expect(html).toContain('value="https://www.spiegel.de/a-1.html"');
+    /* Vorbefuellt steht die kanonische Adresse: ohne www. */
+    expect(html).toContain('value="https://spiegel.de/a-1.html"');
     expect(html).toContain("Der Mietwgaen steht bereit.");
+  });
+
+  it("kuerzt die vorbefuellte Adresse auf die kanonische Form ohne Abfrage", async () => {
+    /* Die SPIEGEL-App haengt beim Teilen ?sara_ref=… an. Der Kurzbefehl soll
+       das nicht selbst wegschneiden muessen -- die Logik liegt im Server.
+       Gekappt wird alles ab dem "?", nicht nur bekannte Tracker. */
+    const geteilt = "https://www.spiegel.de/politik/artikel-a-ba1a07ac?sara_ref=re-so-app-sh";
+    const html = await (
+      await app().request(`/hinweis?url=${encodeURIComponent(geteilt)}`)
+    ).text();
+    expect(html).toContain('value="https://spiegel.de/politik/artikel-a-ba1a07ac"');
+    expect(html).not.toContain("sara_ref");
+
+    const mitAbfrage = "https://beispiel.de/artikel?id=7&x=1";
+    const html2 = await (
+      await app().request(`/hinweis?url=${encodeURIComponent(mitAbfrage)}`)
+    ).text();
+    expect(html2).toContain('value="https://beispiel.de/artikel"');
+  });
+
+  it("glaettet doppelte Leerzeichen in der Fundstelle", async () => {
+    /* Verlinkungssymbole im Artikel verschwinden im Reintext und
+       hinterlassen doppelte Leerzeichen. */
+    const stelle = "Regierungschef  eines Bundeslands";
+    const q = Buffer.from(stelle, "utf8").toString("base64url");
+    const html = await (await app().request(`/hinweis?url=https://x.test/a&q=${q}`)).text();
+    expect(html).toContain("Regierungschef eines Bundeslands");
+    expect(html).not.toContain("Regierungschef  eines");
   });
 
   it("verwirft RTF aus der Zwischenablage, statt es ins Feld zu stellen", async () => {
@@ -184,7 +213,7 @@ describe("Base64-Vorbefuellung (?b=)", () => {
     const html = await (
       await app().request("/hinweis?url=" + encodeURIComponent("https://www.spiegel.de/a-1.html"))
     ).text();
-    expect(html).toContain('value="https://www.spiegel.de/a-1.html"');
+    expect(html).toContain('value="https://spiegel.de/a-1.html"');
     expect(html).toMatch(/id="quoteBefore"[^>]*><\/textarea>/);
   });
 

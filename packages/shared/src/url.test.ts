@@ -27,6 +27,16 @@ describe("canonicalizeUrl", () => {
     );
   });
 
+  it("entfernt SPIEGEL-Tracking (sara_*), behält die Artikel-ID", () => {
+    expect(
+      canonicalizeUrl("https://www.spiegel.de/politik/artikel-a-ba1a07ac?sara_ref=re-so-app-sh")
+        ?.canonical,
+    ).toBe("https://spiegel.de/politik/artikel-a-ba1a07ac");
+    expect(canonicalizeUrl("https://example.de/x?sara_ecid=abc&id=2")?.canonical).toBe(
+      "https://example.de/x?id=2",
+    );
+  });
+
   it("sortiert verbleibende Parameter stabil", () => {
     expect(canonicalizeUrl("https://example.de/a?b=2&a=1")?.canonical).toBe(
       "https://example.de/a?a=1&b=2",

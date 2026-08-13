@@ -51,6 +51,26 @@ function ausBase64url(wert: string | undefined): string {
   }
 }
 
+/* Die vorbefuellte Adresse ist die kanonische, zusaetzlich ohne alles ab dem
+   "?": Teilen-Anhaengsel wie ?sara_ref=… (SPIEGEL-App) sollen nicht im
+   Formular stehen, und der Kurzbefehl soll sie nicht selbst wegschneiden
+   muessen (Entscheidung vom 13.8.2026). Traegt eine Seite die Artikel-ID in
+   der Abfrage, muss man sie von Hand stehen lassen -- bei den gemeldeten
+   Medien kommt das nicht vor. Unlesbares bleibt, wie es kam -- beanstandet
+   wird erst beim Senden. */
+function gekuerzteAdresse(roh: string): string {
+  const canon = canonicalizeUrl(roh)?.canonical;
+  if (!canon) return roh;
+  return canon.split("?")[0] ?? canon;
+}
+
+/* Verlinkungssymbole im Artikel verschwinden im Reintext der Zwischenablage
+   und hinterlassen doppelte Leerzeichen -- die glaettet der Server, sonst
+   verankert die Fundstelle nicht am Artikeltext. */
+function glaetteFundstelle(roh: string): string {
+  return roh.replace(/ {2,}/g, " ");
+}
+
 function leseVorbefuellung(c: Parameters<Handler>[0]): { url: string; quote: string } {
   const b = c.req.query("b");
   if (b) {
@@ -60,7 +80,10 @@ function leseVorbefuellung(c: Parameters<Handler>[0]): { url: string; quote: str
         .object({ u: z.string().optional(), t: z.string().optional() })
         .safeParse(JSON.parse(json));
       if (gelesen.success) {
-        return { url: gelesen.data.u ?? "", quote: gelesen.data.t ?? "" };
+        return {
+          url: gekuerzteAdresse(gelesen.data.u ?? ""),
+          quote: glaetteFundstelle(gelesen.data.t ?? ""),
+        };
       }
     } catch {
       /* unlesbar -> leeres Formular */
@@ -72,8 +95,8 @@ function leseVorbefuellung(c: Parameters<Handler>[0]): { url: string; quote: str
      Formular niemandem -- dann lieber ein leeres Feld. */
   const roh = q ? ausBase64url(q).trim() : (c.req.query("text") ?? "");
   return {
-    url: c.req.query("url") ?? "",
-    quote: roh.startsWith("{\\rtf") ? "" : roh,
+    url: gekuerzteAdresse(c.req.query("url") ?? ""),
+    quote: roh.startsWith("{\\rtf") ? "" : glaetteFundstelle(roh),
   };
 }
 
