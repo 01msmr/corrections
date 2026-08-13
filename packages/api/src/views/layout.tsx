@@ -949,7 +949,11 @@ const STYLES = `
   body:not(:has(.listenrumpf)) .fusszeile {
     left: 0; transform: none; width: 100%; max-width: none; padding: 0;
     animation: fussschatten linear both;
-    animation-timeline: scroll(root); }
+    animation-timeline: scroll(root);
+    /* Der Schatten ist 4rem vor dem Scroll-Ende ganz weg. Feste Laenge --
+       aber als Rechnung geschrieben, weil Bereiche einer Scroll-Zeitachse
+       immer vom Anfang zaehlen; ein "vom Ende" kennt scroll() nicht. */
+    animation-range: 0 calc(100% - 4rem); }
   /* Der Schatten kommt mit der ersten Bewegung und geht am Seitenende
      wieder (Entscheidung vom 13.8.2026): er trennt nur, solange etwas
      unter der Zeile liegt. Die Marken stehen in Prozent der Scrollstrecke
