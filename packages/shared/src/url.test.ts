@@ -70,6 +70,14 @@ describe("gleicherOrt", () => {
     ).toBe(false);
   });
 
+  it("wertet die www-Umleitung nicht als Ortswechsel", () => {
+    /* Kanonisch reist die Adresse ohne www.; viele Seiten (SPIEGEL) leiten
+       beim Abruf wieder darauf um. Man ist trotzdem am Ziel. */
+    expect(gleicherOrt("https://spiegel.de/politik/a-1", "https://www.spiegel.de/politik/a-1")).toBe(
+      true,
+    );
+  });
+
   it("laesst angehaengte Parameter und einen Schlussstrich gelten", () => {
     expect(gleicherOrt(artikel, artikel + "?utm_source=rss")).toBe(true);
     expect(gleicherOrt(artikel + "/", artikel)).toBe(true);

@@ -61,7 +61,10 @@ export function gleicherOrt(angefragt: string, erreicht: string): boolean {
     const a = new URL(angefragt);
     const b = new URL(erreicht);
     const pfad = (u: URL): string => u.pathname.replace(/\/+$/, "");
-    return a.host === b.host && pfad(a) === pfad(b);
+    /* Ohne fuehrendes www.: kanonisch reist die Adresse ohne, viele Seiten
+       leiten beim Abruf wieder darauf um -- man ist trotzdem am Ziel. */
+    const ort = (u: URL): string => u.host.replace(/^www\./i, "");
+    return ort(a) === ort(b) && pfad(a) === pfad(b);
   } catch {
     /* Unlesbare Adresse: lieber annehmen, dass alles stimmt, als eine
        brauchbare Pruefung zu verweigern. */
