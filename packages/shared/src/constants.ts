@@ -14,6 +14,9 @@ export const WEICHE_FEHLERARTEN = ["schlechter_satzbau"] as const;
  *  lassen als eine echte Antwort verschieben. */
 export const BESTAETIGUNGS_MUSTER = [
   "gerne sichten wir",
+  /* SPIEGEL, neuere Fassung: "Gern sichten und bearbeiten wir Ihren Hinweis." */
+  "sichten und bearbeiten wir",
+  "im falle einer rückfrage melden wir uns",
   "eingangsbestätigung",
   "empfangsbestätigung",
 ] as const;

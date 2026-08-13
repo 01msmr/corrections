@@ -4,7 +4,12 @@ import { createDb, runMigrations, type Db } from "../db/client.js";
 import { corrections, errorTypes, outlets, responseEvents } from "../db/schema.js";
 import { seed } from "../db/seed.js";
 import { createOutlet } from "./outlets.js";
-import { ladeAntwortKandidaten, vermerkeAntwort } from "./antworten.js";
+import {
+  ladeAntwortKandidaten,
+  nimmBestaetigungenZurueck,
+  vermerkeAntwort,
+  zaehleBestaetigungen,
+} from "./antworten.js";
 
 const JETZT = 1_800_000_000;
 
@@ -103,5 +108,57 @@ describe("vermerkeAntwort", () => {
     expect(zeile?.outcome).toBe("corrected");
     expect(zeile?.respondedAt).toBe(JETZT + 100);
     expect(db.select().from(responseEvents).all()).toHaveLength(1);
+  });
+});
+
+/* Eingangsbestaetigungen, die als Antwort gezaehlt wurden, weil die Erkennung
+   ihre Formulierung noch nicht kannte (Fund vom 14.8.2026). */
+describe("Bestaetigungen zuruecknehmen", () => {
+  const passt = (text: string): boolean => text.toLowerCase().includes("sichten und bearbeiten wir");
+
+  it("zaehlt sie, ohne etwas zu aendern", () => {
+    const id = meldung();
+    vermerkeAntwort(db, id, {
+      receivedAt: JETZT,
+      rawMessageId: "bestaetigung@spiegel.de",
+      fromAddr: "leserservice@spiegel.de",
+      excerpt: "Gern sichten und bearbeiten wir Ihren Hinweis.",
+    });
+    expect(zaehleBestaetigungen(db, passt)).toEqual({ ereignisse: 1, meldungen: 1 });
+    expect(db.select().from(responseEvents).all()).toHaveLength(1);
+  });
+
+  it("loescht das Ereignis und stellt den offenen Ausgang wieder her", () => {
+    const id = meldung();
+    vermerkeAntwort(db, id, {
+      receivedAt: JETZT,
+      rawMessageId: "bestaetigung@spiegel.de",
+      fromAddr: "leserservice@spiegel.de",
+      excerpt: "Gern sichten und bearbeiten wir Ihren Hinweis.",
+    });
+    expect(nimmBestaetigungenZurueck(db, passt)).toEqual({ geloescht: 1, wiederOffen: 1 });
+
+    expect(db.select().from(responseEvents).all()).toHaveLength(0);
+    const zeile = db.select().from(corrections).all()[0];
+    expect(zeile?.outcome).toBe("open");
+    expect(zeile?.respondedAt).toBeNull();
+  });
+
+  it("laesst eine Meldung in Ruhe, die auch eine echte Antwort hat", () => {
+    const id = meldung();
+    vermerkeAntwort(db, id, {
+      receivedAt: JETZT,
+      rawMessageId: "bestaetigung@spiegel.de",
+      fromAddr: "leserservice@spiegel.de",
+      excerpt: "Gern sichten und bearbeiten wir Ihren Hinweis.",
+    });
+    vermerkeAntwort(db, id, {
+      receivedAt: JETZT + 60,
+      rawMessageId: "echt@spiegel.de",
+      fromAddr: "leserservice@spiegel.de",
+      excerpt: "Wir haben die Stelle korrigiert.",
+    });
+    expect(nimmBestaetigungenZurueck(db, passt)).toEqual({ geloescht: 1, wiederOffen: 0 });
+    expect(db.select().from(corrections).all()[0]?.outcome).toBe("acknowledged");
   });
 });

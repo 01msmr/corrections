@@ -78,3 +78,59 @@ export function vermerkeAntwort(db: Db, correctionId: string, mail: AntwortVerme
 
   return true;
 }
+
+/** Ereignisse, deren Auszug auf eine Eingangsbestaetigung passt. */
+function bestaetigungsEreignisse(
+  db: Db,
+  passt: (text: string) => boolean,
+): { id: string; correctionId: string }[] {
+  return db
+    .all<{ id: string; correctionId: string; excerpt: string | null }>(
+      sql`SELECT id, correction_id AS correctionId, excerpt FROM response_events`,
+    )
+    .filter((zeile) => zeile.excerpt !== null && passt(zeile.excerpt))
+    .map((zeile) => ({ id: zeile.id, correctionId: zeile.correctionId }));
+}
+
+/** Zaehlt sie, ohne etwas zu aendern. */
+export function zaehleBestaetigungen(
+  db: Db,
+  passt: (text: string) => boolean,
+): { ereignisse: number; meldungen: number } {
+  const treffer = bestaetigungsEreignisse(db, passt);
+  return {
+    ereignisse: treffer.length,
+    meldungen: new Set(treffer.map((t) => t.correctionId)).size,
+  };
+}
+
+/**
+ * Nimmt sie zurueck: Ereignis loeschen, und wenn danach keine Antwort mehr
+ * zur Meldung steht, wieder auf "ohne Rueckmeldung". Ein von Hand gesetzter
+ * Ausgang (korrigiert, abgelehnt) bleibt unangetastet.
+ */
+export function nimmBestaetigungenZurueck(
+  db: Db,
+  passt: (text: string) => boolean,
+): { geloescht: number; wiederOffen: number } {
+  const treffer = bestaetigungsEreignisse(db, passt);
+  let wiederOffen = 0;
+
+  for (const ereignis of treffer) {
+    db.run(sql`DELETE FROM response_events WHERE id = ${ereignis.id}`);
+  }
+
+  for (const meldungId of new Set(treffer.map((t) => t.correctionId))) {
+    const rest = db.get<{ anzahl: number }>(
+      sql`SELECT COUNT(*) AS anzahl FROM response_events WHERE correction_id = ${meldungId}`,
+    );
+    if ((rest?.anzahl ?? 0) > 0) continue;
+    const geaendert = db.run(
+      sql`UPDATE corrections SET outcome = 'open', responded_at = NULL
+          WHERE id = ${meldungId} AND outcome = 'acknowledged'`,
+    );
+    if (geaendert.changes > 0) wiederOffen += 1;
+  }
+
+  return { geloescht: treffer.length, wiederOffen };
+}

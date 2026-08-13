@@ -27,12 +27,17 @@ export interface MailMerkmale {
 /** Kennung im Betreff: " [K…]" wie von composeMail vergeben. */
 const KENNUNG_MUSTER = /\[K[A-Z0-9]+\]/;
 
+/** Nur die Wortmarke, ohne Bezugspruefung -- fuer schon zugeordnete Ereignisse. */
+export function passtAufBestaetigungsmuster(text: string): boolean {
+  const klein = text.toLowerCase();
+  return BESTAETIGUNGS_MUSTER.some((muster) => klein.includes(muster));
+}
+
 export function istEingangsbestaetigung(
   mail: MailMerkmale,
   bekannteMessageIds: ReadonlySet<string>,
 ): boolean {
-  const durchsuchbar = `${mail.betreff}\n${mail.textAnfang}`.toLowerCase();
-  const musterTreffer = BESTAETIGUNGS_MUSTER.some((muster) => durchsuchbar.includes(muster));
+  const musterTreffer = passtAufBestaetigungsmuster(`${mail.betreff}\n${mail.textAnfang}`);
   if (!musterTreffer) return false;
 
   const kennungTreffer = KENNUNG_MUSTER.test(mail.betreff) || KENNUNG_MUSTER.test(mail.textAnfang);

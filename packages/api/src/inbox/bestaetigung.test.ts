@@ -69,3 +69,36 @@ describe("istEingangsbestaetigung", () => {
     ).toBe(true);
   });
 });
+
+/* SPIEGEL hat die Formulierung geaendert: "Gern sichten und bearbeiten wir"
+   statt "Gerne sichten wir". Solche Mails tragen unsere Kennung im Betreff
+   und zaehlten dadurch als echte Antwort (Fund vom 14.8.2026). */
+describe("SPIEGEL-Leserservice, neue Fassung", () => {
+  const mail = {
+    betreff:
+      'Textfehler im Artikel: Anlage "He Dreiht" vor Helgoland: Größter Offshore-Windpark fertiggestel… [KVZQE7] [#5921934]',
+    textAnfang:
+      "Liebe Leserin, lieber Leser,\n\ndanke für Ihre Nachricht und Ihr Interesse am SPIEGEL.\n" +
+      "Gern sichten und bearbeiten wir Ihren Hinweis. Im Falle einer Rückfrage melden wir uns bei Ihnen.\n" +
+      "Freundliche Grüße\n\nIhr Leserservice",
+    inReplyTo: null,
+  };
+
+  it("erkennt sie als Eingangsbestaetigung", () => {
+    expect(istEingangsbestaetigung(mail, new Set())).toBe(true);
+  });
+
+  it("laesst eine echte Antwort des Leserservice in Ruhe", () => {
+    expect(
+      istEingangsbestaetigung(
+        {
+          betreff: "Re: Textfehler im Artikel: … [KVZQE7]",
+          textAnfang:
+            "Vielen Dank für den Hinweis — wir haben die Stelle korrigiert.\nFreundliche Grüße\nIhr Leserservice",
+          inReplyTo: null,
+        },
+        new Set(),
+      ),
+    ).toBe(false);
+  });
+});
