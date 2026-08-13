@@ -451,6 +451,11 @@ const STYLES = `
      Linien im Blatt. Einzeilige Angaben stehen auf einer Grundlinie; nur
      mehrzeilige Felder bekommen den duennen Rahmen, den auch gedruckte
      Bemerkungsfelder haben. Beim Fokus uebernimmt der Rotstift die Linie. */
+  /* Formularelemente bringen hier eigene display-Angaben mit; die schlagen
+     das [hidden]-Attribut, und Verstecktes bliebe sichtbar. Einmal fuer
+     alle zurueckgenommen. */
+  :is(input, textarea, select, button)[hidden] { display: none; }
+
   input, textarea, select {
     /* Block statt inline-block: die Grundlinien-Phantomluecke unter den
        Feldern wuerde sonst jede Zeile um ein paar Pixel hoeher machen als
@@ -776,6 +781,15 @@ const STYLES = `
   /* Das Zeichen bleibt innerhalb dieser Zeile: knapp unter die Grundlinie
      gesetzt, damit es sie oben nicht sprengt. */
   .zeilenknopf .navicon { vertical-align: -.1em; }
+
+  /* Ein Knopf, der wie Beiwerk aussieht: er steht in der Beschriftungszeile
+     neben dem Hinweis und soll sie nicht beherrschen -- deshalb der Ton der
+     Zaehler, kein Kasten. */
+  button.textknopf { display: inline; background: none; border: 0; box-shadow: none;
+    padding: 0; margin-left: .5rem; transform: none;
+    font: italic 400 .72rem/1.4 var(--sans); color: var(--rand);
+    text-decoration: underline; text-underline-offset: .2em; cursor: pointer; }
+  button.textknopf:hover { color: var(--tinte); box-shadow: none; transform: none; }
 
   .hinweis { padding: .85rem 1rem; margin: 0 0 1.5rem;
     background: var(--feld); border: 1px solid var(--linie);

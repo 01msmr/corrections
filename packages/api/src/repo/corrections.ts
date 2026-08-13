@@ -128,6 +128,13 @@ function toDuplicateResult(row: typeof corrections.$inferSelect): CreateResult &
 export async function createCorrection(
   deps: CreateDeps,
   input: NewCorrectionInput,
+  /**
+   * Artikeltext aus dem Formular (Bezahlschranke): steht er da, wird darin
+   * verankert und gar nicht erst abgerufen. Bewusst kein Feld von
+   * `NewCorrectionInput` -- so kann er nirgends in die Datenbank geraten.
+   * Gespeichert werden wie sonst auch nur die kurzen Anker.
+   */
+  artikelText?: string,
 ): Promise<CreateResult> {
   const { db } = deps;
 
@@ -167,13 +174,22 @@ export async function createCorrection(
   let anchors = NO_ANCHOR;
   let headline = input.headline;
   let artikelGeladen = false;
-  const fetched = await deps.fetchArticle(canon.canonical);
-  if (fetched.ok) {
-    const article = extractArticle(fetched.html, canon.canonical);
-    if (article) {
-      artikelGeladen = true;
-      anchors = deriveAnchors(article.text, input.quoteBefore);
-      headline = headline ?? article.title;
+  const eingefuegt = artikelText?.trim() ?? "";
+  if (eingefuegt.length > 0) {
+    /* Der Mensch hat geliefert, was der Server nicht bekommt -- dann ist
+       auch kein Abruf noetig. Die Ueberschrift steht in solchen Faellen
+       schon im Formular. */
+    artikelGeladen = true;
+    anchors = deriveAnchors(eingefuegt, input.quoteBefore);
+  } else {
+    const fetched = await deps.fetchArticle(canon.canonical);
+    if (fetched.ok) {
+      const article = extractArticle(fetched.html, canon.canonical);
+      if (article) {
+        artikelGeladen = true;
+        anchors = deriveAnchors(article.text, input.quoteBefore);
+        headline = headline ?? article.title;
+      }
     }
   }
 

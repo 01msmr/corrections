@@ -100,6 +100,45 @@ function leseVorbefuellung(c: Parameters<Handler>[0]): { url: string; quote: str
   };
 }
 
+/**
+ * Der eingefuegte Artikeltext aus dem Formular -- oder null, wenn keiner
+ * dasteht oder zu wenig, um daraus etwas zu schliessen. Er dient dem Pruefen
+ * und dem Verankern und wird nie gespeichert: der Weg fuer Artikel hinter
+ * einer Bezahlschranke, bei denen der angemeldete Mensch sieht, was der
+ * Server nicht bekommt (Entscheidung vom 13.8.2026).
+ */
+function leseArtikelText(body: Record<string, unknown>): string | null {
+  const roh = typeof body["artikelText"] === "string" ? body["artikelText"].trim() : "";
+  return roh.length < ARTIKEL_MINDESTZEICHEN ? null : roh;
+}
+
+/** Warum der Artikeltext fehlt -- die Meldung im Formular haengt daran. */
+type Artikelgrund = "bezahlschranke" | "nicht_lesbar" | null;
+
+/**
+ * Holt den Artikeltext. Dass er fehlt, kommt haeufiger vor, als es aussieht:
+ * viele Seiten leiten Abrufe auf ein Zustimmungsfenster um und liefern dort
+ * 200 mit ein paar Zeilen Text. Wer das nicht bemerkt, prueft die
+ * Zustimmungsseite und meldet "nichts gefunden".
+ */
+async function holeArtikelText(
+  fetchArticle: CreateDeps["fetchArticle"],
+  canonical: string,
+): Promise<{ text: string | null; grund: Artikelgrund }> {
+  const geholt = await fetchArticle(canonical);
+  if (!geholt.ok) return { text: null, grund: "nicht_lesbar" };
+  if (!gleicherOrt(canonical, geholt.url)) return { text: null, grund: "nicht_lesbar" };
+  const artikel = extractArticle(geholt.html, canonical);
+  if (!artikel) return { text: null, grund: "nicht_lesbar" };
+  /* Der Abruf gelingt, aber statt des Textes kommt Abo-Werbung: die
+     Signatur einer Bezahlschranke. Ein Artikel unter dieser Laenge waere
+     ohnehin nicht zu pruefen. */
+  if (artikel.text.trim().length < ARTIKEL_MINDESTZEICHEN) {
+    return { text: null, grund: "bezahlschranke" };
+  }
+  return { text: artikel.text, grund: null };
+}
+
 export function captureRoutes(
   deps: CreateDeps & {
     mailFrom: string;
@@ -200,29 +239,32 @@ export function captureRoutes(
     const fundstelle = typeof body["text"] === "string" ? body["text"].trim() : "";
     if (!canon) return c.json({ funde: [], quelle: "keine" });
 
-    /* Der Artikeltext -- oder null, wenn wir ihn nicht bekommen haben. Das
-       kommt haeufiger vor, als es aussieht: viele Seiten leiten Abrufe auf
-       ein Zustimmungsfenster um und liefern dort 200 mit ein paar Zeilen
-       Text. Wer das nicht bemerkt, prueft die Zustimmungsseite und meldet
-       "nichts gefunden". */
-    const artikelText = await (async (): Promise<string | null> => {
-      const geholt = await deps.fetchArticle(canon.canonical);
-      if (!geholt.ok) return null;
-      if (!gleicherOrt(canon.canonical, geholt.url)) return null;
-      const artikel = extractArticle(geholt.html, canon.canonical);
-      if (!artikel) return null;
-      return artikel.text.trim().length < ARTIKEL_MINDESTZEICHEN ? null : artikel.text;
-    })();
+    /* Steht der Text schon im Formular, ist nichts zu holen: hinter einer
+       Bezahlschranke liefert ihn der angemeldete Mensch. Er wird geprueft
+       und verworfen, nie gespeichert. */
+    const eingefuegt = leseArtikelText(body);
+    if (eingefuegt !== null) {
+      return c.json({ funde: await pruefeText(eingefuegt, deps.pruefung), quelle: "eingefuegt" });
+    }
 
-    if (artikelText !== null) {
-      return c.json({ funde: await pruefeText(artikelText, deps.pruefung), quelle: "artikel" });
+    const geholt = await holeArtikelText(deps.fetchArticle, canon.canonical);
+
+    if (geholt.text !== null) {
+      return c.json({ funde: await pruefeText(geholt.text, deps.pruefung), quelle: "artikel" });
     }
     /* Ersatzweise die Fundstelle: sie steht im Formular und braucht keinen
-       Abruf. Weniger als der ganze Artikel, aber besser als nichts. */
+       Abruf. Weniger als der ganze Artikel, aber besser als nichts. Der
+       Grund reist mit -- eine Bezahlschranke ist keine Panne, und das
+       Formular bietet dafuer einen anderen Ausweg an als fuer ein
+       Zustimmungsfenster. */
     if (fundstelle.length > 0) {
-      return c.json({ funde: await pruefeText(fundstelle, deps.pruefung), quelle: "fundstelle" });
+      return c.json({
+        funde: await pruefeText(fundstelle, deps.pruefung),
+        quelle: "fundstelle",
+        grund: geholt.grund,
+      });
     }
-    return c.json({ funde: [], quelle: "keine" });
+    return c.json({ funde: [], quelle: "keine", grund: geholt.grund });
   };
   app.post("/neu/pruefen", pruefHandler(false));
   app.post("/hinweis/pruefen", pruefHandler(true));
@@ -345,7 +387,9 @@ export function captureRoutes(
       );
     }
 
-    const result = await createCorrection(deps, parsed.data);
+    /* Der eingefuegte Artikeltext reist als verstecktes Feld durch die
+       Vorschau mit; hier dient er dem Verankern und wird dann verworfen. */
+    const result = await createCorrection(deps, parsed.data, leseArtikelText(body) ?? undefined);
     if (!result.ok) {
       // Bei fehlender Kontaktadresse fuehrt die Seite weiter, statt nur zu
       // melden. Der Host kommt aus der Kanonisierung, damit die Orchestrierung

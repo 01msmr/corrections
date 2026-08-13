@@ -35,6 +35,15 @@ Zustimmungsfenster —, wird ersatzweise die Fundstelle geprüft und das auch
 gesagt. Ein Ausfall des Dienstes ist kein Fehler: das Formular arbeitet
 unverändert weiter.
 
+**Artikel hinter einer Bezahlschranke.** Der Server bekommt dort nur
+Abo-Werbung zu sehen; er erkennt das (der Abruf gelingt, der Text bleibt
+unter der Mindestlänge) und sagt es, statt eine Panne vorzutäuschen. Als
+Ausweg erscheint im Formular ein Feld: den Artikel angemeldet öffnen, Text
+kopieren, einfügen. Er dient dem Prüfen und dem Verankern der Fundstelle
+und wird **nie gespeichert** — abgelegt werden wie sonst auch nur Fundstelle
+und die beiden 48-Zeichen-Anker. Zugangsdaten kommen dabei nirgends ins
+Spiel, weder eigene noch fremde.
+
 **Mail.** Text- und HTML-Teil (multipart): Wortmarke, Korrekturfahne, beide
 Fassungen mit markierter Fehlstelle, Kontext-Anker, Referenz-Kennung im
 Betreff. Über die Kennung finden Antworten später zum Datensatz zurück.

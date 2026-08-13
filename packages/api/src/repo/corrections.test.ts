@@ -75,6 +75,34 @@ describe("createCorrection", () => {
     expect(row?.quotePrefix).toContain("Im vergangenen Jahr nutzten");
   });
 
+  it("verankert im eingefuegten Artikeltext, ohne den Artikel zu holen", async () => {
+    /* Hinter einer Bezahlschranke kommt der Text vom angemeldeten Menschen.
+       Gespeichert wird davon nur, was sonst auch: die kurzen Anker. */
+    let abgerufen = 0;
+    const result = await createCorrection(
+      deps({
+        fetchArticle: async () => {
+          abgerufen++;
+          return { ok: false, status: null, reason: "network" };
+        },
+      }),
+      INPUT,
+      "Im vergangenen Jahr nutzten rund 4,2 Millionen Menschen das Angebot. " +
+        "Der Anteil stieg damit erneut an, wie aus dem Bericht hervorgeht. " +
+        "Weit hinten im Text steht ein Nachtrag zur Fussballmeisterschaft.",
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(abgerufen).toBe(0);
+    expect(result.anchorQuality).toBe("exact");
+
+    const row = getCorrectionByRef(db, result.ref);
+    expect(row?.quotePrefix).toContain("Im vergangenen Jahr nutzten");
+    /* Nur Fundstelle und die kurzen Anker liegen im Satz; alles weiter
+       entfernte bleibt draussen -- der Volltext wird nicht gespeichert. */
+    expect(JSON.stringify(row)).not.toContain("Fussballmeisterschaft");
+  });
+
   it("erzeugt bei gleichem Idempotency-Key keinen zweiten Datensatz", async () => {
     const first = await createCorrection(deps(), INPUT);
     const second = await createCorrection(deps(), INPUT);

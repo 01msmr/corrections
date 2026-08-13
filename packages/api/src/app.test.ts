@@ -19,7 +19,9 @@ const ENV = {
   MAIL_FROM: "korrektur@example.tld",
 } satisfies Env;
 
-function app() {
+type FetchArticle = Parameters<typeof createApp>[0]["fetchArticle"];
+
+function app(ueber: { fetchArticle?: FetchArticle } = {}) {
   const db = createDb(":memory:");
   runMigrations(db);
   applyViews(db);
@@ -28,10 +30,18 @@ function app() {
     env: ENV,
     db,
     mailer: createJsonMailer(ENV.MAIL_FROM),
-    fetchArticle: async () => ({ ok: false, status: null, reason: "network" }),
+    fetchArticle: ueber.fetchArticle ?? (async () => ({ ok: false, status: null, reason: "network" })),
     now: () => 1_800_000_000,
   });
 }
+
+/** Eine Seite, die den Abruf beantwortet, aber statt des Textes Abo-Werbung zeigt. */
+const BEZAHLSCHRANKE_HTML = `<html><body><article>
+<h1>Missliche Plakatwerbung des Spitzenkandidaten</h1>
+<p>Diesen Artikel weiterlesen mit SPIEGEL+. Sie haben bereits ein Digital-Abo?
+Zum Login. Nur für Neukunden: vier Wochen für einen Euro, danach fünf Euro
+pro Woche. Jederzeit kündbar.</p>
+</article></body></html>`;
 
 const AUTH = `Basic ${Buffer.from("admin:geheimes-passwort").toString("base64")}`;
 
@@ -303,7 +313,12 @@ describe("Fehlerpruefung (/pruefen)", () => {
         headers: { ...FORM, authorization: AUTH },
       });
       expect(res.status).toBe(200);
-      await expect(res.json()).resolves.toEqual({ funde: [], quelle: "keine" });
+      /* Der Grund reist mit: das Formular unterscheidet Panne und Schranke. */
+      await expect(res.json()).resolves.toEqual({
+        funde: [],
+        quelle: "keine",
+        grund: "nicht_lesbar",
+      });
     }
   });
 
@@ -318,6 +333,49 @@ describe("Fehlerpruefung (/pruefen)", () => {
     expect(res.status).toBe(200);
     const daten = (await res.json()) as { quelle: string };
     expect(daten.quelle).toBe("fundstelle");
+  });
+
+  it("benennt die Bezahlschranke, statt sie wie eine Panne aussehen zu lassen", async () => {
+    /* Der Abruf gelingt, aber es kommt nur Abo-Werbung. Das ist kein
+       Zustimmungsfenster und keine Panne -- und der Unterschied entscheidet,
+       welchen Ausweg das Formular anbietet. */
+    const a = app({
+      fetchArticle: async () => ({
+        ok: true,
+        status: 200,
+        html: BEZAHLSCHRANKE_HTML,
+        url: "https://x.test/a",
+      }),
+    });
+    const res = await a.request("/neu/pruefen", {
+      ...anfrage({ url: "https://x.test/a", text: "Der Mietwgaen stand bereit." }),
+      headers: { ...FORM, authorization: AUTH },
+    });
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({
+      quelle: "fundstelle",
+      grund: "bezahlschranke",
+    });
+  });
+
+  it("prueft den eingefuegten Artikeltext, ohne ihn zu holen", async () => {
+    /* Der Weg fuer Artikel hinter einer Schranke: der angemeldete Mensch
+       liefert den Text, der Server holt gar nicht erst. */
+    let abgerufen = 0;
+    const a = app({
+      fetchArticle: async () => {
+        abgerufen++;
+        return { ok: false, status: null, reason: "network" };
+      },
+    });
+    const artikelText = "Ein langer Artikelabsatz. ".repeat(60);
+    const res = await a.request("/neu/pruefen", {
+      ...anfrage({ url: "https://x.test/a", text: "Der Mietwgaen stand bereit.", artikelText }),
+      headers: { ...FORM, authorization: AUTH },
+    });
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({ quelle: "eingefuegt" });
+    expect(abgerufen).toBe(0);
   });
 
   it("gibt Besuchern zwei Pruefungen am Tag und lehnt die dritte ab", async () => {

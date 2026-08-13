@@ -216,6 +216,52 @@ const erkennungScript = (basis: string) => `
     }
   };
 
+  /* Artikel hinter einer Bezahlschranke: der Server sieht nur Abo-Werbung,
+     der angemeldete Mensch den Text. Das Feld erscheint erst, wenn die
+     Pruefung das meldet -- und klappt zu einer Zeile zusammen, sobald etwas
+     drinsteht. Der Text reist beim Senden als verstecktes Feld mit, dient
+     dem Verankern und wird nie gespeichert. */
+  const artikeltextBlock = document.getElementById("artikeltext-block");
+  const artikelText = document.getElementById("artikelText");
+  const artikeltextGrund = document.getElementById("artikeltext-grund");
+  const artikeltextFuss = document.getElementById("artikeltext-fuss");
+  const artikeltextEntfernen = document.getElementById("artikeltext-entfernen");
+
+  const zeigeArtikeltextStand = () => {
+    const gefuellt = artikelText.value.trim().length > 0;
+    /* Eingeklappt: nur die Zeile, was uebernommen wurde. Aufgeklappt: das
+       Feld samt Aufforderung. */
+    artikelText.hidden = gefuellt;
+    artikeltextEntfernen.hidden = !gefuellt;
+    if (gefuellt) {
+      artikeltextGrund.textContent =
+        "Artikeltext übernommen — " + artikelText.value.trim().length + " Zeichen. ";
+      artikeltextFuss.textContent = "Er wird nur zum Prüfen und Verankern benutzt, nicht gespeichert.";
+    } else {
+      artikeltextFuss.textContent = "wird nur zum Prüfen und Verankern benutzt, nicht gespeichert";
+    }
+  };
+
+  const zeigeArtikeltextBlock = (grund) => {
+    if (grund === "bezahlschranke" || grund === "nicht_lesbar") {
+      artikeltextBlock.hidden = false;
+      if (artikelText.value.trim().length === 0) {
+        artikeltextGrund.textContent = grund === "bezahlschranke"
+          ? "Dieser Artikel steht hinter einer Bezahlschranke. Öffne ihn angemeldet, kopiere den Text und füge ihn hier ein: "
+          : "Der Artikel ließ sich nicht abrufen. Öffne ihn im Browser, kopiere den Text und füge ihn hier ein: ";
+      }
+    }
+    zeigeArtikeltextStand();
+  };
+
+  artikelText.addEventListener("input", zeigeArtikeltextStand);
+  artikeltextEntfernen.addEventListener("click", () => {
+    artikelText.value = "";
+    artikeltextGrund.textContent = "Artikeltext hier einfügen: ";
+    zeigeArtikeltextStand();
+    artikelText.focus();
+  });
+
   pruefKnopf.addEventListener("click", () => {
     if (!url.value.trim()) {
       setzeHinweis(pruefHinweis, "Erst die Artikel-URL eintragen.", false);
@@ -225,7 +271,11 @@ const erkennungScript = (basis: string) => `
     setzeHinweis(pruefHinweis, "wird durchgesehen …", false);
     fetch("${basis}/pruefen", {
       method: "POST",
-      body: new URLSearchParams({ url: url.value, text: falsch.value }),
+      body: new URLSearchParams({
+        url: url.value,
+        text: falsch.value,
+        artikelText: artikelText.value,
+      }),
     })
       .then((res) => (res.status === 429 ? "kontingent" : res.ok ? res.json() : null))
       .then((daten) => {
@@ -240,12 +290,21 @@ const erkennungScript = (basis: string) => `
            die Antwort, was statt des Artikels geprüft wurde. */
         const quelle = daten && daten.quelle;
         const zahl = funde.length + " Stelle" + (funde.length === 1 ? "" : "n");
+        /* Eine Bezahlschranke ist keine Panne: dann steht dort, was zu tun
+           ist, und das Einfuegefeld klappt gleich auf. */
+        zeigeArtikeltextBlock(daten && daten.grund);
         let text;
-        if (quelle === "keine") {
+        if (quelle === "eingefuegt") {
+          text = funde.length === 0
+            ? "Im eingefügten Text nichts gefunden — was nicht heißt, dass nichts drin steht"
+            : zahl + " im eingefügten Text";
+        } else if (quelle === "keine") {
           text = "Der Artikel ließ sich nicht lesen — oft ein Zustimmungsfenster. "
             + "Trag die Fundstelle ein, dann sehe ich wenigstens die durch.";
         } else if (quelle === "fundstelle") {
-          text = "Der Artikel ließ sich nicht lesen — geprüft wurde nur die Fundstelle: "
+          text = (daten && daten.grund === "bezahlschranke"
+            ? "Der Artikel steht hinter einer Bezahlschranke — geprüft wurde nur die Fundstelle: "
+            : "Der Artikel ließ sich nicht lesen — geprüft wurde nur die Fundstelle: ")
             + (funde.length === 0 ? "nichts gefunden" : zahl + " zum Ansehen");
         } else {
           text = funde.length === 0
@@ -393,6 +452,25 @@ export const CaptureForm: FC<{
             </a>
             . Vorschläge, keine Urteile — was stimmt, entscheidest du.
           </p>
+        </div>
+
+        {/* Steht der Artikel hinter einer Bezahlschranke, bekommt der Server
+            ihn nie zu sehen -- der angemeldete Mensch schon. Der Block
+            erscheint erst, wenn die Pruefung das meldet, und klappt nach dem
+            Einfuegen wieder zu: sonst draengt ein Textklotz die eigentliche
+            Arbeit nach unten. Ein eigenes Feld, kein Teil des Pruefblocks --
+            dessen Trefferfarbe gilt den Fundstellen, nicht diesem Text. */}
+        <div class="feld" id="artikeltext-block" hidden>
+          <label for="artikelText">
+            <span id="artikeltext-grund" />
+            <button type="button" id="artikeltext-entfernen" class="textknopf" hidden>
+              entfernen
+            </button>
+          </label>
+          <textarea id="artikelText" name="artikelText" rows={6} />
+          <span class="zaehler" id="artikeltext-fuss">
+            wird nur zum Prüfen und Verankern benutzt, nicht gespeichert
+          </span>
         </div>
 
         <div class="feld">
