@@ -1088,6 +1088,11 @@ const STYLES = `
        die Anmerkung neben der Fundstelle, der Abschluss neben der
        berichtigten Fassung. Die Zeile der Pruefung bleibt rechts frei,
        damit rechts keine Luecke im Lauf entsteht. */
+    /* ACHTUNG: Die Zuordnung zaehlt Kinder. Die Hauptspalte muss genau fuenf
+       haben (URL, Pruefblock, Ueberschrift, Fundstelle, Berichtigung), die
+       Nebenspalte vier. Ein zusaetzliches Kind verschiebt alles und faellt
+       am Ende aus der Zuordnung -- dann steht die Berichtigung oben. Neue
+       Felder gehoeren in einen der vorhandenen Bloecke. */
     .erfassungsraster .hauptspalte, .erfassungsraster .nebenspalte { display: contents; }
     .erfassungsraster { align-items: start; }
     .erfassungsraster .hauptspalte > * { grid-column: 1; }

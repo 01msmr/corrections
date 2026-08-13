@@ -451,6 +451,11 @@ export const CaptureForm: FC<{
           <input id="articleUrl" name="articleUrl" type="url" required value={url} />
         </div>
 
+        {/* Pruefung und der Artikeltext dazu teilen sich eine Rasterzeile:
+            der Text ist die Abhilfe zur Meldung, kein eigener Schritt. Das
+            Raster weist die Zeilen ueber nth-child zu -- die Hauptspalte
+            muss genau fuenf Kinder haben (siehe .erfassungsraster). */}
+        <div class="pruefblock">
         {/* Fehlersuche im Artikel: laeuft nur auf Klick (Spec 2026-08-08) —
             die oeffentliche LanguageTool-API untersagt automatische Anfragen. */}
         <div class="feld pruefung">
@@ -487,6 +492,7 @@ export const CaptureForm: FC<{
           <span class="zaehler" id="artikeltext-fuss">
             wird nur zum Prüfen und Verankern benutzt, nicht gespeichert
           </span>
+        </div>
         </div>
 
         <div class="feld">
