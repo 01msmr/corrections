@@ -9,6 +9,18 @@ und stellt beides auswertbar dar. Spec: `docs/superpowers/specs/2026-08-01-korre
 - `pnpm db:generate` (Migration erzeugen), `pnpm db:seed`
 - `pnpm typecheck` / `pnpm lint`
 
+### Betrieb (Server, über Plesk → Node.js → „Skript ausführen", nur der Name)
+- `worker` — Posteingang und fällige Artikel-Prüfungen von Hand
+- `bestaetigungen` / `bestaetigungen:loeschen` — fälschlich gezählte
+  Eingangsbestätigungen zählen bzw. zurücknehmen (mit JSON-Sicherung)
+- `auszuege` — gespeicherte Antwort-Auszüge nachträglich lesbar machen
+- `papierkorb` — Formulierungen im Papierkorb sichten (nur lesend)
+
+Stündlich läuft beides von selbst über eine geplante Aufgabe vom Typ
+**„URL abrufen"** auf `/intern/posteingang?token=…`. Geplante Aufgaben haben
+auf dem Server **keine Node-Laufzeit** — deshalb die Adresse statt eines
+Cron-Befehls. `/healthz` zeigt, ob `WORKER_TOKEN` angekommen ist.
+
 ### Altbestand (Backfill, Einmalwerkzeuge)
 - `pnpm backfill:korpus` — Gesendet-Ordner einmalig als `.eml` nach `fixtures.local/korpus`
 - `pnpm backfill:review` — Review-Queue auf **http://localhost:3223**

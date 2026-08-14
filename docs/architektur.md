@@ -30,7 +30,7 @@ flowchart TB
         REPO --> COMPOSE["dispatch/compose.ts<br/>Betreff, Text, HTML"]
         COMPOSE --> SEND["dispatch/send.ts<br/>SMTP"]
         REPO --> DB[("data/korrektur.db<br/>SQLite über node:sqlite")]
-        WORKER["worker.ts<br/>noch kein Cronjob"] -.-> DB
+        WORKER["worker.ts / routes/intern.ts<br/>stündlich: Posteingang + Artikel-Prüfung"] -.-> DB
     end
 
     subgraph SHARED["packages/shared — reine Funktionen, kein IO"]
@@ -128,9 +128,8 @@ Seit den Diagrammen oben dazugekommen:
   ursprünglichen Kurzbefehls plus Ergänzungen.
 - **Geplant, noch nicht gebaut:** die öffentliche Statistik-Seite „Bilanz"
   (Route + Ansicht; Kennzahlen-Views und `repo/stats.ts` liegen bereit; Regeln:
-  Quoten nie ohne n, alphabetisch, kein Ranking). Offen außerdem: der
-  Worker-Cronjob in Plesk und der verwaiste alte Deploy-Schlüssel in
-  `authorized_keys`.
+  Quoten nie ohne n, alphabetisch, kein Ranking). Offen außerdem der
+  verwaiste alte Deploy-Schlüssel in `authorized_keys`.
 
 ## Ergänzungen (Stand 6. August 2026)
 
@@ -201,9 +200,9 @@ außerhalb von `constants.ts` — der Deploy bricht sonst ab.
 
 ### Offen
 
-P3 (Antwort-Zuordnung per IMAP) und P5 (Artikel-Prüfungen per Cronjob) — solange
-sie fehlen, bleiben beide Quoten der Bilanz leer. Außerdem weiter offen: der
-Worker-Cronjob in Plesk und der verwaiste Deploy-Schlüssel in `authorized_keys`.
+P3 (Antwort-Zuordnung) und P5 (Artikel-Prüfung) sind seit dem 14.8.2026 in
+Betrieb, beide am selben stündlichen Anstoß. Weiter offen: der verwaiste
+Deploy-Schlüssel in `authorized_keys`.
 
 ## Ergänzungen (Stand 12. August 2026)
 
@@ -291,3 +290,30 @@ Sitzungs-Cookie (90 Tage): HMAC über die Zugangsdaten — nicht erratbar,
 absichtlich deterministisch, ein Passwortwechsel macht alle Sitzungen
 ungültig, gespeichert wird nichts. iOS-Safari vergisst Basic-Auth-Zugänge
 sonst notorisch schnell.
+
+## Ergänzungen (Stand 14. August 2026)
+
+### Artikel-Prüfung (P5)
+
+Zweiter Gang am selben stündlichen Anstoß wie der Posteingang
+(`article/lauf.ts`, Beurteilung rein in `article/pruefung.ts`, Fälligkeit und
+Schreiben in `repo/artikelChecks.ts`):
+
+1. **Fällig** an Tag 1, 3, 7, 30 und 90 nach dem Versand. Sind bei einem
+   Altbestand alle Meilensteine vorbei, wird **einmal** nachgeholt, nicht
+   fünfmal.
+2. **Je Lauf höchstens eine Meldung pro Domain.** Der stündliche Takt hält
+   damit „ein Abruf pro Domain und Minute" mit weitem Abstand ein.
+3. **robots.txt** wird vorher befragt (je Domain einmal täglich, ausgewertet
+   für `*` und für `KorrekturTracker`). Zweck ist nicht Gehorsam, sondern ein
+   funktionierender Ausschalter für die Redaktion. Unerreichbar oder unlesbar
+   heißt: prüfen — eine Panne darf die Prüfung nicht stillschweigend
+   abschalten. Der Abruf beim Melden bleibt davon unberührt.
+4. **Befund** über die Anker-Kaskade (§8.1): `unchanged`,
+   `changed_as_suggested`, `changed_otherwise` (mit dem beobachteten Wortlaut),
+   sonst `passage_gone`. Nicht erreichbare Seiten und robots-Ausschlüsse werden
+   als `unreachable` vermerkt — die Kennzahlen-Views rechnen sie aus der
+   Korrekturquote heraus.
+
+Der Ausgang einer Meldung bleibt unberührt; ein Befund ist Evidenz, keine
+Entscheidung.
