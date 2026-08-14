@@ -72,14 +72,23 @@ anders korrigiert / als richtig benannt.
 (sortierbar per Drag & Drop) hinter der Anmeldung; nach einmaliger
 Basic-Auth trägt ein Sitzungs-Cookie 90 Tage.
 
-**Worker.** Separater Prozess für wiederkehrende Aufgaben, per Cron
-aufgerufen. Ein Gang durch den Posteingang: Eingangsbestätigungen wandern
-in den Papierkorb (zählen nicht als Antwort), echte Redaktionsantworten
-werden zugeordnet — über die Kennung im Betreff, den Faden (In-Reply-To)
-oder, für Meldungen aus der Zeit vor dem Projekt, über Artikeltitel plus
-Absender-Domain — und landen als Ereignis in der Historie; offene
-Meldungen wechseln auf „Antwort erhalten". Der erste Lauf liest das ganze
-Postfach (UID-Cursor), danach nur das Neue.
+**Antwort-Zuordnung.** Ein Gang durch den Posteingang: Eingangsbestätigungen
+wandern in den Papierkorb (zählen nicht als Antwort), echte
+Redaktionsantworten werden zugeordnet — über die Kennung im Betreff, den
+Faden (In-Reply-To) oder, für Meldungen aus der Zeit vor dem Projekt, über
+Artikeltitel plus Absender-Domain — und landen als Ereignis in der
+Historie; offene Meldungen wechseln auf „Antwort erhalten". Der erste Lauf
+liest das ganze Postfach (UID-Cursor), danach nur das Neue. Mailtexte
+werden vor der Erkennung aus Quoted-Printable dekodiert, sonst trifft kein
+Muster mit Umlaut.
+
+Angestoßen wird der Gang stündlich über `/intern/posteingang?token=…`
+(Plesk: geplante Aufgabe vom Typ „URL abrufen"). Der Weg über die Adresse
+statt über einen Cron-Befehl ist keine Bequemlichkeit: Auf dem Hoster gibt
+es für geplante Aufgaben keine Node-Laufzeit. Ohne `WORKER_TOKEN` ist die
+Route abgeschaltet, ein falscher Token bekommt 404. `/healthz` zeigt, ob das
+Losungswort angekommen ist. Von Hand geht derselbe Gang über `npm run
+worker`.
 
 **Backfill.** Drei Einmalwerkzeuge (`pnpm backfill:korpus|review|import`)
 holen über 1300 Alt-Meldungen aus dem Gesendet-Ordner in die Datenbank:
@@ -108,7 +117,7 @@ aus einer Quelle generiert: `tools/iconsErzeugen.py`.
 | `packages/shared` | Zod-Schemas, Palette, reine Erkennungs-/Normalisierungs-/Benennungsfunktionen — einzige Typquelle |
 | `packages/api` | Server: Formulare, Versand, Bilanz, Verwaltung, Datenbank (Drizzle + SQLite), Worker |
 | `packages/backfill` | Einmalwerkzeuge für den Altbestand |
-| `tools/` | Icon-Generator, Backfill-Import-CLI |
+| `tools/` | Icon-Generator; im Bündel zusätzlich die Einmalwerkzeuge (Backfill-Import, Bestätigungen, Papierkorb) |
 | `docs/` | Architektur, Specs, Anleitung Bookmarklet/Kurzbefehl |
 
 ## Entwicklung
@@ -135,3 +144,19 @@ Web-Prozess, Worker und Migrationen per tar über SSH auf Shared-Hosting
 (Plesk/Passenger; rsync steht in der Chroot nicht zur Verfügung). Migrationen
 laufen beim Start; die Kennzahlen-Views werden aus den Konstanten neu
 erzeugt.
+
+**Umgebung.** Der Webprozess bekommt sie aus dem Plesk-Node.js-Panel (nach
+jeder Änderung „App neu starten"; sie greift erst beim nächsten Zugriff, weil
+Passenger faul startet). Ein Leerzeichen im Schlüsselnamen macht die Variable
+unsichtbar — `/healthz` zeigt für `WORKER_TOKEN`, ob sie angekommen ist.
+Handgestartete Läufe (Node.js → „Skript ausführen") sehen die Plesk-Variablen
+**nicht**; für sie liegt im Anwendungsstamm eine `.env` mit `MIGRATIONS_DIR`
+und `IMAP_*`. Passwörter mit `#` gehören dort in `"…"`, sonst schneidet Nodes
+`--env-file` am `#` ab.
+
+**Einmalwerkzeuge auf dem Server** (Node.js → „Skript ausführen", nur der
+Skriptname): `worker` (Posteingang von Hand), `bestaetigungen` /
+`bestaetigungen:loeschen` (fälschlich als Antwort gezählte
+Eingangsbestätigungen zählen bzw. zurücknehmen — mit JSON-Sicherung neben der
+Datenbank), `papierkorb` (zeigt die Formulierungen im Papierkorb, damit neue
+Bestätigungs-Muster nicht geraten werden müssen).
