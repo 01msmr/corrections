@@ -2,6 +2,7 @@ import { ImapFlow } from "imapflow";
 import type { WorkerEnv } from "../env.js";
 import type { EingehendeMail } from "./antworten.js";
 import { istEingangsbestaetigung } from "./bestaetigung.js";
+import { dekodiereQuotedPrintable } from "./dekodieren.js";
 
 /**
  * IO-Schicht des Postfachs (Gegenstueck zu dispatch/send.ts): verbindet sich
@@ -97,7 +98,9 @@ export async function verarbeitePosteingang(
         ergebnis.hoechsteUid = Math.max(ergebnis.hoechsteUid, nachricht.uid);
 
         const betreff = nachricht.envelope?.subject ?? "";
-        const textAnfang = nachricht.bodyParts?.get("text")?.toString("utf8").slice(0, 2000) ?? "";
+        const textAnfang = dekodiereQuotedPrintable(
+          nachricht.bodyParts?.get("text")?.toString("utf8").slice(0, 4000) ?? "",
+        ).slice(0, 2000);
         const inReplyTo = nachricht.envelope?.inReplyTo?.replace(/[<>]/g, "").trim() || null;
         const absender = nachricht.envelope?.from?.[0]?.address ?? null;
 

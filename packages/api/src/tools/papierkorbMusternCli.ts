@@ -1,6 +1,7 @@
 import { ImapFlow } from "imapflow";
 import { loadWorkerEnv } from "../env.js";
 import { passtAufBestaetigungsmuster } from "../inbox/bestaetigung.js";
+import { dekodiereQuotedPrintable } from "../inbox/dekodieren.js";
 
 /**
  * Einmalwerkzeug: zeigt, wie die Eingangsbestaetigungen im Papierkorb
@@ -35,14 +36,20 @@ async function main(): Promise<void> {
         { uid: true, envelope: true, bodyParts: ["text"] },
       )) {
         const betreff = nachricht.envelope?.subject ?? "";
-        const text = nachricht.bodyParts?.get("text")?.toString("utf8") ?? "";
+        const text = dekodiereQuotedPrintable(nachricht.bodyParts?.get("text")?.toString("utf8") ?? "");
         const domain = (nachricht.envelope?.from?.[0]?.address ?? "").split("@")[1] ?? "?";
         /* Erste Zeile mit Inhalt, Anrede uebersprungen. */
         const zeile =
           text
             .split(/\r?\n/)
             .map((z) => z.trim())
-            .find((z) => z.length > 25 && !/^(liebe|sehr geehrte|hallo|guten)/i.test(z)) ?? "";
+            .find(
+              (z) =>
+                z.length > 25 &&
+                !z.startsWith("--") &&
+                !/^[A-Za-z-]+:/.test(z) &&
+                !/^(liebe|sehr geehrte|hallo|guten)/i.test(z),
+            ) ?? "";
         const schluessel = `${domain}|${zeile.slice(0, 60)}`;
         if (gesehen.has(schluessel)) continue;
         gesehen.add(schluessel);
