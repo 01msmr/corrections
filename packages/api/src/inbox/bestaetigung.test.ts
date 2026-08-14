@@ -102,3 +102,37 @@ describe("SPIEGEL-Leserservice, neue Fassung", () => {
     ).toBe(false);
   });
 });
+
+/* Zwei weitere Fassungen des Leserservice, gefunden im Papierkorb
+   (14.8.2026). Beide kommen als HTML -- die Wendung steht zwischen Tags. */
+describe("SPIEGEL-Leserservice, weitere Fassungen", () => {
+  const mitBezug = (textAnfang: string) => ({
+    betreff: "Textfehler im Artikel: Irgendein Titel [KVZQE7]",
+    textAnfang,
+    inReplyTo: null,
+  });
+
+  it("erkennt „Wir kümmern uns so schnell wie möglich“", () => {
+    expect(
+      istEingangsbestaetigung(
+        mitBezug(
+          "<p>Sehr geehrte Leserin, sehr geehrter Leser,</p><p>Danke für Ihre E-Mail.</p>" +
+            "<p>Wir kümmern uns so schnell wie möglich darum und melden uns mit einer Antwort.</p>",
+        ),
+        new Set(),
+      ),
+    ).toBe(true);
+  });
+
+  it("erkennt „Gern bearbeiten wir Ihre Anfrage“", () => {
+    expect(
+      istEingangsbestaetigung(
+        mitBezug(
+          "<p>Liebe Leserin, lieber Leser,</p><p>Danke für Ihre Nachricht.</p>" +
+            "<p>Gern bearbeiten wir Ihre Anfrage so schnell wie möglich.</p>",
+        ),
+        new Set(),
+      ),
+    ).toBe(true);
+  });
+});

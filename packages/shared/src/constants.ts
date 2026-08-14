@@ -19,6 +19,8 @@ export const BESTAETIGUNGS_MUSTER = [
   "im falle einer rückfrage melden wir uns",
   /* SPIEGEL, aeltere Fassung: "vielen Dank für Ihr Interesse am SPIEGEL." */
   "interesse am spiegel",
+  "wir kümmern uns so schnell wie möglich",
+  "gern bearbeiten wir ihre anfrage",
   "eingangsbestätigung",
   "empfangsbestätigung",
 ] as const;
