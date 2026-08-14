@@ -22,3 +22,49 @@ export function dekodiereQuotedPrintable(roh: string): string {
 
   return Buffer.from(bytes).toString("utf8");
 }
+
+/** Ein Abschnitt einer mehrteiligen Mail: Kopfzeilen und Rumpf. */
+interface Teil {
+  kopf: string;
+  rumpf: string;
+}
+
+function zerlegeInTeile(roh: string): Teil[] {
+  const grenze = /^--[^\s-][^\s]*\s*$/m.exec(roh);
+  if (!grenze) return [{ kopf: "", rumpf: roh }];
+
+  const marke = grenze[0].trim().replace(/--$/, "");
+  return roh
+    .split(new RegExp(`^${marke.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(--)?\\s*$`, "m"))
+    .filter((stueck): stueck is string => typeof stueck === "string" && stueck.trim().length > 0)
+    .map((stueck) => {
+      const trennung = stueck.search(/\r?\n\r?\n/);
+      if (trennung < 0) return { kopf: "", rumpf: stueck };
+      return {
+        kopf: stueck.slice(0, trennung),
+        rumpf: stueck.slice(trennung).replace(/^\r?\n\r?\n/, ""),
+      };
+    });
+}
+
+/**
+ * Der lesbare Text einer Mail: aus einer mehrteiligen Nachricht der
+ * text/plain-Abschnitt, dekodiert nach seiner Transfer-Kodierung. Ohne das
+ * stehen Grenzmarken, Kopfzeilen und base64-Bloecke im Auszug der Historie.
+ */
+export function lesbarerText(roh: string): string {
+  const teile = zerlegeInTeile(roh);
+  const gewaehlt =
+    teile.find((t) => /content-type:\s*text\/plain/i.test(t.kopf)) ?? teile[0];
+  if (!gewaehlt) return roh.trim();
+
+  const kodierung = /content-transfer-encoding:\s*(\S+)/i.exec(gewaehlt.kopf)?.[1]?.toLowerCase();
+  if (kodierung === "base64") {
+    return Buffer.from(gewaehlt.rumpf.replace(/\s+/g, ""), "base64")
+      .toString("utf8")
+      .replace(/\r\n/g, "\n")
+      .trim();
+  }
+  const text = kodierung === "quoted-printable" ? dekodiereQuotedPrintable(gewaehlt.rumpf) : gewaehlt.rumpf;
+  return text.replace(/\r\n/g, "\n").trim();
+}

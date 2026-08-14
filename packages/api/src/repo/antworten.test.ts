@@ -6,6 +6,7 @@ import { seed } from "../db/seed.js";
 import { createOutlet } from "./outlets.js";
 import {
   ladeAntwortKandidaten,
+  macheAuszuegeLesbar,
   nimmBestaetigungenZurueck,
   vermerkeAntwort,
   zaehleBestaetigungen,
@@ -165,5 +166,38 @@ describe("Bestaetigungen zuruecknehmen", () => {
     });
     expect(nimmBestaetigungenZurueck(db, passt)).toMatchObject({ geloescht: 1, wiederOffen: 0 });
     expect(db.select().from(corrections).all()[0]?.outcome).toBe("acknowledged");
+  });
+});
+
+/* Die Auszuege der ersten Laeufe stehen roh in der Historie: Grenzmarken,
+   Kopfzeilen, base64. Sie lassen sich nachtraeglich lesbar machen, ohne das
+   Postfach noch einmal zu lesen (Fund vom 14.8.2026). */
+describe("Auszuege lesbar machen", () => {
+  it("dekodiert einen base64-Auszug und ruehrt lesbare nicht an", () => {
+    const roh = meldung();
+    vermerkeAntwort(db, roh, {
+      receivedAt: JETZT,
+      rawMessageId: "roh@example.tld",
+      fromAddr: "redaktion@example.tld",
+      excerpt:
+        '--grenze\nContent-Type: text/plain; charset="utf-8"\nContent-Transfer-Encoding: base64\n\n' +
+        "RGFua2UsIHdpciBoYWJlbiBrb3JyaWdpZXJ0Lg==",
+    });
+    const lesbar = meldung();
+    vermerkeAntwort(db, lesbar, {
+      receivedAt: JETZT,
+      rawMessageId: "lesbar@example.tld",
+      fromAddr: "redaktion@example.tld",
+      excerpt: "Danke, wir haben korrigiert.",
+    });
+
+    expect(macheAuszuegeLesbar(db)).toBe(1);
+    const auszuege = db
+      .select()
+      .from(responseEvents)
+      .all()
+      .map((z) => z.excerpt);
+    expect(auszuege).toContain("Danke, wir haben korrigiert.");
+    expect(auszuege.filter((a) => a === "Danke, wir haben korrigiert.")).toHaveLength(2);
   });
 });

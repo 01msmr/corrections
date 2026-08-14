@@ -1,7 +1,7 @@
 import { ImapFlow } from "imapflow";
 import { loadWorkerEnv } from "../env.js";
 import { passtAufBestaetigungsmuster } from "../inbox/bestaetigung.js";
-import { dekodiereQuotedPrintable } from "../inbox/dekodieren.js";
+import { lesbarerText } from "../inbox/dekodieren.js";
 
 /**
  * Einmalwerkzeug: zeigt, wie die Eingangsbestaetigungen im Papierkorb
@@ -36,7 +36,7 @@ async function main(): Promise<void> {
         { uid: true, envelope: true, bodyParts: ["text"] },
       )) {
         const betreff = nachricht.envelope?.subject ?? "";
-        const text = dekodiereQuotedPrintable(nachricht.bodyParts?.get("text")?.toString("utf8") ?? "");
+        const text = lesbarerText(nachricht.bodyParts?.get("text")?.toString("utf8") ?? "");
         const domain = (nachricht.envelope?.from?.[0]?.address ?? "").split("@")[1] ?? "?";
         /* Erste Zeile mit Inhalt, Anrede uebersprungen. */
         const zeile =

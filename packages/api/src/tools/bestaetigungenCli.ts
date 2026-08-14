@@ -2,7 +2,11 @@ import { writeFileSync } from "node:fs";
 import { createDb } from "../db/client.js";
 import { loadWorkerEnv } from "../env.js";
 import { passtAufBestaetigungsmuster } from "../inbox/bestaetigung.js";
-import { nimmBestaetigungenZurueck, zaehleBestaetigungen } from "../repo/antworten.js";
+import {
+  macheAuszuegeLesbar,
+  nimmBestaetigungenZurueck,
+  zaehleBestaetigungen,
+} from "../repo/antworten.js";
 
 /**
  * Einmalwerkzeug: Eingangsbestaetigungen, die als Antwort gezaehlt wurden,
@@ -16,6 +20,13 @@ function main(): void {
   const env = loadWorkerEnv();
   const db = createDb(env.DATABASE_PATH);
   const loeschen = process.argv.includes("--loeschen");
+
+  if (process.argv.includes("--auszuege")) {
+    console.log(
+      JSON.stringify({ level: "info", msg: "auszuege lesbar gemacht", geaendert: macheAuszuegeLesbar(db) }),
+    );
+    return;
+  }
 
   const treffer = zaehleBestaetigungen(db, passtAufBestaetigungsmuster);
   if (!loeschen) {

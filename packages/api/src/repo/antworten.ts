@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { corrections, responseEvents } from "../db/schema.js";
 import { normBetreff, type AntwortKandidat } from "../inbox/antworten.js";
+import { lesbarerText } from "../inbox/dekodieren.js";
 
 /**
  * Schreibseite der Antwort-Zuordnung (P3). Die Erkennung ist rein und liegt
@@ -146,4 +147,24 @@ export function nimmBestaetigungenZurueck(
   }
 
   return { geloescht: treffer.length, wiederOffen, zeilen: treffer };
+}
+
+/**
+ * Macht die Auszuege der ersten Laeufe lesbar: dort stehen noch Grenzmarken,
+ * Kopfzeilen und base64. Das Postfach muss dafuer nicht gelesen werden.
+ * Liefert die Zahl der geaenderten Ereignisse.
+ */
+export function macheAuszuegeLesbar(db: Db): number {
+  const zeilen = db.all<{ id: string; excerpt: string | null }>(
+    sql`SELECT id, excerpt FROM response_events WHERE excerpt IS NOT NULL`,
+  );
+  let geaendert = 0;
+  for (const zeile of zeilen) {
+    if (zeile.excerpt === null) continue;
+    const lesbar = lesbarerText(zeile.excerpt).slice(0, 300).trim();
+    if (lesbar.length === 0 || lesbar === zeile.excerpt) continue;
+    db.run(sql`UPDATE response_events SET excerpt = ${lesbar} WHERE id = ${zeile.id}`);
+    geaendert += 1;
+  }
+  return geaendert;
 }
