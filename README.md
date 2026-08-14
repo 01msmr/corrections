@@ -62,6 +62,14 @@ Domain und Minute" mit weitem Abstand ein. Ein Altbestand, dessen
 Meilensteine längst vorbei sind, wird genau einmal nachgeholt, nicht
 fünfmal. Was anders geändert wurde, hält der Befund im Wortlaut fest.
 
+Vor jedem wiederkehrenden Abruf wird die `robots.txt` der Domain befragt
+(einmal täglich je Domain, ausgewertet für `*` **und** für unseren eigenen
+Namen `KorrekturTracker`) — nicht aus Gehorsam, sondern damit eine Redaktion
+diesen Abrufer gezielt ausschließen kann, ohne IPs zu sperren. Der Abruf beim
+Melden bleibt davon unberührt: Er ist die Fortsetzung des eigenen Lesens. Ist
+die Datei nicht zu holen oder unlesbar, wird geprüft — eine Panne darf die
+Prüfung nicht stillschweigend abschalten.
+
 **Bilanz.** Öffentliche Auswertung: Kennzahlen, Verlauf, Kategorien- und
 Medienverteilung mit Anteils-Segmenten, umschaltbar mit/ohne weiche
 Kategorien. Quoten nur mit n, Tabellen alphabetisch, keine Rankings. Ein

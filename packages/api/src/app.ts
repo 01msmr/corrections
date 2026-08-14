@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { FetchResult } from "./article/fetch.js";
+import { fetchText, type FetchResult } from "./article/fetch.js";
 import { adminAuth, betreiberErkennung } from "./auth.js";
 import type { Db } from "./db/client.js";
 import type { Mailer } from "./dispatch/send.js";
@@ -58,7 +58,11 @@ export function createApp(options: AppOptions): Hono {
       },
     }),
   );
-  app.route("/", internRoutes(options.db, options.env, { fetchArticle: options.fetchArticle, now }));
+  app.route("/", internRoutes(options.db, options.env, {
+      fetchArticle: options.fetchArticle,
+      now,
+      holeRobots: (url) => fetchText(url),
+    }));
   app.route("/", outletAdminRoutes(options.db, now));
   app.route("/", errorTypeAdminRoutes(options.db, now));
   // Einmalwerkzeug: nach dem Altbestand-Import kann diese Zeile entfallen (§11.5).

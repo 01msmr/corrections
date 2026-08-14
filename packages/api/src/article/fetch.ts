@@ -48,3 +48,24 @@ export async function fetchArticle(
     clearTimeout(timer);
   }
 }
+
+/**
+ * Reiner Text von einer Adresse — fuer robots.txt. Wirft bei jedem Fehler;
+ * der Aufrufer entscheidet, was das bedeutet.
+ */
+export async function fetchText(url: string, options: { fetchImpl?: typeof fetch } = {}): Promise<string> {
+  const doFetch = options.fetchImpl ?? fetch;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8_000);
+  try {
+    const response = await doFetch(url, {
+      redirect: "follow",
+      signal: controller.signal,
+      headers: { "user-agent": USER_AGENT, accept: "text/plain" },
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return (await response.text()).slice(0, 100_000);
+  } finally {
+    clearTimeout(timer);
+  }
+}

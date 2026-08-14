@@ -24,6 +24,7 @@ function gleich(a: string, b: string): boolean {
 export interface InternDeps {
   fetchArticle: (url: string) => Promise<FetchResult>;
   now: () => number;
+  holeRobots?: (url: string) => Promise<string>;
 }
 
 export function internRoutes(db: Db, env: Env, deps: InternDeps): Hono {

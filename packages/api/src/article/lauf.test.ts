@@ -89,3 +89,35 @@ describe("artikelLauf", () => {
     expect(db.select().from(articleChecks).all()).toHaveLength(1);
   });
 });
+
+describe("artikelLauf mit robots.txt", () => {
+  it("laesst die Seite in Ruhe, wenn die Redaktion sie ausschliesst", async () => {
+    meldung();
+    let abgerufen = 0;
+    const ergebnis = await artikelLauf(db, {
+      fetchArticle: async () => {
+        abgerufen += 1;
+        return seite("rund 4,2 Millionen Menschen");
+      },
+      now: () => JETZT,
+      holeRobots: async () => "User-agent: *\nDisallow: /artikel\n",
+    });
+    expect(abgerufen).toBe(0);
+    expect(ergebnis.ausgeschlossen).toBe(1);
+    const zeile = db.select().from(articleChecks).all()[0];
+    expect(zeile?.quoteState).toBe("unreachable");
+    expect(zeile?.observedText).toBe("durch robots.txt ausgeschlossen");
+  });
+
+  it("prueft weiter, wenn robots.txt nicht zu holen ist", async () => {
+    meldung();
+    const ergebnis = await artikelLauf(db, {
+      fetchArticle: async () => seite("rund 4,2 Millionen Menschen"),
+      now: () => JETZT,
+      holeRobots: async () => {
+        throw new Error("kein Netz");
+      },
+    });
+    expect(ergebnis.geprueft).toBe(1);
+  });
+});

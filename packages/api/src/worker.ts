@@ -1,7 +1,7 @@
 import { createDb, runMigrations } from "./db/client.js";
 import { loadWorkerEnv } from "./env.js";
 import { artikelLauf } from "./article/lauf.js";
-import { fetchArticle } from "./article/fetch.js";
+import { fetchArticle, fetchText } from "./article/fetch.js";
 import { posteingangLauf } from "./inbox/lauf.js";
 import { fehlerDetails } from "./inbox/postfach.js";
 
@@ -16,7 +16,11 @@ async function main(): Promise<void> {
   runMigrations(db, env.MIGRATIONS_DIR);
 
   const posteingang = await posteingangLauf(db, env);
-  const artikel = await artikelLauf(db, { fetchArticle, now: () => Math.floor(Date.now() / 1000) });
+  const artikel = await artikelLauf(db, {
+    fetchArticle,
+    now: () => Math.floor(Date.now() / 1000),
+    holeRobots: (url) => fetchText(url),
+  });
 
   console.log(
     JSON.stringify({
