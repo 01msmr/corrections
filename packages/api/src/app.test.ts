@@ -454,6 +454,10 @@ describe("Interner Anstoss (/intern/posteingang)", () => {
     const a = app({ env: { ...ENV, WORKER_TOKEN: "geheimes-losungswort" } });
     const res = await a.request("/intern/posteingang?token=geheimes-losungswort");
     expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toMatchObject({ hinweis: "IMAP nicht konfiguriert" });
+    /* Zwei Gaenge in einer Antwort: Posteingang und Artikel-Pruefung. */
+    await expect(res.json()).resolves.toMatchObject({
+      posteingang: "IMAP nicht konfiguriert",
+      artikel: { geprueft: 0, unerreichbar: 0 },
+    });
   });
 });

@@ -1,5 +1,7 @@
 import { createDb, runMigrations } from "./db/client.js";
 import { loadWorkerEnv } from "./env.js";
+import { artikelLauf } from "./article/lauf.js";
+import { fetchArticle } from "./article/fetch.js";
 import { posteingangLauf } from "./inbox/lauf.js";
 import { fehlerDetails } from "./inbox/postfach.js";
 
@@ -13,15 +15,17 @@ async function main(): Promise<void> {
   const db = createDb(env.DATABASE_PATH);
   runMigrations(db, env.MIGRATIONS_DIR);
 
-  const ergebnis = await posteingangLauf(db, env);
-  if (ergebnis === null) {
-    console.log(
-      JSON.stringify({ level: "info", msg: "worker gelaufen", tasks: [], hinweis: "IMAP nicht konfiguriert" }),
-    );
-    return;
-  }
+  const posteingang = await posteingangLauf(db, env);
+  const artikel = await artikelLauf(db, { fetchArticle, now: () => Math.floor(Date.now() / 1000) });
 
-  console.log(JSON.stringify({ level: "info", msg: "worker gelaufen", tasks: ["posteingang"], ...ergebnis }));
+  console.log(
+    JSON.stringify({
+      level: "info",
+      msg: "worker gelaufen",
+      posteingang: posteingang ?? "IMAP nicht konfiguriert",
+      artikel,
+    }),
+  );
 }
 
 main().catch((fehler: unknown) => {

@@ -54,6 +54,14 @@ unterscheiden: unverändert, wie vorgeschlagen geändert, anders geändert,
 verschwunden, Seite nicht erreichbar. Automatische Befunde landen in einer
 Warteschlange, nie direkt als „korrigiert".
 
+**Artikel-Prüfung.** Am selben stündlichen Anstoß hängt der zweite Gang: An
+Tag 1, 3, 7, 30 und 90 nach dem Versand wird der Artikel erneut geholt und
+die Fundstelle zwischen ihren Ankern beurteilt. Je Lauf höchstens **eine**
+Meldung pro Domain — der stündliche Takt hält die Zusage „ein Abruf pro
+Domain und Minute" mit weitem Abstand ein. Ein Altbestand, dessen
+Meilensteine längst vorbei sind, wird genau einmal nachgeholt, nicht
+fünfmal. Was anders geändert wurde, hält der Befund im Wortlaut fest.
+
 **Bilanz.** Öffentliche Auswertung: Kennzahlen, Verlauf, Kategorien- und
 Medienverteilung mit Anteils-Segmenten, umschaltbar mit/ohne weiche
 Kategorien. Quoten nur mit n, Tabellen alphabetisch, keine Rankings. Ein

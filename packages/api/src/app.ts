@@ -58,7 +58,7 @@ export function createApp(options: AppOptions): Hono {
       },
     }),
   );
-  app.route("/", internRoutes(options.db, options.env));
+  app.route("/", internRoutes(options.db, options.env, { fetchArticle: options.fetchArticle, now }));
   app.route("/", outletAdminRoutes(options.db, now));
   app.route("/", errorTypeAdminRoutes(options.db, now));
   // Einmalwerkzeug: nach dem Altbestand-Import kann diese Zeile entfallen (§11.5).
