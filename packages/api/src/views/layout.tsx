@@ -228,7 +228,7 @@ const STYLES = `
   /* Der Zeitungstitel laeuft nicht in der Schreibmaschine, sondern in einer
      Didone -- der Schriftgattung klassischer Titelkoepfe. Didot und Bodoni
      liegen auf Apple-Systemen, Georgia faengt den Rest ab. */
-  .marke { font: 700 2.6rem/1.1 var(--titel);
+  .marke { font: 700 2.68rem/1.1 var(--titel);
     letter-spacing: .05em; text-transform: uppercase;
     color: inherit; text-decoration: none; }
   /* Die Schrift bleibt in Tinte; ausgezeichnet wird ueber eine Unterstreichung
@@ -343,7 +343,7 @@ const STYLES = `
   .trefferWechsel { display: block; font: 700 .85rem/1.4 var(--mono); }
   .trefferWechsel del { color: var(--korrektur); text-decoration-thickness: 2px; margin-right: .5em; }
   .trefferWechsel ins { color: var(--vorschlag); text-decoration: none; }
-  .trefferOft { font: .68rem/1 var(--sans); color: var(--rand); margin-left: .6em; }
+  .trefferOft { font: .74rem/1 var(--sans); color: var(--rand); margin-left: .6em; }
   .trefferSatz { display: block; font-size: .8rem; color: var(--rand); margin-top: .15rem; }
   .trefferSatz mark { background: color-mix(in srgb, var(--korrektur) 18%, var(--papier));
     color: var(--tinte); font-weight: 700; }
@@ -452,7 +452,7 @@ const STYLES = `
   h2.balken { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
   .zaehlweise { display: inline-flex; border-radius: 999px; overflow: hidden;
     background: color-mix(in srgb, var(--balkengrund) 70%, var(--papier));
-    font: 700 .62rem/1 var(--sans); letter-spacing: .02em; flex: none; }
+    font: 700 .7rem/1 var(--sans); letter-spacing: .02em; flex: none; }
   .zaehlweise > * { padding: .28rem .6rem; text-decoration: none;
     color: color-mix(in srgb, var(--balkenschrift) 70%, var(--balkengrund)); }
   .zaehlweise > * + * { border-left: 2px solid var(--balkengrund); }
@@ -548,14 +548,14 @@ const STYLES = `
   select:hover, select:focus-visible {
     background-image: ${pfeil(PALETTE.korrektur)};
   }
-  optgroup { font: 600 .75rem var(--mono); letter-spacing: .06em; color: var(--rand); }
+  optgroup { font: 600 .8rem var(--mono); letter-spacing: .06em; color: var(--rand); }
   optgroup option { font: 400 1rem var(--sans); letter-spacing: 0; color: var(--tinte); }
   :focus-visible { outline: 2px solid var(--korrektur); outline-offset: 1px; }
 
 
   /* Kursiv, weil die Zusaetze erlaeutern und nicht benennen: sie gehoeren zu
      einer anderen Sprechebene als die Beschriftung links daneben. */
-  .zaehler { font: italic 400 .72rem/1.4 var(--sans); letter-spacing: 0;
+  .zaehler { font: italic 400 .8rem/1.4 var(--sans); letter-spacing: 0;
     text-transform: none; color: var(--rand); }
   /* Ganze Absaetze in dieser Nebenstimme wollen gelesen werden, nicht nur
      ueberflogen: sie bekommen Lesegroesse. Die kurzen Stempel an den
@@ -835,7 +835,7 @@ const STYLES = `
      Zaehler, kein Kasten. */
   button.textknopf { display: inline; background: none; border: 0; box-shadow: none;
     padding: 0; margin-left: .5rem; transform: none;
-    font: italic 400 .72rem/1.4 var(--sans); color: var(--rand);
+    font: italic 400 .8rem/1.4 var(--sans); color: var(--rand);
     text-decoration: underline; text-underline-offset: .2em; cursor: pointer; }
   button.textknopf:hover { color: var(--tinte); box-shadow: none; transform: none; }
 
@@ -871,14 +871,14 @@ const STYLES = `
     grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
   .kennzahl { display: flex; flex-direction: column; gap: .15rem;
     border: 1px solid var(--linie); padding: .8rem .9rem; background: var(--feld); }
-  .kennzahl-titel { font: 700 .72rem/1.4 var(--mono); letter-spacing: .1em;
+  .kennzahl-titel { font: 700 .8rem/1.4 var(--mono); letter-spacing: .1em;
     text-transform: uppercase; color: var(--rand); }
   .kennzahl-wert { font: 700 2rem/1.15 var(--mono); color: var(--tinte); }
   .kennzahl-wert.klein { font-size: 1.15rem; line-height: 1.4; }
   /* Fehlende Aussage sieht aus wie fehlende Aussage: leise, nicht als Null. */
   .kennzahl-leer { font: italic 400 1.15rem/1.4 var(--sans); color: var(--rand); }
   .kennzahl-fuss { font: .78rem/1.4 var(--mono); color: var(--tinte); }
-  .kennzahl-erklaerung { font: italic 400 .72rem/1.45 var(--sans); color: var(--rand);
+  .kennzahl-erklaerung { font: italic 400 .8rem/1.45 var(--sans); color: var(--rand);
     margin-top: .35rem; }
 
   /* Waagerechte Balken: Name links, Spur, Zahl rechts auf fester Breite,
@@ -909,14 +909,14 @@ const STYLES = `
     color-mix(in srgb, var(--korrektur) 25%, var(--papier)) 2px 4px); }
   .balkenteil + .balkenteil { border-left: 1px solid var(--papier); }
   .balkenteilname { display: inline-flex; align-items: center; gap: .3rem;
-    font: 700 .7rem/1 var(--sans); padding: 0 .3rem;
+    font: 700 .76rem/1 var(--sans); padding: 0 .3rem;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* Die Menge des Mediums als Marke direkt rechts neben seinem Namen —
      rund bis zwei Stellen, darueber waechst sie zur Pille. */
   .teilzahl { display: inline-flex; align-items: center; justify-content: center;
     min-width: 1.05rem; height: 1.05rem; padding: 0 .22rem; border-radius: 999px;
     background: color-mix(in srgb, var(--papier) 85%, transparent);
-    color: var(--tinte); font-size: .62rem; flex: none; }
+    color: var(--tinte); font-size: .7rem; flex: none; }
   /* In zu schmalen Segmenten faellt der Name weg — der Tooltip bleibt. */
   @container (max-width: 3.5rem) { .balkenteilname { display: none; } }
   .balkenwert { font: 700 .85rem/1.4 var(--mono); text-align: right; }
@@ -930,8 +930,8 @@ const STYLES = `
     justify-content: flex-end; height: 100%; min-width: 2.4rem; max-width: 4rem; flex: 1; }
   .verlaufsbalken { display: block; width: 100%; background: var(--korrektur);
     min-height: 2px; }
-  .verlaufswert { font: 700 .72rem/1.4 var(--mono); color: var(--tinte); }
-  .verlaufsmonat { font: .68rem/1.4 var(--mono); color: var(--rand); margin-top: .25rem;
+  .verlaufswert { font: 700 .8rem/1.4 var(--mono); color: var(--tinte); }
+  .verlaufsmonat { font: .74rem/1.4 var(--mono); color: var(--rand); margin-top: .25rem;
     white-space: nowrap; }
 
   /* Ganz unten, unter dem Blatt: ein leiser Hinweis auf die Herkunft. Er
@@ -1029,7 +1029,7 @@ const STYLES = `
   table button {
     display: flex; align-items: center; margin: 0; padding: 0 .7rem; min-height: 0;
     height: 100%; width: 100%;
-    font: .75rem/1.4 var(--mono); letter-spacing: .02em; text-transform: none;
+    font: .8rem/1.4 var(--mono); letter-spacing: .02em; text-transform: none;
     background: transparent; color: var(--rand);
     border: none; border-left: 1px solid var(--linie); border-radius: 0;
     box-shadow: none; transition: none; transform: none;
@@ -1156,7 +1156,7 @@ const STYLES = `
   @media (max-width: 40rem) {
     .markenzeile { padding: 1rem 0 .5rem; }
     .marke { font-size: 1.7rem; }
-    .untertitel { font-size: .68rem; letter-spacing: .1em; }
+    .untertitel { font-size: .74rem; letter-spacing: .1em; }
     /* Der Untertitel bricht schmal an seiner sinnvollen Fuge: die Selbst-
        beschreibung in Zeile eins, die beiden Haltungen zusammen darunter. */
     .untertiteltrenner { display: none; }
@@ -1165,7 +1165,7 @@ const STYLES = `
        Das Datum rueckt darunter, beides zentriert, das Band waechst mit. */
     .datumszeile .kopfinhalt { flex-direction: column; gap: .05rem; min-height: 0;
       padding-top: .3rem; padding-bottom: .35rem; }
-    .datum { position: static; transform: none; font-size: .7rem; }
+    .datum { position: static; transform: none; font-size: .76rem; }
     /* Schmal traegt die Zeile nur die Kurzfassung, und die kleine Marke
        entfaellt: das Band ist hier eine zentrierte Spalte ohne freie Flanke. */
     .klebemarke { display: none; }
@@ -1182,7 +1182,7 @@ const STYLES = `
     /* Die Ressorts bleiben eine Zeile; die Verwaltungspille rutscht darunter
        in eine eigene, zentrierte Reihe — statt die Zeile zu verlaengern. */
     nav { flex-wrap: wrap; justify-content: center; row-gap: .1rem; }
-    nav a { white-space: nowrap; font-size: .72rem; padding: .55rem .7rem .45rem; }
+    nav a { white-space: nowrap; font-size: .8rem; padding: .55rem .7rem .45rem; }
     nav > a:first-child { margin-left: 0; }
     /* Die Hauptreihe weicht dem Aufklapper; die Verwaltungspille bleibt. */
     nav > a { display: none; }
@@ -1219,11 +1219,11 @@ const STYLES = `
     .kennzahl-wert.klein { font-size: 1rem; }
     .balkenname { font-size: .8rem; }
     .balkenwert { font-size: .78rem; }
-    .balkenteilname { font-size: .62rem; }
-    .teilzahl { min-width: .95rem; height: .95rem; font-size: .56rem; }
-    .zaehlweise { font-size: .56rem; }
+    .balkenteilname { font-size: .7rem; }
+    .teilzahl { min-width: .95rem; height: .95rem; font-size: .64rem; }
+    .zaehlweise { font-size: .64rem; }
     .trefferWechsel { font-size: .78rem; }
-    .trefferSatz { font-size: .74rem; }
+    .trefferSatz { font-size: .8rem; }
 
     /* Schriftstaffel fuers Telefon: Fliesstext bleibt bei 16 px (darunter
        zoomen Browser beim Tippen in Felder), alles Ausgezeichnete rueckt
@@ -1238,12 +1238,12 @@ const STYLES = `
     .kennzahl-wert.klein { font-size: 1rem; }
     .balkenname { font-size: .8rem; }
     .balkenwert { font-size: .78rem; }
-    .balkenteilname { font-size: .62rem; }
-    .teilzahl { min-width: .95rem; height: .95rem; font-size: .56rem; }
-    .zaehlweise { font-size: .56rem; }
-    .verlaufsmonat, .verlaufswert { font-size: .6rem; }
+    .balkenteilname { font-size: .7rem; }
+    .teilzahl { min-width: .95rem; height: .95rem; font-size: .64rem; }
+    .zaehlweise { font-size: .64rem; }
+    .verlaufsmonat, .verlaufswert { font-size: .68rem; }
     .trefferWechsel { font-size: .78rem; }
-    .trefferSatz { font-size: .74rem; }
+    .trefferSatz { font-size: .8rem; }
   }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

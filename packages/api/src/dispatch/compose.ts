@@ -298,8 +298,8 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
      Rueckfall schiede aus: wo beides laeuft, staenden zwei Striche. */
   const kopf = [
     `<div style="text-align:center;font-family:Didot,'Bodoni 72',Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;letter-spacing:2px;color:${PALETTE.tinte}">KORREKTU<span style="background:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 ${TILGUNG_STRICH.breite} ${TILGUNG_STRICH.hoehe}%22 preserveAspectRatio=%22none%22%3E%3Cpath d=%22${TILGUNG_STRICH.pfad}%22 fill=%22${PALETTE.korrektur.replace("#", "%23")}%22/%3E%3C/svg%3E') center/100% 100% no-repeat;padding:2px 5px;margin:-2px -5px">H</span>REN</div>`,
-    `<div style="background:${PALETTE.tinte};color:${PALETTE.papier};${schreibmaschine};font-size:11px;font-weight:700;letter-spacing:2px;text-align:center;padding:5px 8px;margin:10px 0 22px">BLATT ZUR TEXTPFLEGE &bull; UNABHÄNGIG &bull; ÜBERPARTEILICH</div>`,
-    `<div style="${schreibmaschine};font-size:12px;font-weight:700;letter-spacing:2px;color:${PALETTE.korrektur};text-transform:uppercase;margin:0 0 4px">Korrektur</div>`,
+    `<div style="background:${PALETTE.tinte};color:${PALETTE.papier};${schreibmaschine};font-size:12px;font-weight:700;letter-spacing:2px;text-align:center;padding:5px 8px;margin:10px 0 22px">BLATT ZUR TEXTPFLEGE &bull; UNABHÄNGIG &bull; ÜBERPARTEILICH</div>`,
+    `<div style="${schreibmaschine};font-size:13px;font-weight:700;letter-spacing:2px;color:${PALETTE.korrektur};text-transform:uppercase;margin:0 0 4px">Korrektur</div>`,
     input.headline
       ? `<div style="${serif};font-size:21px;font-weight:700;line-height:1.3;margin:0 0 18px">${escapeHtml(input.headline)}</div>`
       : "",
@@ -350,7 +350,7 @@ export function composeMail(input: ComposeInput): { subject: string; text: strin
     // Der Block steht in beiden Teilen: welchen ein Mailprogramm beim Antworten
     // zitiert, ist nicht vorhersagbar. Beide tragen denselben Inhalt, ein Parser
     // darf deshalb den ersten Treffer nehmen.
-    `<p style="margin:0;color:${PALETTE.rand};${schreibmaschine};font-size:12px">Meta-Informationen:<br>${META_OPEN}<br>${escapeHtml(meta)}<br>${META_CLOSE}</p>`,
+    `<p style="margin:0;color:${PALETTE.rand};${schreibmaschine};font-size:13px">Meta-Informationen:<br>${META_OPEN}<br>${escapeHtml(meta)}<br>${META_CLOSE}</p>`,
   ]
     .filter((part) => part.length > 0)
     .join("\n");
