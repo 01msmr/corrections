@@ -159,4 +159,6 @@ Skriptname): `worker` (Posteingang von Hand), `bestaetigungen` /
 `bestaetigungen:loeschen` (fälschlich als Antwort gezählte
 Eingangsbestätigungen zählen bzw. zurücknehmen — mit JSON-Sicherung neben der
 Datenbank), `papierkorb` (zeigt die Formulierungen im Papierkorb, damit neue
-Bestätigungs-Muster nicht geraten werden müssen).
+Bestätigungs-Muster nicht geraten werden müssen), `auszuege` (macht
+gespeicherte Auszüge nachträglich lesbar, falls sie noch MIME-Rohtext
+enthalten).
