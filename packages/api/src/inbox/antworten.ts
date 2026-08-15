@@ -1,4 +1,4 @@
-import { normalizeText } from "@korrektur/shared";
+import { SUBJECT_PREFIX, normalizeText } from "@korrektur/shared";
 
 /**
  * Zuordnung eingehender Redaktionsantworten zu Meldungen (P3). Rein, ohne
@@ -44,6 +44,15 @@ const VORSATZ = /^\s*((re|aw|wg|fw|fwd|antw)\s*(\^\d+)?\s*:\s*)+/i;
 /** Die Kennung am Ende des Betreffs, wie buildSubject sie vergibt. */
 const KENNUNG = /\[([A-Z0-9]{4,12})\]\s*$/;
 
+/** Unser eigener Betreff-Anfang; ohne Doppelpunkt, den nimmt \s*:?\s* mit. */
+const PRAEFIX = new RegExp(`^\\s*${SUBJECT_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*:?\\s*`, "i");
+
+/** NFKC macht aus dem Auslassungszeichen drei Punkte. */
+const GEKUERZT = /\.\.\.$/;
+
+/** So viele Zeichen muss ein gekuerzter Betreff mindestens tragen. */
+const MINDEST_ANFANG = 20;
+
 export function kennungAusBetreff(betreff: string): string | null {
   return KENNUNG.exec(betreff.trim())?.[1] ?? null;
 }
@@ -53,10 +62,24 @@ export function kennungAusBetreff(betreff: string): string | null {
  * Typografie wird geglaettet, Gross/Klein eingeebnet.
  */
 export function normBetreff(betreff: string): string {
-  return normalizeText(betreff.replace(VORSATZ, "").replace(KENNUNG, ""))
+  return normalizeText(betreff.replace(VORSATZ, "").replace(KENNUNG, "").replace(PRAEFIX, ""))
     .toLowerCase()
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/**
+ * Betreff und Ueberschrift derselbe Text? buildSubject kuerzt lange
+ * Ueberschriften gegen ein Budget -- ein gekuerzter Betreff gilt, wenn die
+ * Ueberschrift mit ihm anfaengt und der Anfang lang genug ist, um zu
+ * unterscheiden.
+ */
+function titelPasst(betreffNorm: string, headlineNorm: string | null): boolean {
+  if (headlineNorm === null || betreffNorm.length === 0) return false;
+  if (betreffNorm === headlineNorm) return true;
+  if (!GEKUERZT.test(betreffNorm)) return false;
+  const anfang = betreffNorm.replace(GEKUERZT, "").trimEnd();
+  return anfang.length >= MINDEST_ANFANG && headlineNorm.startsWith(anfang);
 }
 
 function absenderDomain(absender: string | null): string | null {
@@ -91,7 +114,7 @@ export function findeZuordnung(
   const titel = normBetreff(mail.betreff);
   if (titel.length > 0) {
     const passende = kandidaten.filter(
-      (k) => k.headlineNorm === titel && domainPasst(mail.absender, k.domains),
+      (k) => titelPasst(titel, k.headlineNorm) && domainPasst(mail.absender, k.domains),
     );
     const einzige = passende[0];
     if (passende.length === 1 && einzige) return { id: einzige.id, weg: "titel" };

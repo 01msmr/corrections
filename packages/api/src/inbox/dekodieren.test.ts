@@ -62,3 +62,31 @@ describe("lesbarerText", () => {
     );
   });
 });
+
+/* Die Mailbibliothek des SPIEGEL setzt Grenzen mit fuehrenden Strichen
+   ("--==_mimepart_…"), die Grenzzeile beginnt dadurch mit vieren. */
+describe("Grenzen mit fuehrenden Strichen", () => {
+  const roh = [
+    "----==_mimepart_6a6aea36e9e45_1a11860260c4",
+    "Content-Type: text/plain; charset=utf-8",
+    "Content-Transfer-Encoding: quoted-printable",
+    "",
+    "----------------------------------------------",
+    "",
+    "vielen Dank f=C3=BCr Ihren Hinweis.",
+    "----==_mimepart_6a6aea36e9e45_1a11860260c4--",
+  ].join("\r\n");
+
+  it("liefert den lesbaren Text ohne Grenzmarke und Kopfzeilen", () => {
+    const text = lesbarerText(roh);
+    expect(text).toContain("vielen Dank für Ihren Hinweis.");
+    expect(text).not.toContain("mimepart");
+    expect(text).not.toContain("Content-Transfer-Encoding");
+  });
+
+  it("haelt eine Trennlinie im Text nicht fuer eine Grenze", () => {
+    const einfach = ["Guten Tag,", "----------------------------------------", "Ihr Leserservice"].join("\r\n");
+    expect(lesbarerText(einfach)).toContain("Guten Tag,");
+    expect(lesbarerText(einfach)).toContain("Ihr Leserservice");
+  });
+});

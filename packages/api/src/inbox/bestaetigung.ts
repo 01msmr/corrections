@@ -1,4 +1,4 @@
-import { BESTAETIGUNGS_MUSTER } from "@korrektur/shared";
+import { BESTAETIGUNGS_MUSTER, SACHAUSSAGE_MUSTER } from "@korrektur/shared";
 
 /**
  * Erkennung von Eingangsbestaetigungen — rein, ohne IO (Projektregel).
@@ -27,9 +27,14 @@ export interface MailMerkmale {
 /** Kennung im Betreff: " [K…]" wie von composeMail vergeben. */
 const KENNUNG_MUSTER = /\[K[A-Z0-9]+\]/;
 
-/** Nur die Wortmarke, ohne Bezugspruefung -- fuer schon zugeordnete Ereignisse. */
+/**
+ * Nur die Wortmarke, ohne Bezugspruefung -- fuer schon zugeordnete Ereignisse.
+ * Eine Sachaussage schlaegt jedes Bestaetigungsmuster: derselbe
+ * Hoeflichkeitssatz steht ueber Bestaetigung wie ueber echter Antwort.
+ */
 export function passtAufBestaetigungsmuster(text: string): boolean {
   const klein = text.toLowerCase();
+  if (SACHAUSSAGE_MUSTER.some((muster) => klein.includes(muster))) return false;
   return BESTAETIGUNGS_MUSTER.some((muster) => klein.includes(muster));
 }
 

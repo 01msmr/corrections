@@ -1,4 +1,10 @@
-import { PALETTE, TILGUNG_STRICH, diffWords, type DiffSegment } from "@korrektur/shared";
+import {
+  PALETTE,
+  SUBJECT_PREFIX,
+  TILGUNG_STRICH,
+  diffWords,
+  type DiffSegment,
+} from "@korrektur/shared";
 /* Reine Funktion; sie lebt bei den Ansichten, weil die Fahne dort entstand. */
 import { vergleicheFassungen } from "../views/vergleich.js";
 
@@ -28,7 +34,6 @@ export interface ComposeInput {
 
 /** Obergrenze fuer den Betreff ohne den angehaengten Token. */
 const SUBJECT_MAX = 120;
-const SUBJECT_PREFIX = "Textfehler im Artikel";
 const META_OPEN = "[korrektur-meta]";
 const META_CLOSE = "[/korrektur-meta]";
 const RULE = "________ ________ ________";

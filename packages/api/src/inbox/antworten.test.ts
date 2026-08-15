@@ -87,4 +87,41 @@ describe("findeZuordnung", () => {
       findeZuordnung({ betreff: "Re: Voellig unbekannt", inReplyTo: null, absender: "a@b.de" }, KANDIDATEN),
     ).toBeNull();
   });
+
+  /* Der Kurzbefehl setzte schon vor dem Projekt denselben Betreff-Praefix;
+     ohne ihn zu streichen trifft der Titel-Weg nie. */
+  it("ordnet ueber den Titel zu, obwohl der Betreff den eigenen Praefix traegt", () => {
+    expect(
+      findeZuordnung(
+        {
+          betreff: "Textfehler im Artikel: Kann die Bahn ihn wiederbeleben?",
+          inReplyTo: null,
+          absender: "leserservice@muster-magazin.de",
+        },
+        KANDIDATEN,
+      ),
+    ).toEqual({ id: "alt-1", weg: "titel" });
+  });
+
+  it("erkennt den gekuerzten Betreff wieder", () => {
+    expect(
+      findeZuordnung(
+        {
+          betreff: "Re: Textfehler im Artikel: Kann die Bahn ihn wieder…",
+          inReplyTo: null,
+          absender: "leserservice@muster-magazin.de",
+        },
+        KANDIDATEN,
+      ),
+    ).toEqual({ id: "alt-1", weg: "titel" });
+  });
+
+  it("laesst einen zu kurzen Betreff-Anfang liegen", () => {
+    expect(
+      findeZuordnung(
+        { betreff: "Textfehler im Artikel: Kann…", inReplyTo: null, absender: "a@muster-magazin.de" },
+        KANDIDATEN,
+      ),
+    ).toBeNull();
+  });
 });

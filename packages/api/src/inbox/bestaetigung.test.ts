@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { istEingangsbestaetigung } from "./bestaetigung.js";
+import { istEingangsbestaetigung, passtAufBestaetigungsmuster } from "./bestaetigung.js";
 
 const KEINE = new Set<string>();
 
@@ -134,5 +134,33 @@ describe("SPIEGEL-Leserservice, weitere Fassungen", () => {
         new Set(),
       ),
     ).toBe(true);
+  });
+});
+
+/* Der Leserservice setzt denselben Hoeflichkeitssatz ueber beide Sorten Mail.
+   Sagt die Mail etwas zur Sache, ist sie keine Bestaetigung. */
+describe("Gegenmuster", () => {
+  const echteAntwort = [
+    "Sehr geehrter Herr Muster,",
+    "vielen Dank fuer Ihr Interesse am SPIEGEL und Ihren Hinweis.",
+    "Wir haben den Fehler zwischenzeitlich korrigiert.",
+  ].join("\n");
+
+  it("stuft eine Antwort mit Sachaussage nicht als Bestaetigung ein", () => {
+    expect(passtAufBestaetigungsmuster(echteAntwort)).toBe(false);
+    expect(
+      istEingangsbestaetigung(
+        { betreff: "Re: Textfehler im Artikel [K7F3A2B]", textAnfang: echteAntwort, inReplyTo: null },
+        KEINE,
+      ),
+    ).toBe(false);
+  });
+
+  it("laesst die reine Bestaetigung Bestaetigung bleiben", () => {
+    const nurEingang = [
+      "vielen Dank fuer Ihr Interesse am SPIEGEL und Ihren Hinweis.",
+      "Wir haben das an die Redaktion weitergeleitet.",
+    ].join("\n");
+    expect(passtAufBestaetigungsmuster(nurEingang)).toBe(true);
   });
 });

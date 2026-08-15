@@ -9,6 +9,22 @@ export const MIN_N_FOR_RATE = 10;
  *  in der Voreinstellung aus (Umschalter ?alle=1). Erweiterbar. */
 export const WEICHE_FEHLERARTEN = ["schlechter_satzbau"] as const;
 
+/** Anfang jedes Betreffs, den wir versenden -- und schon der des alten
+ *  Kurzbefehls. Die Antwort-Zuordnung streicht ihn wieder weg. */
+export const SUBJECT_PREFIX = "Textfehler im Artikel";
+
+/** Sagt die Mail etwas zur Sache, ist sie keine Eingangsbestaetigung --
+ *  auch wenn ein Muster unten trifft. Der Leserservice setzt denselben
+ *  Hoeflichkeitssatz ueber beide Sorten. */
+export const SACHAUSSAGE_MUSTER = [
+  "korrigiert",
+  "geändert",
+  "geaendert",
+  "angepasst",
+  "behoben",
+  "richtiggestellt",
+] as const;
+
 /** Betreff-/Textmuster von Eingangsbestaetigungen (klein geschrieben,
  *  Teilstring-Vergleich). Bewusst eng — lieber eine Bestaetigung liegen
  *  lassen als eine echte Antwort verschieben. */

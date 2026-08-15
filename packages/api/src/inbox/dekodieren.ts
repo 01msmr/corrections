@@ -29,9 +29,33 @@ interface Teil {
   rumpf: string;
 }
 
+/**
+ * Eine Grenzzeile: zwei Striche und eine Marke. Die Marke darf selbst mit
+ * Strichen anfangen (`--==_mimepart_…`), muss aber irgendwo ein anderes
+ * Zeichen tragen -- sonst hielte die Zerlegung jede Trennlinie im Text fuer
+ * eine Grenze.
+ */
+const GRENZE = /^--(?=[^\s]*[^\s-])[^\s]+\s*$/m;
+
+/** Kopfzeilen erkennt man an ihnen, nicht an der ersten Leerzeile. */
+const KOPFZEILE = /^content-(type|transfer-encoding|disposition):/im;
+
 function zerlegeInTeile(roh: string): Teil[] {
-  const grenze = /^--[^\s-][^\s]*\s*$/m.exec(roh);
-  if (!grenze) return [{ kopf: "", rumpf: roh }];
+  const grenze = GRENZE.exec(roh);
+  /* Ohne Grenze bleibt der Text ganz -- Kopfzeilen aber trotzdem abtrennen,
+     sonst stehen sie im Auszug und die Kodierung wird nicht erkannt. */
+  if (!grenze) {
+    const trennung = roh.search(/\r?\n\r?\n/);
+    if (trennung < 0 || !KOPFZEILE.test(roh.slice(0, trennung))) {
+      return [{ kopf: "", rumpf: roh }];
+    }
+    return [
+      {
+        kopf: roh.slice(0, trennung),
+        rumpf: roh.slice(trennung).replace(/^\r?\n\r?\n/, ""),
+      },
+    ];
+  }
 
   const marke = grenze[0].trim().replace(/--$/, "");
   return roh
