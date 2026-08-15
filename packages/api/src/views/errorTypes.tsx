@@ -66,7 +66,7 @@ export const ErrorTypeList: FC<{
   fehler?: string | undefined;
 }> = ({ types, hinweis, fehler }) => (
   <Layout title="Kategorien" aktiv="fehlerarten" betreiber>
-    {hinweis ? <p class="hinweis">{hinweis}</p> : null}
+    {hinweis ? <p class="hinweis fluechtig">{hinweis}</p> : null}
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
     <h2 class="balken">Kategorien</h2>

@@ -31,8 +31,9 @@ export default tseslint.config(
     },
   },
   {
-    // Die eine Stelle, an der Farbwerte stehen dürfen.
-    files: ["packages/shared/src/constants.ts"],
+    // Die eine Stelle, an der Farbwerte stehen dürfen — und übernommener
+    // Fremdcode, dessen Werte ohnehin überschrieben werden.
+    files: ["packages/shared/src/constants.ts", "**/views/vendor/**"],
     rules: { "no-restricted-syntax": "off" },
   },
 );

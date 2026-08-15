@@ -1,6 +1,7 @@
 import { PALETTE, PALETTE_DUNKEL, TILGUNG_STRICH } from "@korrektur/shared";
 import type { FC, PropsWithChildren } from "hono/jsx";
 import { raw } from "hono/html";
+import { TOASTIFY_CSS, TOASTIFY_JS } from "./vendor/toastify.js";
 
 /** Fuer Farben in data-URIs: "#rrggbb" -> "%23rrggbb". */
 const uri = (hex: string): string => hex.replace("#", "%23");
@@ -165,6 +166,11 @@ const STYLES = `
   .datumszeile .datum { color: var(--linie); transition: color 2s ease-out; }
   .datumszeile .datum:hover { color: var(--papier); transition-duration: .25s; }
   .datum-kurz { display: none; }
+  /* Schmaler als 62rem draengt sich die Zeile: der Zusatz faellt weg, das
+     lange Datum bleibt. */
+  @media (max-width: 62rem) {
+    .untertiteltrenner, .untertitelrest { display: none; }
+  }
   /* Ist der Titel weggescrollt, tritt er verkleinert ins Band -- links,
      spiegelbildlich zum Datum rechts, und mager statt fett: er meldet sich
      zurueck, ohne den Platz des Untertitels zu beanspruchen. Ein- und
@@ -214,10 +220,10 @@ const STYLES = `
     from { box-shadow: 0 -48px 16px 40px rgb(var(--schatten) / 0); }
     to { box-shadow: 0 -34px 26px 40px rgb(var(--schatten) / .55); }
   }
-  /* Schmal gibt das Datum beim Scrollen seine Zeile frei (siehe Medienblock);
-     der Kopf schrumpft dabei um genau diese Zeile. */
-  @keyframes datumweicht {
-    from { max-height: 1.4rem; opacity: 1; }
+  /* Schmal gibt das Band beim Scrollen seine Zeile frei; der Kopf schrumpft
+     dabei um genau diese Zeile. */
+  @keyframes bandweicht {
+    from { max-height: 3rem; opacity: 1; }
     to { max-height: 0; opacity: 0; }
   }
   .kopfinhalt {
@@ -289,6 +295,13 @@ const STYLES = `
     color: var(--tinte); }
   .randressorts a[aria-current="page"] {
     background: var(--balkengrund); color: var(--papier); }
+  /* Breit traegt die Pille Text; schmaler als 62rem nur die Icons. */
+  .randressorts .navicon { display: none; }
+  @media (max-width: 62rem) {
+    .randressorts .ressorttext { display: none; }
+    .randressorts .navicon { display: block; width: 1.05em; height: 1.05em;
+      margin: 0; position: relative; top: .12em; }
+  }
   /* Der Aufklapper der schmalen Navigation: die Zeile oben traegt den
      aktiven Bereich wie die aktive Ressortmarke (hell auf Karmin), die
      Liste faellt als Blatt darunter. */
@@ -669,6 +682,40 @@ const STYLES = `
   .trefferzahl { font: 700 .95rem/1 var(--mono); color: var(--rand);
     padding-right: .35rem; }
   .filterzeile select, .filterzeile input { width: auto; margin: 0; }
+  /* Breit ist das Filterfeld unsichtbare Verpackung um den Select. */
+  .filterfeld { display: contents; }
+  .filterfeld .navicon { display: none; }
+  /* Kategorie als Chip auf allen Breiten: Tabelle zeigt die Langform,
+     die Karte (schmal) die Kurzform. */
+  .meldungsliste .sp-kategorie .langform,
+  .meldungsliste .sp-kategorie .kurzform {
+    background: var(--korrektur); color: var(--papier);
+    font-size: .85rem; line-height: 1; border-radius: 4px; padding: 4px;
+    white-space: nowrap; }
+  .meldungsliste .sp-kategorie .langform { display: inline-block; }
+  .sp-kategorie .kurzform { display: none; }
+  /* Der Schweregrad als Chip in derselben Form. Die Toene sind vom
+     Korrekturrot aus im Farbton verschoben (relative Farbsyntax, keine
+     eigenen Werte): schwer bleibt Karmin, mittel dreht nach Orange,
+     leicht weiter nach Gelb -- dunkler nachgezogen, damit das Papierweiss
+     darauf lesbar bleibt. Bewusste Ausnahme von "keine Ampelfarben":
+     nur hier, in der nicht-oeffentlichen Liste (Zuruf vom 15.8.2026). */
+  .meldungsliste .sp-ausgang, .meldungsliste .sp-datum { white-space: nowrap; }
+  .meldungsliste .nrim, .meldungsliste .sp-ausgang .kurzform { display: none; }
+  /* Die Titelzelle scrollt ohne sichtbaren Balken (das Wischen bleibt). */
+  .meldungsliste td.sp-artikel { scrollbar-width: none; }
+  .meldungsliste td.sp-artikel::-webkit-scrollbar { display: none; }
+  .meldungsliste .gradchip { display: inline-block;
+    background: var(--korrektur); color: var(--papier);
+    font-size: .85rem; line-height: 1; border-radius: 999px; padding: 4px 9px;
+    white-space: nowrap; }
+  /* Volle Toene statt abgedunkelt; auf den hellen traegt Schwarz den Text. */
+  .meldungsliste .gradchip.grad-2 {
+    background: hsl(from var(--korrektur) calc(h + 42) 92% 58%);
+    color: rgb(var(--schatten)); }
+  .meldungsliste .gradchip.grad-1 {
+    background: hsl(from var(--korrektur) calc(h + 58) 95% 55%);
+    color: rgb(var(--schatten)); }
   /* Ohne die betonte Unterkante der Formularfelder: hier sind es Werkzeuge
      in einer Leiste, keine Eingaben im Blatt. */
   .filterzeile select, .filterzeile input[type="search"] {
@@ -713,27 +760,109 @@ const STYLES = `
     width: min(100% - 2.5rem, var(--mass) - 2.5rem);
     margin: 0; background: var(--papier); }
   .listenrumpf table { margin-top: .25rem; }
-  /* Breite Arbeits-Tabellen (Medien, Kategorien, Meldungen): am Telefon
-     scrollt der Inhalt IN der Seite quer, nie die Seite selbst. Auf der
-     Meldungsliste liegen Filter und Tabelle im selben Scroller und wandern
-     gemeinsam. Breit ist der Scroller unsichtbar (alles passt) -- und erst
-     schmal wird er zum Scroll-Container: sonst braeche er das Kleben der
-     Filterzeile auch am Desktop. */
-  @media (max-width: 48rem) {
-    /* Die festen Leisten unten laufen schmal randlos ueber die volle
-       Breite: die zentrierte Spaltenbreite liesse links und rechts
-       1.25rem-Streifen frei, durch die der scrollende Inhalt
-       vorbeizoege. */
-    body:has(.listenrumpf) .seitenblaettern, .fusszeile {
-      width: 100%; max-width: none; left: 0; transform: none; }
+  /* Breite Arbeits-Tabellen (Medien, Kategorien, Meldungen): der Inhalt
+     scrollt IN der Seite quer, nie die Seite selbst. Die Grenze liegt dort,
+     wo die breiteste Tabelle noch passt. */
+  /* Breit nimmt der Titel die Restbreite der Tabelle und kuerzt mit
+     Ellipse (max-width 0 zwingt die Spalte auf den uebrigen Raum). */
+  @media (min-width: 60.0625rem) {
+    .meldungsliste td.sp-artikel { width: 100%; max-width: 0;
+      overflow-x: auto; white-space: nowrap; }
+  }
+  /* Zwischenmodus (Tablet-Hochformat): die Tabelle bleibt einzeilig und
+     verzichtet aufs Querscrollen -- Datum und Medium treten ab (stehen im
+     Detail), die Nummer rueckt zur Kennung, der Ausgang traegt die
+     Kurzform, der Titel nimmt die Restbreite und scrollt in der Zelle. */
+  @media (min-width: 40.0625rem) and (max-width: 60rem) {
+    .querblatt .meldungsliste { width: 100%; min-width: 0; }
+    .meldungsliste .sp-datum, .meldungsliste .sp-medium { display: none; }
+    .meldungsliste .sp-nr { display: none; }
+    .meldungsliste .nrim { display: inline; font: 700 .95rem/1.4 var(--mono);
+      color: var(--rand); }
+    .meldungsliste td.sp-kennung { white-space: nowrap; }
+    .meldungsliste td.sp-artikel { width: 100%; max-width: 0;
+      overflow-x: auto; white-space: nowrap; }
+    .meldungsliste .sp-ausgang .langform { display: none; }
+    .meldungsliste .sp-ausgang .kurzform { display: inline; }
+  }
+  @media (max-width: 60rem) {
     .querblatt { overflow-x: auto; }
     .querblatt table { width: max-content; min-width: 100%; }
-    .querblatt .filterzeile { flex-wrap: nowrap; min-width: max-content;
-      position: static; }
-    .querblatt .filterzeile input[type="search"] { min-width: 11rem; }
+
+    /* Entfernen-Knopf rechts und Namensspalte links bleiben beim
+       Querscrollen stehen; der Papiergrund deckt die durchlaufenden
+       Zellen ab. */
+    .querblatt th.aktion, .querblatt td.aktion { position: sticky; right: 0;
+      background: var(--papier); z-index: 1; }
+    .querblatt .namenfest th:first-child, .querblatt .namenfest td:first-child {
+      position: sticky; left: 0; background: var(--papier); z-index: 1; }
+    /* Domains reihen sich sonst ungebremst: Deckel und Ellipse, die volle
+       Liste steht im title. */
+    .querblatt .sp-domain { max-width: 13rem;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  }
+  @media (max-width: 48rem) {
+    /* Randlos ueber die volle Breite: die zentrierte Spalte liesse Streifen
+       frei, durch die der scrollende Inhalt vorbeizoege. */
+    body:has(.listenrumpf) .seitenblaettern, .fusszeile {
+      width: 100%; max-width: none; left: 0; transform: none; }
   }
   body:has(.listenrumpf) .blatt th,
   body:has(.listenrumpf) .blatt td { padding: .22rem .5rem; }
+  /* Telefon: aus jeder Meldungszeile wird eine Karte. Datum, Medium und
+     Grad treten ab (stehen im Detail); die Kategorie schliesst als Band in
+     Korrekturrot ab und trennt so zur naechsten Karte. */
+  @media (max-width: 40rem) {
+    .querblatt .meldungsliste { width: 100%; min-width: 0; }
+    /* Nur Medien und Kategorien: Icon als Beschriftung, der Select selbst
+       zeigt kurz das Gewaehlte (Breitendeckel + Ellipse). Der Ausgang
+       steht in den Karten selbst. */
+    .filterzeile select[name="ausgang"] { display: none; }
+    /* Eine Zeile fuer alles: die Selects geben ab, das Suchfeld schrumpft. */
+    .filterzeile { flex-wrap: nowrap; }
+    .filterzeile input[type="search"] { flex: 1 1 5rem; min-width: 4.5rem; }
+    .filterfeld { display: flex; flex-wrap: nowrap; align-items: center;
+      gap: .3rem; flex: 0 1 auto; min-width: 0; }
+    .filterfeld .navicon { display: block; width: 1em; height: 1em;
+      margin: 0; flex: none; color: var(--rand); }
+    .filterfeld select { min-width: 0; max-width: 6.5rem;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .meldungsliste, .meldungsliste tbody { display: block; }
+    .meldungsliste thead, .meldungsliste .sp-medium { display: none; }
+    /* Die Karte hebt sich leicht vom Papier ab: Richtung Licht gemischt,
+       aber nicht reinweiss. */
+    .meldungsliste tr { background: color-mix(in srgb, rgb(var(--licht)) 80%, var(--papier));
+      display: flex; flex-wrap: wrap; align-items: baseline;
+      margin: .55rem 0; border: 1px solid var(--linie); }
+    /* tr td: hebt die Spezifitaet ueber die Polster-Regel des Blattes. */
+    .meldungsliste tr td { display: block; border-bottom: 0; }
+    /* Zeile 1: Nr · Kennung — Datum rechts. */
+    .meldungsliste tr td.sp-nr { order: 1; padding-right: 0;
+      font: 700 .95rem/1.4 var(--mono); color: var(--rand); }
+    .meldungsliste tr td.sp-nr::after { content: "\u00a0·\u00a0"; }
+    .meldungsliste tr td.sp-kennung { order: 2; padding-left: 0; }
+    .meldungsliste tr td.sp-datum { order: 3; margin-left: auto;
+      font-size: .85rem; color: var(--rand); }
+    /* Zeile 2: die Ueberschrift, auf zwei Zeilen gekappt. */
+    .meldungsliste tr td.sp-artikel { order: 4; width: 100%; max-width: none;
+      padding-top: 0; white-space: normal;
+      display: -webkit-box; -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2; overflow: hidden; }
+    /* Zeile 3: der Kategorie-Chip (Kurzform) voran, dann Grad · Ausgang. */
+    .meldungsliste tr td.sp-kategorie { order: 5; margin-left: .5rem;
+      align-self: center; padding: 0; }
+    .meldungsliste tr td.sp-grad { order: 6;
+      font-size: .85rem; color: var(--rand); }
+    /* Die eigene Schlusszeile der Karte traegt die volle Bezeichnung. */
+    .meldungsliste tr td.sp-ausgang { order: 7; margin-left: auto;
+      font-size: .85rem; color: var(--rand); white-space: nowrap; }
+    .meldungsliste .sp-kategorie .langform { display: none; }
+    .sp-kategorie .kurzform { display: inline-block; }
+    /* Lange Erlaeuterungen: zwei Zeilen, Antippen klappt auf. */
+    p.zaehler, .kennzahl-erklaerung { display: -webkit-box;
+      -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+    p.zaehler.offen, .kennzahl-erklaerung.offen { -webkit-line-clamp: unset; }
+  }
   /* Unter dem Text derselbe Weissraum wie ueberall (.6rem, siehe
      .fussinhalt) -- so steht die Herkunftszeile auf jeder Seite gleich
      hoch ueber der Unterkante (Entscheidung vom 13.8.2026). Oben bleibt
@@ -933,6 +1062,42 @@ const STYLES = `
   .verlaufswert { font: 700 .8rem/1.4 var(--mono); color: var(--tinte); }
   .verlaufsmonat { font: .74rem/1.4 var(--mono); color: var(--rand); margin-top: .25rem;
     white-space: nowrap; }
+
+  /* Toasts im Blattstil: Papier auf Korrekturrot, Schreibmaschine, keine
+     Verlaeufe. Sie gleiten von oben herein und fahren denselben Weg
+     zurueck — reine Bewegung, kein Ausblenden (Toastify nimmt vor dem
+     Entfernen nur die on-Klasse, die Ruecktransition laeuft von selbst).
+     Der Aus-Zustand liegt weit genug oben, dass er auch unterhalb des
+     klebenden Kopfs startend aus dem Bild faehrt. */
+  .toastify.hinweistoast { background: var(--korrektur); color: var(--papier);
+    font: 700 1rem/1.5 var(--mono); letter-spacing: .03em;
+    border-radius: .2rem; padding: .6rem 1rem;
+    box-shadow: 0 6px 18px rgb(var(--schatten) / .4);
+    /* Ueber Kopf und Filterzeile geschichtet — nichts verdeckt ihn. Und
+       kein Klickziel: was unter ihm liegt, bleibt sofort bedienbar. */
+    z-index: 6; pointer-events: none; cursor: default;
+    /* Die Ruheposition setzt das Skript als Variable; !important schlaegt
+       Toastifys nachtraegliches Inline-top -- sonst springt die Einfahrt. */
+    top: var(--toastruhe, 6rem) !important;
+    /* Beide Richtungen als Keyframe-Animation, nicht als Transition: das
+       reduced-motion-CSS unten schaltet Transitionen pauschal ab, und
+       Toastify fuegt das Element ohnehin schon fertig eingeblendet ein.
+       Die Ausfahrt ist die gespiegelte Einfahrt; das Skript setzt dafuer
+       die ab-Klasse und entfernt den Toast erst nach der Animation. */
+    opacity: 1; transform: translateY(-24rem); }
+  .toastify.hinweistoast.on {
+    transform: translateY(0);
+    animation: toasteinfahrt .4s cubic-bezier(.215, .61, .355, 1); }
+  .toastify.hinweistoast.ab {
+    animation: toastausfahrt .4s cubic-bezier(.645, 0, .785, .39) forwards; }
+  @keyframes toasteinfahrt {
+    from { transform: translateY(-24rem); }
+    to { transform: translateY(0); }
+  }
+  @keyframes toastausfahrt {
+    from { transform: translateY(0); }
+    to { transform: translateY(-24rem); }
+  }
 
   /* Ganz unten, unter dem Blatt: ein leiser Hinweis auf die Herkunft. Er
      klebt nicht und draengt sich nicht vor -- eine Zeile im Ton eines
@@ -1157,25 +1322,18 @@ const STYLES = `
     .markenzeile { padding: 1rem 0 .5rem; }
     .marke { font-size: 1.7rem; }
     .untertitel { font-size: .74rem; letter-spacing: .1em; }
-    /* Der Untertitel bricht schmal an seiner sinnvollen Fuge: die Selbst-
-       beschreibung in Zeile eins, die beiden Haltungen zusammen darunter. */
-    .untertiteltrenner { display: none; }
-    .untertitelrest { display: block; }
-    /* Schmal reicht die Zeile nicht fuer Untertitel und Datum nebeneinander:
-       Das Datum rueckt darunter, beides zentriert, das Band waechst mit. */
-    .datumszeile .kopfinhalt { flex-direction: column; gap: .05rem; min-height: 0;
-      padding-top: .3rem; padding-bottom: .35rem; }
-    .datum { position: static; transform: none; font-size: .76rem; }
-    /* Schmal traegt die Zeile nur die Kurzfassung, und die kleine Marke
-       entfaellt: das Band ist hier eine zentrierte Spalte ohne freie Flanke. */
-    .klebemarke { display: none; }
+    /* Nur am Telefon ersetzt "15. Aug." das lange Datum; die kleine Marke
+       entfaellt. */
     .datum-lang { display: none; }
-    /* Und sie darf weichen, sobald gescrollt wird: der klebende Kopf nimmt
-       auf kleinen Anzeigen sonst zu viel vom Blatt. Dieselbe Scroll-Zeitachse
-       wie der Kopfschatten, also ohne Skript; wo der Browser sie nicht kennt,
-       bleibt das Datum einfach stehen. */
-    .datum-kurz { display: block; overflow: hidden;
-      animation: datumweicht linear both;
+    .datum-kurz { display: block; }
+    .datumszeile .kopfinhalt { justify-content: center; gap: .75rem; }
+    .datum { position: static; transform: none; }
+    .klebemarke { display: none; }
+    /* Das ganze Band darf weichen, sobald gescrollt wird: der klebende Kopf
+       nimmt auf kleinen Anzeigen sonst zu viel vom Blatt. Scroll-Zeitachse
+       ohne Skript; wo der Browser sie nicht kennt, bleibt das Band stehen. */
+    .datumszeile { overflow: hidden;
+      animation: bandweicht linear both;
       animation-timeline: scroll(root);
       animation-range: 1rem 5rem; }
 
@@ -1184,14 +1342,25 @@ const STYLES = `
     nav { flex-wrap: wrap; justify-content: center; row-gap: .1rem; }
     nav a { white-space: nowrap; font-size: .8rem; padding: .55rem .7rem .45rem; }
     nav > a:first-child { margin-left: 0; }
-    /* Die Hauptreihe weicht dem Aufklapper; die Verwaltungspille bleibt. */
+    /* Die Hauptreihe weicht dem Aufklapper; die Verwaltungspille steht
+       rechts daneben in derselben Zeile. */
     nav > a { display: none; }
     .navklapp { display: block; }
-    /* Umbruch VOR der Pille: das leere Pseudoelement fuellt die Zeile, die
-       Pille kommt per order dahinter — sie behaelt dadurch ihre natuerliche
-       Breite, statt sich ueber die ganze Zeile zu spannen. */
-    nav::after { content: ""; flex-basis: 100%; height: 0; }
-    .randressorts { position: static; transform: none; margin: 0 0 .35rem; order: 1; }
+    nav { justify-content: center; gap: .6rem; align-items: center; }
+    .randressorts { position: static; transform: none; margin: 0; align-self: center; }
+
+    /* Am Telefon scrollt die Herkunftszeile mit dem Blatt statt fest zu
+       stehen -- sie kostete sonst ein Zehntel der Hoehe. Unter der Liste
+       bleibt sie Teil der festen Schale. */
+    body:not(:has(.listenrumpf)) .fusszeile { position: static;
+      animation: none; box-shadow: none; }
+    body:not(:has(.listenrumpf)) { padding-bottom: .5rem; }
+
+    /* Bilanz: die Namensspalte so schmal wie ihr laengster Eintrag, die
+       Zahlen bekommen den Rest. table-Selektor, sonst gewinnt gleichspaltig. */
+    table.medienliste { table-layout: auto; }
+    .medienliste th:first-child, .medienliste td:first-child { width: 1%;
+      white-space: nowrap; }
 
     /* Die Mailvorschau bringt eine feste Lesebreite mit (Outlook-Tabelle):
        schmal muss sie sich fuegen. Tabellen auf volle Breite zwingen, die
@@ -1284,13 +1453,11 @@ function datumszeile(): string {
   }).format(new Date());
 }
 
-/** Kurzfassung fuer schmale Anzeigen: "So., 9. Aug. 2026". */
+/** Kurzfassung fuer schmale Anzeigen: "15. Aug." */
 function datumKurz(): string {
   return new Intl.DateTimeFormat("de-DE", {
-    weekday: "short",
     day: "numeric",
     month: "short",
-    year: "numeric",
   }).format(new Date());
 }
 
@@ -1298,8 +1465,8 @@ function datumKurz(): string {
    License - https://fontawesome.com/license/free (Icons: CC BY 4.0)
    Copyright 2024 Fonticons, Inc. — Pfade byteidentisch aus svgs/solid/
    uebernommen (solid/file-pen.svg, solid/envelope-open-text.svg,
-   solid/paste.svg, brands/apple.svg), als inline SVG statt
-   Webfont (Projektregel: keine Webfonts). */
+   solid/paste.svg, solid/newspaper.svg, solid/tag.svg, brands/apple.svg),
+   als inline SVG statt Webfont (Projektregel: keine Webfonts). */
 export const FilePenIcon: FC = () => (
   <svg class="navicon" viewBox="0 0 576 512" aria-hidden="true">
     <path fill="currentColor" d="M0 64C0 28.7 28.7 0 64 0L224 0l0 128c0 17.7 14.3 32 32 32l128 0 0 125.7-86.8 86.8c-10.3 10.3-17.5 23.1-21 37.2l-18.7 74.9c-2.3 9.2-1.8 18.8 1.3 27.5L64 512c-35.3 0-64-28.7-64-64L0 64zm384 64l-128 0L256 0 384 128zM549.8 235.7l14.4 14.4c15.6 15.6 15.6 40.9 0 56.6l-29.4 29.4-71-71 29.4-29.4c15.6-15.6 40.9-15.6 56.6 0zM311.9 417L441.1 287.8l71 71L382.9 487.9c-4.1 4.1-9.2 7-14.9 8.4l-60.1 15c-5.5 1.4-11.2-.2-15.2-4.2s-5.6-9.7-4.2-15.2l15-60.1c1.4-5.6 4.3-10.8 8.4-14.9z" />
@@ -1321,6 +1488,16 @@ export const EnvelopeOpenTextIcon: FC = () => (
   </svg>
 );
 
+export const NewspaperIcon: FC = () => (
+  <svg class="navicon" viewBox="0 0 512 512" aria-hidden="true">
+    <path fill="currentColor" d="M96 96c0-35.3 28.7-64 64-64l288 0c35.3 0 64 28.7 64 64l0 320c0 35.3-28.7 64-64 64L80 480c-44.2 0-80-35.8-80-80L0 128c0-17.7 14.3-32 32-32s32 14.3 32 32l0 272c0 8.8 7.2 16 16 16s16-7.2 16-16L96 96zm64 24l0 80c0 13.3 10.7 24 24 24l112 0c13.3 0 24-10.7 24-24l0-80c0-13.3-10.7-24-24-24L184 96c-13.3 0-24 10.7-24 24zm208-8c0 8.8 7.2 16 16 16l48 0c8.8 0 16-7.2 16-16s-7.2-16-16-16l-48 0c-8.8 0-16 7.2-16 16zm0 96c0 8.8 7.2 16 16 16l48 0c8.8 0 16-7.2 16-16s-7.2-16-16-16l-48 0c-8.8 0-16 7.2-16 16zM160 304c0 8.8 7.2 16 16 16l256 0c8.8 0 16-7.2 16-16s-7.2-16-16-16l-256 0c-8.8 0-16 7.2-16 16zm0 96c0 8.8 7.2 16 16 16l256 0c8.8 0 16-7.2 16-16s-7.2-16-16-16l-256 0c-8.8 0-16 7.2-16 16z" />
+  </svg>
+);
+export const TagIcon: FC = () => (
+  <svg class="navicon" viewBox="0 0 448 512" aria-hidden="true">
+    <path fill="currentColor" d="M0 80L0 229.5c0 17 6.7 33.3 18.7 45.3l176 176c25 25 65.5 25 90.5 0L418.7 317.3c25-25 25-65.5 0-90.5l-176-176c-12-12-28.3-18.7-45.3-18.7L48 32C21.5 32 0 53.5 0 80zm112 32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z" />
+  </svg>
+);
 export const CopyIcon: FC = () => (
   <svg class="navicon" viewBox="0 0 448 512" aria-hidden="true">
     <path fill="currentColor" d="M208 0L332.1 0c12.7 0 24.9 5.1 33.9 14.1l67.9 67.9c9 9 14.1 21.2 14.1 33.9L448 336c0 26.5-21.5 48-48 48l-192 0c-26.5 0-48-21.5-48-48l0-288c0-26.5 21.5-48 48-48zM48 128l80 0 0 64-64 0 0 256 192 0 0-32 64 0 0 48c0 26.5-21.5 48-48 48L48 512c-26.5 0-48-21.5-48-48L0 176c0-26.5 21.5-48 48-48z" />
@@ -1373,6 +1550,7 @@ export const Layout: FC<
       <meta name="apple-mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-title" content="Korrekturen" />
       <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      <style dangerouslySetInnerHTML={{ __html: TOASTIFY_CSS }} />
       <style dangerouslySetInnerHTML={{ __html: STYLES }} />
     </head>
     <body>
@@ -1394,7 +1572,7 @@ export const Layout: FC<
               <span class="untertitelrest">Unabhängig • Überparteilich</span>
             </span>
             <span class="datum datum-lang">{datumszeile()}</span>
-            <span class="datum datum-kurz">{datumKurz()}</span>
+            <span class="datum datum-kurz" title={datumszeile()}>{datumKurz()}</span>
           </div>
         </div>
         <div class="navzeile">
@@ -1451,11 +1629,13 @@ export const Layout: FC<
             {/* Verwaltungsressorts: rechtsbuendig am Rand der Inhaltsspalte,
                 Hover nur im Grau der Zwischenueberschriften. */}
             <span class="randressorts">
-              <a href="/admin/redaktionen" aria-current={aktiv === "redaktionen" ? "page" : undefined} draggable={false}>
-                Medien
+              <a href="/admin/redaktionen" aria-label="Medien" aria-current={aktiv === "redaktionen" ? "page" : undefined} draggable={false}>
+                <NewspaperIcon />
+                <span class="ressorttext">Medien</span>
               </a>
-              <a href="/admin/fehlerarten" aria-current={aktiv === "fehlerarten" ? "page" : undefined} draggable={false}>
-                Kategorien
+              <a href="/admin/fehlerarten" aria-label="Kategorien" aria-current={aktiv === "fehlerarten" ? "page" : undefined} draggable={false}>
+                <TagIcon />
+                <span class="ressorttext">Kategorien</span>
               </a>
             </span>
             </nav>
@@ -1474,6 +1654,7 @@ export const Layout: FC<
           </a>
         </p>
       </footer>
+      <script dangerouslySetInnerHTML={{ __html: TOASTIFY_JS }} />
       <script
         dangerouslySetInnerHTML={{
           __html: `
@@ -1517,6 +1698,48 @@ export const Layout: FC<
     zeile.addEventListener("click", (e) => {
       if (e.target.closest("a, button, form, .griff")) return;
       location.href = zeile.dataset.href;
+    });
+  }
+
+  /* Erfolgs-Hinweise laufen als Toast (Toastify, 5s) statt als Kasten im
+     Blatt; die Adresse wird gleich vom Hinweis-Parameter befreit, damit
+     Neuladen ihn nicht wiederholt. Ohne Skript bleibt der Kasten stehen. */
+  /* Der Ruheplatz liegt unter Titel und Navigation, nicht darueber. */
+  const kopf = document.querySelector(".klebekopf");
+  const kopfKante = kopf ? Math.round(kopf.getBoundingClientRect().bottom) + 10 : 16;
+  document.documentElement.style.setProperty("--toastruhe", kopfKante + "px");
+  for (const kasten of document.querySelectorAll(".hinweis.fluechtig")) {
+    /* duration 0: Toastify raeumt nicht selbst ab -- erst faehrt die
+       Ausfahrt-Animation (ab-Klasse), dann entfernt hideToast den Toast. */
+    const toast = Toastify({
+      text: kasten.textContent.trim(),
+      duration: 0,
+      gravity: "top",
+      position: "center",
+      className: "hinweistoast",
+      stopOnFocus: false,
+    });
+    toast.showToast();
+    const el = toast.toastElement;
+    setTimeout(() => {
+      el.classList.add("ab");
+      setTimeout(() => toast.hideToast(), 400);
+    }, 3000);
+    kasten.remove();
+  }
+  if (document.querySelector(".hinweis.fluechtig") || location.search.includes("hinweis=")) {
+    const adresse = new URL(location.href);
+    adresse.searchParams.delete("hinweis");
+    adresse.searchParams.delete("gesetzt");
+    history.replaceState(null, "", adresse);
+  }
+
+  /* Gekappte Erlaeuterungen (schmal): Antippen klappt auf und zu. */
+  for (const text of document.querySelectorAll("p.zaehler, .kennzahl-erklaerung")) {
+    text.addEventListener("click", () => {
+      if (text.classList.contains("offen") || text.scrollHeight > text.clientHeight + 1) {
+        text.classList.toggle("offen");
+      }
     });
   }
 

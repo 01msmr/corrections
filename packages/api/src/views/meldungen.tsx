@@ -9,7 +9,7 @@ import type {
 import { AUSGAENGE } from "../repo/meldungen.js";
 import type { OutletRecord } from "../repo/outlets.js";
 import { fassungenHtml } from "../dispatch/compose.js";
-import { Layout } from "./layout.js";
+import { Layout, NewspaperIcon, TagIcon } from "./layout.js";
 import { vergleicheFassungen } from "./vergleich.js";
 
 /**
@@ -31,12 +31,8 @@ export const AUSGANG_NAMEN: Record<Ausgang, string> = {
 
 function datum(epoche: number | null): string {
   if (epoche === null) return "—";
-  return new Intl.DateTimeFormat("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-    timeZone: "UTC",
-  }).format(new Date(epoche * 1000));
+  const d = new Date(epoche * 1000);
+  return `${d.getUTCDate()}. ${d.getUTCMonth() + 1}. ${d.getUTCFullYear()}`;
 }
 
 /** Ein Datum fuer <input type="date">: JJJJ-MM-TT oder leer. */
@@ -46,6 +42,31 @@ function datumsWert(epoche: number | null): string {
 }
 
 const SCHWERE: Record<number, string> = { 1: "leicht", 2: "mittel", 3: "schwer" };
+
+/** Kurzformen fuer Smartphone und Tablet-Hochformat.
+    "richtig": die Redaktion benennt ihre Fassung als richtig. */
+const AUSGANG_KURZ: Record<Ausgang, string> = {
+  open: "ohne",
+  acknowledged: "Antwort",
+  corrected: "korrigiert",
+  corrected_other: "anders",
+  rejected: "richtig",
+  no_response: "beendet",
+};
+
+/** Fuers Karten-Band: fuehrende Artikel und Adjektive fallen weg
+    ("ein falscher Name" -> "Name"); "Wörter fehlen" bleibt ganz. */
+function kurzeKategorie(label: string): string {
+  const woerter = label.split(" ");
+  while (
+    woerter.length > 1 &&
+    /^(ein|eine|[a-zäöü]\S*(er|e))$/.test(woerter[0] ?? "") &&
+    /^[A-ZÄÖÜ]/.test(woerter[1] ?? "")
+  ) {
+    woerter.shift();
+  }
+  return woerter.join(" ");
+}
 
 /** Erste, letzte und die Nachbarn der aktuellen Seite; dazwischen "…". */
 function seitenfenster(seite: number, seiten: number): (number | "…")[] {
@@ -85,26 +106,35 @@ export const MeldungsListe: FC<{
     <Layout title="Meldungen" aktiv="meldungen" betreiber>
       {/* Keine Zwischenueberschrift: die aktive Marke in der Navigation
           benennt die Seite schon, ein Balken doppelte nur. */}
-      <div class="listenrumpf querblatt">
+      <div class="listenrumpf">
+      {/* Ausserhalb des Quer-Scrollers, sonst klebt sie an dessen Scrollfenster. */}
       <form method="get" action="/admin/meldungen" class="filterzeile">
         {/* Die Gesamtzahl der Treffer steht vor den Filtern, in der Zeile. */}
         <span class="trefferzahl">{gesamt}</span>
-        <select name="medium" aria-label="Medium">
-          <option value="">alle Medien</option>
-          {outlets.map((o) => (
-            <option value={o.id} selected={o.id === filter.outletId}>
-              {o.name}
-            </option>
-          ))}
-        </select>
-        <select name="kategorie" aria-label="Kategorie">
-          <option value="">alle Kategorien</option>
-          {errorTypes.map((t) => (
-            <option value={t.id} selected={t.id === filter.errorTypeId}>
-              {t.label}
-            </option>
-          ))}
-        </select>
+        {/* Schmal: Icon als Beschriftung, der Select selbst zeigt kurz das
+            Gewaehlte (Breitendeckel + Ellipse). */}
+        <label class="filterfeld">
+          <NewspaperIcon />
+          <select name="medium" aria-label="Medium">
+            <option value="">alle Medien</option>
+            {outlets.map((o) => (
+              <option value={o.id} selected={o.id === filter.outletId}>
+                {o.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label class="filterfeld">
+          <TagIcon />
+          <select name="kategorie" aria-label="Kategorie">
+            <option value="">alle Kategorien</option>
+            {errorTypes.map((t) => (
+              <option value={t.id} selected={t.id === filter.errorTypeId}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <select name="ausgang" aria-label="Ausgang">
           <option value="">alle Ausgänge</option>
           {AUSGAENGE.map((wert) => (
@@ -155,43 +185,72 @@ export const MeldungsListe: FC<{
       if (ziel) new ResizeObserver(messe).observe(ziel);
     }
     messe();
-  });`,
+  });
+
+  /* Die ganze Zeile ist Ausloeser fuers Titel-Scrollen: eine horizontale
+     Geste irgendwo auf der Tabelle schiebt den Artikeltitel der Zeile
+     unter dem Zeiger -- die Tabelle selbst bewegt sich nicht. Erst nach
+     dem fertigen Dokument: die Tabelle steht im Markup hinter diesem
+     Skript. */
+  addEventListener("DOMContentLoaded", () =>
+  document.querySelector(".meldungsliste")?.addEventListener("wheel", (e) => {
+    const quer = e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY);
+    if (!quer) return;
+    const titel = e.target.closest("tr")?.querySelector(".sp-artikel");
+    if (!titel || titel.scrollWidth <= titel.clientWidth) return;
+    titel.scrollLeft += e.deltaX || e.deltaY;
+    e.preventDefault();
+  }, { passive: false }));`,
         }}
       />
 
-      <table class="sortierbar">
+      {/* Spaltenklassen: schmal wird aus jeder Zeile eine Karte. */}
+      <div class="querblatt">
+      <table class="sortierbar meldungsliste">
         <thead>
           <tr>
-            <th>Nr</th>
-            <th>Kennung</th>
-            <th>Datum</th>
-            <th>Medium</th>
-            <th>Artikel</th>
-            <th>Kategorie</th>
-            <th>Grad</th>
-            <th>Ausgang</th>
+            <th class="sp-nr">Nr</th>
+            <th class="sp-kennung">Kennung</th>
+            <th class="sp-datum">Datum</th>
+            <th class="sp-medium">Medium</th>
+            <th class="sp-artikel">Artikel</th>
+            <th class="sp-kategorie">Kategorie</th>
+            <th class="sp-grad">Grad</th>
+            <th class="sp-ausgang">Ausgang</th>
           </tr>
         </thead>
         <tbody>
           {zeilen.map((z) => (
             <tr data-href={`/admin/meldungen/${z.id}`}>
-              <td>{z.nummer}</td>
-              <td>
+              <td class="sp-nr">{z.nummer}</td>
+              <td class="sp-kennung">
+                <span class="nrim">{z.nummer}&nbsp;·&nbsp;</span>
                 <a href={`/admin/meldungen/${z.id}`} draggable={false}>
                   <code>{z.ref}</code>
                 </a>
               </td>
-              <td>{datum(z.zeitpunkt)}</td>
-              <td>{z.medium}</td>
-              <td title={z.articleUrl}>{z.headline ?? z.articleUrl}</td>
-              <td>{z.kategorie}</td>
-              <td>{SCHWERE[z.severity] ?? String(z.severity)}</td>
-              <td>{AUSGANG_NAMEN[z.outcome]}</td>
+              <td class="sp-datum">{datum(z.zeitpunkt)}</td>
+              <td class="sp-medium">{z.medium}</td>
+              <td class="sp-artikel" title={z.articleUrl}>{z.headline ?? z.articleUrl}</td>
+              <td class="sp-kategorie">
+                <span class="langform">{z.kategorie}</span>
+                <span class="kurzform">{kurzeKategorie(z.kategorie)}</span>
+              </td>
+              <td class="sp-grad">
+                <span class={`gradchip grad-${z.severity}`}>
+                  {SCHWERE[z.severity] ?? String(z.severity)}
+                </span>
+              </td>
+              <td class="sp-ausgang">
+                <span class="langform">{AUSGANG_NAMEN[z.outcome]}</span>
+                <span class="kurzform">{AUSGANG_KURZ[z.outcome]}</span>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
       {zeilen.length === 0 ? <p class="zaehler">Nichts gefunden.</p> : null}
+      </div>
       </div>
 
       {/* Immer da, auch bei einer Seite oder leer: der Platz gehoert zur
@@ -239,7 +298,7 @@ export const MeldungsAnsicht: FC<{ detail: MeldungsDetail; hinweis?: string | un
   const fassungen = fassungenHtml(m.quoteBefore, m.suggestionAfter);
   return (
     <Layout title={`Meldung ${m.ref}`} aktiv="meldungen" betreiber>
-      {hinweis ? <p class="hinweis">{hinweis}</p> : null}
+      {hinweis ? <p class="hinweis fluechtig">{hinweis}</p> : null}
       <h2 class="balken">
         Nr. {detail.nummer} — <code>{m.ref}</code>
       </h2>

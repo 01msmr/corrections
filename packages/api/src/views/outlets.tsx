@@ -110,12 +110,12 @@ export const OutletList: FC<{
   eingabe?: OutletFormValues | undefined;
 }> = ({ outlets, hinweis, fehler, vorgabeDomain, zurueck, eingabe }) => (
   <Layout title="Medien" aktiv="redaktionen" betreiber>
-    {hinweis ? <p class="hinweis">{hinweis}</p> : null}
+    {hinweis ? <p class="hinweis fluechtig">{hinweis}</p> : null}
     {fehler ? <p class="hinweis">{fehler}</p> : null}
 
     <h2 class="balken">Medien</h2>
     <div class="querblatt">
-    <table class="sortierbar">
+    <table class="sortierbar namenfest">
       <thead>
         <tr>
           <th>Name</th>
@@ -130,7 +130,9 @@ export const OutletList: FC<{
             <td>
               <a href={`/admin/redaktionen/${outlet.id}`} draggable={false}>{outlet.name}</a>
             </td>
-            <td>{outlet.domains.join(", ")}</td>
+            <td class="sp-domain" title={outlet.domains.join(", ")}>
+              {outlet.domains.join(", ")}
+            </td>
             {/* Die Adresse selbst statt einer blossen Anzahl; bei mehreren
                 steht die erste mit Auslassung, die volle Liste liegt im
                 title und damit unter dem Zeiger. */}
