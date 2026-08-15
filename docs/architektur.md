@@ -242,13 +242,58 @@ Blätterreihe und Fußzeile fest, dazwischen läuft allein die Liste.
   eingedrückt (aktive Seite, kein Link), flach auf z = 0 (ziel-loses
   zurück/vor). Der Innenrand der Reihe muss Hub (7px) und Kanten (5px)
   der Klötze einschließen, sonst blitzen Zeilen um die Knöpfe durch.
-- **Schmal (≤ 48 rem):** Breite Tabellen (Medien, Kategorien, Meldungen)
-  liegen in einem Quer-Scroller (`.querblatt`) — die Tabelle scrollt IN
-  der Seite, nie die Seite selbst; auf der Meldungsliste wandern
-  Filterzeile und Tabelle gemeinsam. Der Scroller wird erst schmal zum
-  Scroll-Container, weil er sonst das Kleben der Filterzeile am Desktop
-  bräche. Die unteren Leisten laufen schmal randlos über die volle
-  Breite, sonst zöge Inhalt durch die seitlichen Streifen.
+- **Schmal (≤ 60 rem):** Breite Tabellen (Medien, Kategorien) liegen in
+  einem Quer-Scroller (`.querblatt`) — die Tabelle scrollt IN der Seite,
+  nie die Seite selbst. Die Filterzeile steht **außerhalb** des
+  Scrollers: läge sie darin, bezöge sich ihr Kleben auf dessen
+  Scrollfenster statt auf die Seite (sie verdeckte die ersten Zeilen —
+  echter Fehler vom 15.8.). Beim Querscrollen kleben Namensspalte links
+  und Entfernen-Knopf rechts auf Papiergrund. Die unteren Leisten laufen
+  schmal randlos über die volle Breite, sonst zöge Inhalt durch die
+  seitlichen Streifen.
+
+### Drei Formen der Meldungsliste (Stand 15. August 2026)
+
+Dieselbe Tabelle, per Spaltenklassen (`sp-*`) umgebaut — der Server
+liefert eine Form, CSS entscheidet:
+
+- **Telefon (≤ 40 rem): Karten.** Nr · Kennung und Datum (ohne führende
+  Nullen) in der Kopfzeile, die Überschrift auf zwei Zeilen gekappt,
+  darunter Kategorie-Chip, Grad-Pille und der Ausgang in voller Länge
+  rechtsbündig. Kartengrund 80 % Richtung Licht — heller als das
+  Papier, nicht reinweiß.
+- **Tablet-Hochformat (40–60 rem): eine Zeile je Meldung, kein
+  Querscrollen.** Datum und Medium treten ab (stehen im Detail), die
+  Nummer rückt zur Kennung, der Ausgang trägt Kurzformen
+  (ohne · Antwort · korrigiert · anders · richtig), der Titel nimmt die
+  Restbreite.
+- **Breit (> 60 rem): volle Tabelle.** Der Titel läuft einzeilig auf der
+  Restbreite (`max-width: 0`-Trick).
+
+Der Titel scrollt in seiner Zelle (Balken unterdrückt); eine Quergeste
+irgendwo auf der Zeile schiebt den Titel der Zeile unter dem Zeiger —
+die Tabelle selbst bewegt sich nie. Kategorie überall als Karmin-Chip
+(am Telefon die Kurzform ohne führende Artikel/Adjektive), der
+Schweregrad als Pille in vollen, vom Karmin aus gedrehten Tönen
+(relative Farbsyntax, keine eigenen Farbwerte) — die dokumentierte
+Ausnahme von „keine Ampelfarben": bewertet wird die eigene Meldung,
+kein Medium. Auf der Liste läuft der Fixier-Schatten des Kopfs mit
+einem Viertel der Intensität — die klebende Filterzeile darunter ist
+dort der eigentliche Trenner.
+
+### Hinweise als Toast (Stand 15. August 2026)
+
+Erfolgsmeldungen (`?hinweis=…`) laufen als Toast statt als Kasten im
+Blatt: Toastify 1.12.0, vendored unter `views/vendor` (MIT, inline
+ausgeliefert — nichts kommt von fremden Servern). Von oben herein, 3 s
+Standzeit, denselben Weg zurück; beide Richtungen als **Keyframes**,
+weil Toastify sein Element bereits mit der on-Klasse einfügt und eine
+Transition die Einfahrt daher nie tragen kann. Der Toast parkt unter
+Titel und Navigation (`--toastruhe` mit `!important` gegen Toastifys
+nachträgliches Inline-top, sonst springt die Einfahrt), ist kein
+Klickziel (`pointer-events: none`), und die Adresse wird sofort per
+`replaceState` vom Hinweis-Parameter befreit. Ohne JavaScript bleibt
+der Kasten stehen.
 
 ### Antwort-Zuordnung (P3, Worker)
 

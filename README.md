@@ -82,7 +82,9 @@ zählt chronologisch über den Gesamtbestand und bleibt beim Filtern stehen.
 Das Detail zeigt beide Fassungen in der Mail-Auszeichnung, die
 Ereignisleiste (Antworten, Artikel-Prüfungen) und setzt den Ausgang:
 ohne Rückmeldung / Antwort erhalten / korrigiert wie vorgeschlagen /
-anders korrigiert / als richtig benannt.
+anders korrigiert / als richtig benannt. Die Liste passt sich dem Gerät
+an — Karten am Telefon, verdichtete Zeilen im Tablet-Hochformat, volle
+Tabelle breit (Details: `docs/architektur.md`).
 
 **Verwaltung.** Medien (Domains, Kontaktadressen) und Fehlerkategorien
 (sortierbar per Drag & Drop) hinter der Anmeldung; nach einmaliger
