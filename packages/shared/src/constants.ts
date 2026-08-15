@@ -102,3 +102,91 @@ export const PALETTE_DUNKEL = {
   schatten: "0 0 0",
   licht: "255 255 255",
 } as const;
+
+/**
+ * Abstufungen der Palette: wie viel einer Farbe stehen bleibt, wenn sie zu
+ * einer zweiten hin verrechnet wird (`color-mix`). Gemischt wird aus PALETTE.
+ */
+export const ANTEIL = {
+  /** Grund der Zwischenueberschriften: knapp zwei Drittel Schwarz. */
+  balkengrund: "65%",
+  /** Zaehlweise-Pille im Balken: Grund, Schrift, angefasste Haelfte. */
+  balkenpille: "70%",
+  balkenpilleSchrift: "70%",
+  balkenpilleHover: "45%",
+  /** Weiche Kategorien (WEICHE_FEHLERARTEN) auf 0,6 Farbintensitaet. */
+  weicheKategorie: "60%",
+  /** Ressortleiste unter dem Zeiger: eine Spur dunkler als die Linie. */
+  ressortHover: "90%",
+  /** Markierte Wortstelle im Rechtschreib-Treffer: ein Hauch Karmin. */
+  trefferMarke: "20%",
+  /** Automatisch befuelltes Feld: Grund und aufgehellte Schrift. */
+  erkanntesFeld: "10%",
+  erkannteSchrift: "60%",
+  /** Meldungskarte (schmal): hebt sich vom Papier ab, ohne reinweiss zu sein. */
+  karte: "80%",
+  /** Blaetterreihe, die Seite ohne Ziel. */
+  seitenrandGrund: "20%",
+  seitenrandSchrift: "55%",
+  /** Gesperrte Fundstelle: lesbar, aber erkennbar uebernommen. */
+  gesperrtRahmen: "60%",
+  gesperrtSchrift: "60%",
+  /** Spur hinter dem Balken, deutlich heller als das Linien-Grau. */
+  balkenspur: "60%",
+  /** Medien-Segmente, von links nach rechts ansteigend heller. */
+  segmentZwei: "80%",
+  segmentDrei: "65%",
+  segmentWeitere: "45%",
+  /** Schraffur der "uebrigen": zwei Toene im Wechsel. */
+  schraffurHell: "50%",
+  schraffurDunkel: "25%",
+  /** Mengenmarke im Segment: Papier, das den Grund durchscheinen laesst. */
+  teilzahl: "85%",
+  /** Fusszeile: zwischen Randgrau und Tinte. */
+  fusszeile: "70%",
+  /** Rotstift-Unterstrich der Fussadresse, gegen Durchsichtig gemischt. */
+  fussUnterstrich: "40%",
+  /** Trennlinie unter den Spaltenkoepfen: leiser als die Kante darueber. */
+  trennlinie: "60%",
+  /** Zeile unter dem Zeiger: gerade so viel, dass sie sich abhebt. */
+  zeileUnterZeiger: "5%",
+} as const;
+
+/** Deckkraft: Schatten und zurueckgenommene Bedienzeichen. */
+export const DECKKRAFT = {
+  /** Kopf und Fuss der Schale, wenn die Seite unter ihnen durchlaeuft. */
+  schale: 0.55,
+  /** Auf der Meldungsliste leiser: die Filterzeile traegt schon eine Kante. */
+  schaleLeise: 0.15,
+  /** Aufgeklappte Navigationsliste. */
+  klappliste: 0.35,
+  /** Bleisatz-Klotz: ruhend, angehoben, vertieft. */
+  klotz: 0.35,
+  klotzGehoben: 0.45,
+  klotzVertieft: 0.45,
+  /** Feste Leisten der Meldungsliste: Filterzeile und Blaetterreihe. */
+  leiste: 0.45,
+  /** Hinweiskasten am Fragezeichen: liegt ueber dem Satz und braucht Kante. */
+  hinweiskasten: 0.9,
+  /** Der Hinweis-Toast. */
+  toast: 0.45,
+  /** Rechtschreib-Treffer, der nur den Stil betrifft. */
+  stiltreffer: 0.7,
+  /** Tastenkuerzel neben der Beschriftung. */
+  taste: 0.7,
+  /** Die gezogene Zeile, solange sie am Zeiger haengt. */
+  gezogeneZeile: 0.45,
+  /** Ziehgriff in Ruhe; unter dem Zeiger steht er voll. */
+  ziehgriff: 0.35,
+} as const;
+
+/**
+ * Die beiden helleren Schweregrad-Chips: vom Korrekturrot im Farbton gedreht.
+ * "schwer" fehlt -- es bleibt das Korrekturrot selbst.
+ */
+export const SCHWEREGRAD_TON = {
+  /** mittel: dreht nach Orange. */
+  mittel: { drehung: 42, saettigung: "95%", helligkeit: "58%" },
+  /** leicht: weiter nach Gelb. */
+  leicht: { drehung: 58, saettigung: "95%", helligkeit: "55%" },
+} as const;

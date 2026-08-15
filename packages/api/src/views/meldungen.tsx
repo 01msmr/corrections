@@ -1,4 +1,5 @@
 import type { FC } from "hono/jsx";
+import { WEICHE_FEHLERARTEN } from "@korrektur/shared";
 import type { ErrorTypeRecord } from "../repo/errorTypes.js";
 import type {
   Ausgang,
@@ -53,6 +54,11 @@ const AUSGANG_KURZ: Record<Ausgang, string> = {
   rejected: "richtig",
   no_response: "beendet",
 };
+
+/** Weiche Kategorie? Dann traegt der Chip den blasseren Grund. */
+function istWeich(key: string): boolean {
+  return (WEICHE_FEHLERARTEN as readonly string[]).includes(key);
+}
 
 /** Fuers Karten-Band: fuehrende Artikel und Adjektive fallen weg
     ("ein falscher Name" -> "Name"); "Wörter fehlen" bleibt ganz. */
@@ -174,14 +180,19 @@ export const MeldungsListe: FC<{
     const kopf = document.querySelector(".klebekopf");
     const reihe = document.querySelector(".seitenblaettern");
     const fusszeile = document.querySelector(".fusszeile");
+    const filterzeile = document.querySelector(".filterzeile");
     const messe = () => {
-      if (kopf) wurzel.style.setProperty("--kopfhoehe", kopf.getBoundingClientRect().height + "px");
+      const kopfhoehe = kopf ? kopf.getBoundingClientRect().height : 0;
+      if (kopf) wurzel.style.setProperty("--kopfhoehe", kopfhoehe + "px");
+      /* Halt der Spaltenkoepfe: beide schrumpfen, also messen. */
+      const filter = filterzeile ? filterzeile.getBoundingClientRect().height : 0;
+      wurzel.style.setProperty("--kopfleiste", kopfhoehe + filter + "px");
       const fuss = fusszeile ? fusszeile.getBoundingClientRect().height : 0;
       wurzel.style.setProperty("--fusshoehe", fuss + "px");
       const leiste = fuss + (reihe ? reihe.getBoundingClientRect().height : 0);
       wurzel.style.setProperty("--leistehoehe", leiste + 4 + "px");
     };
-    for (const ziel of [kopf, reihe, fusszeile]) {
+    for (const ziel of [kopf, reihe, fusszeile, filterzeile]) {
       if (ziel) new ResizeObserver(messe).observe(ziel);
     }
     messe();
@@ -196,10 +207,12 @@ export const MeldungsListe: FC<{
   document.querySelector(".meldungsliste")?.addEventListener("wheel", (e) => {
     const quer = e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY);
     if (!quer) return;
+    /* Die Quergeste gehoert ab hier der Liste, auch wenn sie ins Leere
+       laeuft -- sonst blaettert der Browser in der Historie zurueck. */
+    e.preventDefault();
     const titel = e.target.closest("tr")?.querySelector(".sp-artikel");
     if (!titel || titel.scrollWidth <= titel.clientWidth) return;
     titel.scrollLeft += e.deltaX || e.deltaY;
-    e.preventDefault();
   }, { passive: false }));`,
         }}
       />
@@ -232,7 +245,7 @@ export const MeldungsListe: FC<{
               <td class="sp-datum">{datum(z.zeitpunkt)}</td>
               <td class="sp-medium">{z.medium}</td>
               <td class="sp-artikel" title={z.articleUrl}>{z.headline ?? z.articleUrl}</td>
-              <td class="sp-kategorie">
+              <td class={istWeich(z.kategorieKey) ? "sp-kategorie weich" : "sp-kategorie"}>
                 <span class="langform">{z.kategorie}</span>
                 <span class="kurzform">{kurzeKategorie(z.kategorie)}</span>
               </td>

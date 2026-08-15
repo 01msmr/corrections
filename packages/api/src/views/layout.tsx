@@ -1,4 +1,28 @@
-import { PALETTE, PALETTE_DUNKEL, TILGUNG_STRICH } from "@korrektur/shared";
+import {
+  ABSTAND,
+  ABSTAND_EM,
+  ANTEIL,
+  DAUER,
+  DECKKRAFT,
+  EBENE,
+  GEWICHT,
+  GRAD,
+  GRAD_EM,
+  HUB,
+  KURVE,
+  MASS,
+  PALETTE,
+  PALETTE_DUNKEL,
+  RADIUS,
+  SCHATTEN,
+  SCHWEREGRAD_TON,
+  SCROLLWEG,
+  SPERRUNG,
+  STRICH,
+  TILGUNG_STRICH,
+  UMBRUCH,
+  ZEILE,
+} from "@korrektur/shared";
 import type { FC, PropsWithChildren } from "hono/jsx";
 import { raw } from "hono/html";
 import { TOASTIFY_CSS, TOASTIFY_JS } from "./vendor/toastify.js";
@@ -48,8 +72,11 @@ const STYLES = `
     /* Grund der Zwischenueberschriften: 66 % Schwarz, 34 % Weiss — in sRGB
        gemischt, damit die Prozente die erwarteten Anteile sind (#333);
        oklab mischt perzeptuell und geriete deutlich dunkler. */
-    --balkengrund: color-mix(in srgb, rgb(var(--schatten)) 66%, rgb(var(--licht)));
+    --balkengrund: color-mix(in srgb, rgb(var(--schatten)) ${ANTEIL.balkengrund}, rgb(var(--licht)));
     --balkenschrift: var(--papier);
+    /* Korrekturrot auf 0,6 vor Weiss. Verrechnet statt per opacity, sonst
+       verblasste die Beschriftung mit. */
+    --korrektur-weich: color-mix(in srgb, var(--korrektur) ${ANTEIL.weicheKategorie}, rgb(var(--licht)));
     /* Schattenfarbe der Klotz-Kanten: hell laeuft sie in Tinte, dunkel als
        echter Schatten -- die helle Dunkel-Tinte wuerde die Kante beleuchten. */
     --klotzkante: var(--tinte);
@@ -70,7 +97,7 @@ const STYLES = `
        woanders. 73.75rem ergibt 1140px Inhalt: zwei Spalten zu je 570px, und
        eine Prosaspalte traegt damit rund 74 Zeichen -- die uebliche
        Obergrenze fuer bequemes Lesen. */
-    --mass: 73.75rem;
+    --mass: ${MASS.arbeitsbreite};
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -83,8 +110,11 @@ const STYLES = `
       /* Invertiert: derselbe Balken (#333) laege auf dem dunklen Blatt bei
          Kontrast 1.4 und waere praktisch unsichtbar. Gleiche Anteile,
          andere Richtung — 66 % Weiss statt 66 % Schwarz. */
-      --balkengrund: color-mix(in srgb, rgb(var(--licht)) 66%, rgb(var(--schatten)));
+      --balkengrund: color-mix(in srgb, rgb(var(--licht)) ${ANTEIL.balkengrund}, rgb(var(--schatten)));
       --balkenschrift: var(--papier);
+      /* Andere Richtung: vor Schwarz. Leiser heisst hier wie dort
+         "naeher am Grund". */
+      --korrektur-weich: color-mix(in srgb, var(--korrektur) ${ANTEIL.weicheKategorie}, rgb(var(--schatten)));
       /* Dunkel liegt der Koerper im echten Schatten, nicht in Tinte. */
       --klotzkante: rgb(var(--schatten));
     }
@@ -94,33 +124,33 @@ const STYLES = `
   body {
     /* Unten nur ein schmaler Rand: den Abstand zum Inhalt bringt die
        Fusszeile selbst mit, darunter soll die Seite enden. */
-    margin: 0; padding: 0 0 .5rem;
+    margin: 0; padding: 0 0 ${ABSTAND.r50};
     background: var(--papier); color: var(--tinte);
     font: 16px/1.6 var(--sans);
   }
   /* Der Kopf laeuft ueber die volle Breite, damit sein Schatten keine Kanten
      nach links und rechts wirft; ausgerichtet wird der Inhalt darin auf
      dieselbe Spalte wie der Rest der Seite. */
-  .blatt, .kopfinhalt, .fusszeile { max-width: 44rem; margin: 0 auto; padding: 0 1.25rem; }
+  .blatt, .kopfinhalt, .fusszeile { max-width: ${MASS.satzspiegel}; margin: 0 auto; padding: 0 ${ABSTAND.r125}; }
   /* Faellt die Ueberschrift weg, weil sie den Navigationspunkt wiederholt, muss
      ihr Raum ersetzt werden -- sonst beginnt das Formular direkt unter dem
      Balken. Seiten mit Ueberschrift bringen ihn selbst mit. */
-  .blatt.ohne-titel { padding-top: .35rem; }
+  .blatt.ohne-titel { padding-top: ${ABSTAND.r35}; }
   /* Die Startseite laeuft wie ein Blatt: ab Tabletbreite zwei gleich breite
      Spalten mit feiner Spaltenlinie, linksbuendig -- Blocksatz ohne
      Silbentrennung reisst Loecher. Vorspann und Rubriken spannen ueber beide
      Spalten, die Rubrik sitzt damit mittig auf der vollen Breite. */
   /* Kein eigenes Mass: die Prosa fuellt die Inhaltsspalte des Blattes. */
   .prosa { margin: 0 auto; text-align: left; }
-  .prosa .einstieg { font-size: 1.2rem; line-height: 1.55; }
-  .prosa h2:not(.rubrik) { margin-top: 1.6rem; }
+  .prosa .einstieg { font-size: ${GRAD.stark}; line-height: 1.55; }
+  .prosa h2:not(.rubrik) { margin-top: ${ABSTAND.r150}; }
   /* Steht der Vorspann ganz oben, gehoert er zum Titel und nicht zu einem
      eigenen Abschnitt: er rueckt dicht unter den Kopf und dicht ueber die
      Rubrik. */
   .prosa .einstieg:first-child { margin-top: 0; }
-  .prosa .einstieg:first-child + h2.rubrik { margin-top: 1rem; }
-  @media (min-width: 48rem) {
-    .prosa { columns: 2; column-gap: 2.75rem; column-rule: 1px solid var(--linie); }
+  .prosa .einstieg:first-child + h2.rubrik { margin-top: ${ABSTAND.r100}; }
+  @media (min-width: ${UMBRUCH.schmal}) {
+    .prosa { columns: 2; column-gap: ${ABSTAND.r275}; column-rule: 1px solid var(--linie); }
     .prosa .einstieg, .prosa h2.rubrik { column-span: all; }
     /* Am Spaltenanfang kappt der Browser den oberen Abstand -- in der zweiten
        Spalte, nicht in der ersten, die den Fluss unter dem Spanner fortsetzt.
@@ -129,7 +159,7 @@ const STYLES = `
     .prosa .einstieg + *:not(.rubrik), .prosa h2.rubrik + *:not(.rubrik) { margin-top: 0; }
     /* Die Luft, die dort wegfaellt, kommt unter den Vorspann: dort gilt sie
        fuer beide Spalten gleich, statt nur die linke tiefer zu setzen. */
-    .prosa .einstieg { margin-bottom: 1.6rem; }
+    .prosa .einstieg { margin-bottom: ${ABSTAND.r150}; }
   }
 
   /* Der Kopf ist ein Zeitungskopf: der Titel zentriert wie ein Zeitungstitel,
@@ -139,7 +169,7 @@ const STYLES = `
   header { background: var(--papier); }
   /* Oben knapper als es die Zahl vermuten laesst: die Didone bringt viel
      eigenes Fleisch ueber den Versalien mit, erst .7rem zentriert optisch. */
-  .markenzeile { display: block; text-align: center; padding: .7rem 0; }
+  .markenzeile { display: block; text-align: center; padding: ${ABSTAND.r70} 0; }
   /* Das Band ist der Trenner zwischen Titel und Ressortleiste: Untertitel
      hell auf Tinte, im Dunkelmodus entsprechend umgekehrt. */
   .datumszeile { background: var(--tinte); }
@@ -149,26 +179,26 @@ const STYLES = `
        symmetrisch, sonst sitzt der Untertitel hoeher als das absolut
        zentrierte Datum. */
     position: relative; display: flex; align-items: center; justify-content: center;
-    min-height: 1.85rem; text-align: center;
-    padding-top: .2rem; padding-bottom: .2rem;
+    min-height: ${MASS.bandhoehe}; text-align: center;
+    padding-top: ${ABSTAND.r25}; padding-bottom: ${ABSTAND.r25};
   }
   /* Die Zeilenbox der Courier sitzt ueber den Versalien hoeher als darunter:
      zentriert waere die Box, nicht die Schrift. Der Versatz holt die Versalien
      auf die Mitte des Bandes (gemessen: .05em). */
-  .untertitel { font: 700 .85rem/1.5 var(--mono); letter-spacing: .14em;
+  .untertitel { font: ${GEWICHT.fett} ${GRAD.klein}/${ZEILE.luftig} var(--mono); letter-spacing: ${SPERRUNG.gesperrt};
     text-transform: uppercase; color: var(--papier);
     position: relative; top: .05em; }
   .datum { position: absolute; right: 1.25rem; top: 50%; transform: translateY(-50%);
-    font: .78rem/1.4 var(--mono); letter-spacing: .04em; color: var(--rand); }
+    font: ${GRAD.winzig}/${ZEILE.satz} var(--mono); letter-spacing: ${SPERRUNG.leicht}; color: var(--rand); }
   /* Das Datum hellt beim Ueberfahren auf Papierweiss auf: schnell an (0.25s),
      langsam wieder zurueck (2s) — es soll aufmerken, nicht blinken. Die
      unterschiedlichen Dauern stehen deshalb an Grund- und Hover-Zustand. */
-  .datumszeile .datum { color: var(--linie); transition: color 2s ease-out; }
-  .datumszeile .datum:hover { color: var(--papier); transition-duration: .25s; }
+  .datumszeile .datum { color: var(--linie); transition: color ${DAUER.lang} ease-out; }
+  .datumszeile .datum:hover { color: var(--papier); transition-duration: ${DAUER.ruhig}; }
   .datum-kurz { display: none; }
   /* Schmaler als 62rem draengt sich die Zeile: der Zusatz faellt weg, das
      lange Datum bleibt. */
-  @media (max-width: 62rem) {
+  @media (max-width: ${UMBRUCH.pille}) {
     .untertiteltrenner, .untertitelrest { display: none; }
   }
   /* Ist der Titel weggescrollt, tritt er verkleinert ins Band -- links,
@@ -178,12 +208,12 @@ const STYLES = `
      ohne Skript; wo der Browser sie nicht kennt, bleibt er unsichtbar. */
   .klebemarke {
     position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%);
-    font: 400 1.05rem/1.2 var(--titel); letter-spacing: .05em;
+    font: ${GEWICHT.normal} ${GRAD.grund}/${ZEILE.knapp} var(--titel); letter-spacing: ${SPERRUNG.leicht};
     text-transform: uppercase; color: var(--linie);
     text-decoration: none; opacity: 0;
     animation: markeauf linear both;
     animation-timeline: scroll(root);
-    animation-range: 2.5rem 4.5rem;
+    animation-range: ${SCROLLWEG.marke};
   }
   /* Im Band traegt der getilgte Buchstabe die Bandfarbe, nicht die Tinte --
      sonst verschwaende er im Schwarz. */
@@ -197,7 +227,7 @@ const STYLES = `
   /* Wie die grosse Marke: beim Zeigen der Rotstift-Unterstrich. */
   .klebemarke:hover, .klebemarke:focus-visible {
     color: var(--papier); text-decoration: underline;
-    text-decoration-color: var(--korrektur); text-decoration-thickness: 2px;
+    text-decoration-color: var(--korrektur); text-decoration-thickness: ${STRICH.kraeftig};
     text-underline-offset: .28em; }
   /* Untertitelband und Ressortleiste bleiben beim Scrollen gemeinsam stehen;
      nur der Titel scrollt weg wie bei einer Zeitung. Der Schatten kommt erst,
@@ -206,27 +236,27 @@ const STYLES = `
      Schatten. Der Block steht ausserhalb des headers, weil sticky nicht
      ueber die Grenzen des Elternkastens hinaus kleben kann. */
   .klebekopf {
-    position: sticky; top: 0; z-index: 5;
-    margin-bottom: 1.5rem;
+    position: sticky; top: 0; z-index: ${EBENE.kopf};
+    margin-bottom: ${ABSTAND.r150};
     animation: kopfschatten linear both;
     animation-timeline: scroll(root);
-    animation-range: 4rem 8rem;
+    animation-range: ${SCROLLWEG.kopf};
   }
   .navzeile { background: var(--papier); }
   /* Beim Scrollen soll der Kopf sichtbar ueber dem Blatt liegen: der Schatten
      faellt tiefer und deutlich kraeftiger als zuvor — er trennt, statt nur
      anzudeuten. */
   @keyframes kopfschatten {
-    from { box-shadow: 0 -48px 16px 40px rgb(var(--schatten) / 0); }
-    to { box-shadow: 0 -34px 26px 40px rgb(var(--schatten) / .55); }
+    from { box-shadow: 0 -${SCHATTEN.schaleFern} rgb(var(--schatten) / 0); }
+    to { box-shadow: 0 -${SCHATTEN.schaleNah} rgb(var(--schatten) / ${DECKKRAFT.schale}); }
   }
   /* Auf der Meldungsliste klebt unterhalb schon die Filterzeile mit
      eigener Kante -- der Kopf traegt dort nur ein Viertel des Schattens,
      sonst stapeln sich zwei Trenner. */
   body:has(.listenrumpf) .klebekopf { animation-name: kopfschattenleise; }
   @keyframes kopfschattenleise {
-    from { box-shadow: 0 -48px 16px 40px rgb(var(--schatten) / 0); }
-    to { box-shadow: 0 -34px 26px 40px rgb(var(--schatten) / .14); }
+    from { box-shadow: 0 -${SCHATTEN.schaleFern} rgb(var(--schatten) / 0); }
+    to { box-shadow: 0 -${SCHATTEN.schaleNah} rgb(var(--schatten) / ${DECKKRAFT.schaleLeise}); }
   }
   /* Schmal gibt das Band beim Scrollen seine Zeile frei; der Kopf schrumpft
      dabei um genau diese Zeile. */
@@ -235,20 +265,20 @@ const STYLES = `
     to { max-height: 0; opacity: 0; }
   }
   .kopfinhalt {
-    display: flex; flex-wrap: wrap; gap: .75rem 1.5rem;
+    display: flex; flex-wrap: wrap; gap: ${ABSTAND.r70} ${ABSTAND.r150};
     align-items: baseline; justify-content: space-between;
   }
   .markenzeile.kopfinhalt { display: block; }
   /* Der Zeitungstitel laeuft nicht in der Schreibmaschine, sondern in einer
      Didone -- der Schriftgattung klassischer Titelkoepfe. Didot und Bodoni
      liegen auf Apple-Systemen, Georgia faengt den Rest ab. */
-  .marke { font: 700 2.68rem/1.1 var(--titel);
-    letter-spacing: .05em; text-transform: uppercase;
+  .marke { font: ${GEWICHT.fett} ${GRAD.zeitung}/${ZEILE.titel} var(--titel);
+    letter-spacing: ${SPERRUNG.leicht}; text-transform: uppercase;
     color: inherit; text-decoration: none; }
   /* Die Schrift bleibt in Tinte; ausgezeichnet wird ueber eine Unterstreichung
      im selben Rot wie der Tilgungsstrich und in derselben Staerke. */
   .marke:hover, .marke:focus-visible { text-decoration: underline;
-    text-decoration-color: var(--korrektur); text-decoration-thickness: 2px;
+    text-decoration-color: var(--korrektur); text-decoration-thickness: ${STRICH.kraeftig};
     text-underline-offset: .28em; }
   /* Der Wortmarke ist ein Fehler eingebaut, der zugleich getilgt wird: man liest
      „Korrekturen“ und sieht dabei, was die Anwendung tut. Fuer Vorlesesoftware
@@ -280,11 +310,11 @@ const STYLES = `
      Hover-Flaechen der Haelften auf die Rundung zu. */
   .randressorts { display: flex; align-items: baseline;
     position: absolute; right: 0; top: 50%; transform: translateY(-50%);
-    background: var(--linie); border-radius: 999px; overflow: hidden;
-    margin: 1px; }
+    background: var(--linie); border-radius: ${RADIUS.voll}; overflow: hidden;
+    margin: ${STRICH.haar}; }
   /* Auf mittleren Breiten faellt die Pille in den Fluss zurueck, sonst
      schoebe sie sich ueber das zentrierte Trio. */
-  @media (max-width: 62rem) {
+  @media (max-width: ${UMBRUCH.pille}) {
     nav > a:first-child { margin-left: auto; }
     .randressorts { position: static; transform: none; margin-left: auto;
       align-self: center; }
@@ -292,73 +322,73 @@ const STYLES = `
   /* Vertikal grosszuegiger als die Schrift verlangt: die Pille ist ein
      haeufiges Tippziel (~34px Hoehe). */
   .randressorts a { border-bottom: none; color: var(--tinte);
-    padding: calc(.65rem - 1px) calc(.95rem - 1px); }
+    padding: calc(${ABSTAND.r60} - ${STRICH.haar}) calc(${ABSTAND.r95} - ${STRICH.haar}); }
   /* Am Spalt stossen zwei Innenabstaende aufeinander und ergaeben sonst
      doppelt so viel Luft wie an den runden Aussenkanten. Innen daher knapper,
      damit die Pille in beiden Ansichten gleichmaessig wirkt. */
-  .randressorts a:first-child { padding-right: calc(.55rem - 1px); }
+  .randressorts a:first-child { padding-right: calc(${ABSTAND.r50} - ${STRICH.haar}); }
   /* Trennstrich im Seiten-Hintergrund: wirkt wie ein Spalt in der Pille. */
-  .randressorts a + a { border-left: 2px solid var(--papier);
-    padding-left: calc(.55rem - 1px); }
+  .randressorts a + a { border-left: ${STRICH.kraeftig} solid var(--papier);
+    padding-left: calc(${ABSTAND.r50} - ${STRICH.haar}); }
   /* Oberhalb des Telefons: 1px vom Polster in den Aussenabstand verlagert
      -- die Pille wirkt eine Spur kompakter und steht freier. */
-  @media (min-width: 40.0625rem) {
-    .randressorts { margin: 2px; }
+  @media (min-width: ${UMBRUCH.abTablet}) {
+    .randressorts { margin: ${STRICH.kraeftig}; }
     /* Breit haengt die Pille absolut und zentriert sich per transform --
        eine vertikale Margin schoebe sie aus der Mitte. */
-    @media (min-width: 62.0625rem) {
-      .randressorts { margin: 0 2px 0 0; }
+    @media (min-width: ${UMBRUCH.abPille}) {
+      .randressorts { margin: 0 ${STRICH.kraeftig} 0 0; }
     }
-    .randressorts a { padding: calc(.65rem - 2px) calc(.95rem - 2px); }
-    .randressorts a:first-child { padding-right: calc(.55rem - 2px); }
-    .randressorts a + a { padding-left: calc(.55rem - 2px); }
+    .randressorts a { padding: calc(${ABSTAND.r60} - ${STRICH.kraeftig}) calc(${ABSTAND.r95} - ${STRICH.kraeftig}); }
+    .randressorts a:first-child { padding-right: calc(${ABSTAND.r50} - ${STRICH.kraeftig}); }
+    .randressorts a + a { padding-left: calc(${ABSTAND.r50} - ${STRICH.kraeftig}); }
   }
   .randressorts a:hover, .randressorts a:focus-visible {
-    background: color-mix(in srgb, var(--linie) 90%, rgb(var(--schatten)));
+    background: color-mix(in srgb, var(--linie) ${ANTEIL.ressortHover}, rgb(var(--schatten)));
     color: var(--tinte); }
   .randressorts a[aria-current="page"] {
     background: var(--balkengrund); color: var(--papier); }
   /* Breit traegt die Pille Text; schmaler als 62rem nur die Icons. */
   .randressorts .navicon { display: none; }
-  @media (max-width: 62rem) {
+  @media (max-width: ${UMBRUCH.pille}) {
     .randressorts .ressorttext { display: none; }
     .randressorts .navicon { display: block; width: 1.575em; height: 1.575em;
       margin: 0; }
     /* Das groessere Icon frisst das Polster: die Pille bleibt so hoch wie
        der Aufklapper daneben, das Icon mittig darin. */
     .randressorts a { display: flex; align-items: center;
-      padding-top: calc(.35rem - 1px); padding-bottom: calc(.35rem - 1px); }
+      padding-top: calc(${ABSTAND.r35} - ${STRICH.haar}); padding-bottom: calc(${ABSTAND.r35} - ${STRICH.haar}); }
   }
   /* Der Aufklapper der schmalen Navigation: die Zeile oben traegt den
      aktiven Bereich wie die aktive Ressortmarke (hell auf Karmin), die
      Liste faellt als Blatt darunter. */
   .navklapp { display: none; position: relative;
-    font: 700 .85rem/1 var(--mono); letter-spacing: .03em; }
+    font: ${GEWICHT.fett} ${GRAD.klein}/${ZEILE.eng} var(--mono); letter-spacing: ${SPERRUNG.leicht}; }
   .navklapp summary { list-style: none; cursor: pointer;
-    display: inline-flex; align-items: center; gap: .5em;
+    display: inline-flex; align-items: center; gap: ${ABSTAND_EM.e50};
     background: var(--korrektur); color: var(--papier);
-    padding: .55rem .95rem .45rem; }
+    padding: ${ABSTAND.r50} ${ABSTAND.r95} ${ABSTAND.r35}; }
   .navklapp summary::-webkit-details-marker { display: none; }
-  .klapppfeil { font-size: .8em; transition: transform .12s ease; }
+  .klapppfeil { font-size: ${GRAD_EM.pille}; transition: transform ${DAUER.flink} ease; }
   .navklapp[open] .klapppfeil { transform: rotate(180deg); }
   .klappliste { position: absolute; top: 100%; left: 0; min-width: 100%;
-    z-index: 7; background: var(--papier); border: 1px solid var(--linie);
-    box-shadow: 0 10px 22px -8px rgb(var(--schatten) / .35); }
+    z-index: ${EBENE.klappliste}; background: var(--papier); border: ${STRICH.haar} solid var(--linie);
+    box-shadow: ${SCHATTEN.schwebe} rgb(var(--schatten) / ${DECKKRAFT.klappliste}); }
   .klappliste a { display: block; white-space: nowrap;
-    padding: .65rem .95rem .55rem; color: var(--rand);
-    text-decoration: none; border-bottom: 1px solid var(--linie); }
+    padding: ${ABSTAND.r60} ${ABSTAND.r95} ${ABSTAND.r50}; color: var(--rand);
+    text-decoration: none; border-bottom: ${STRICH.haar} solid var(--linie); }
   .klappliste a:last-child { border-bottom: none; }
   .klappliste a:hover, .klappliste a:focus-visible {
     background: var(--linie); color: var(--tinte); }
-  nav a { font: 700 .95rem/1 var(--mono); letter-spacing: .03em;
-    color: var(--rand); text-decoration: none; padding: .6rem .95rem .5rem;
-    border-bottom: 2px solid transparent; }
+  nav a { font: ${GEWICHT.fett} ${GRAD.normal}/${ZEILE.eng} var(--mono); letter-spacing: ${SPERRUNG.leicht};
+    color: var(--rand); text-decoration: none; padding: ${ABSTAND.r60} ${ABSTAND.r95} ${ABSTAND.r50};
+    border-bottom: ${STRICH.kraeftig} solid transparent; }
   /* Das Icon steht als Inline-Element mit seiner Unterkante auf der
      Grundlinie der Schrift; die Feinkorrektur gleicht die Innenraender der
      Font-Awesome-Zeichenflaeche aus. */
   /* Zeichen, die nicht quadratisch angelegt sind, behalten ihr Verhaeltnis. */
   .navicon.schmal { width: auto; }
-  .navicon { width: .85em; height: .85em; margin-right: .4em;
+  .navicon { width: .85em; height: .85em; margin-right: ${ABSTAND_EM.e50};
     vertical-align: baseline; position: relative; top: .02em; }
   nav a:hover, nav a:focus-visible { color: var(--tinte); border-bottom-color: var(--korrektur); }
   /* Die aktuelle Seite ist rot hinterlegt statt groesser gesetzt: die Leiste
@@ -369,24 +399,24 @@ const STYLES = `
      Wortaenderung und dem Satz, in dem sie steckt. Stilbefunde stehen
      nachrangig darunter und laufen blasser. */
   .pruefung { display: block; }
-  .pruefung .quelle { margin: .4rem 0 0; }
-  .treffer { display: flex; flex-direction: column; gap: .3rem; margin-top: .5rem; }
+  .pruefung .quelle { margin: ${ABSTAND.r35} 0 0; }
+  .treffer { display: flex; flex-direction: column; gap: ${ABSTAND.r35}; margin-top: ${ABSTAND.r50}; }
   .treffer:empty { margin-top: 0; }
   .treffer-zeile { display: block; width: 100%; text-align: left; cursor: pointer;
-    margin: 0; padding: .4rem .6rem; border: 1px solid var(--linie); border-radius: 3px;
+    margin: 0; padding: ${ABSTAND.r35} ${ABSTAND.r60}; border: ${STRICH.haar} solid var(--linie); border-radius: ${RADIUS.klein};
     background: var(--feld); color: var(--tinte); font: inherit;
     /* Kein Bleisatz-Klotz: das sind Zeilenknoepfe in einer Liste. */
     transform: none; box-shadow: none; }
   .treffer-zeile:hover, .treffer-zeile:focus-visible {
     transform: none; box-shadow: none; border-color: var(--korrektur); }
-  .treffer-zeile.stil { opacity: .72; }
-  .trefferWechsel { display: block; font: 700 .85rem/1.4 var(--mono); }
-  .trefferWechsel del { color: var(--korrektur); text-decoration-thickness: 2px; margin-right: .5em; }
+  .treffer-zeile.stil { opacity: ${DECKKRAFT.stiltreffer}; }
+  .trefferWechsel { display: block; font: ${GEWICHT.fett} ${GRAD.klein}/${ZEILE.satz} var(--mono); }
+  .trefferWechsel del { color: var(--korrektur); text-decoration-thickness: ${STRICH.kraeftig}; margin-right: ${ABSTAND_EM.e50}; }
   .trefferWechsel ins { color: var(--vorschlag); text-decoration: none; }
-  .trefferOft { font: .74rem/1 var(--sans); color: var(--rand); margin-left: .6em; }
-  .trefferSatz { display: block; font-size: .8rem; color: var(--rand); margin-top: .15rem; }
-  .trefferSatz mark { background: color-mix(in srgb, var(--korrektur) 18%, var(--papier));
-    color: var(--tinte); font-weight: 700; }
+  .trefferOft { font: ${GRAD.winzig}/${ZEILE.eng} var(--sans); color: var(--rand); margin-left: ${ABSTAND_EM.e60}; }
+  .trefferSatz { display: block; font-size: ${GRAD.klein}; color: var(--rand); margin-top: ${ABSTAND.r15}; }
+  .trefferSatz mark { background: color-mix(in srgb, var(--korrektur) ${ANTEIL.trefferMarke}, var(--papier));
+    color: var(--tinte); font-weight: ${GEWICHT.fett}; }
 
   /* QR-Code des Kurzbefehls: klein, mit Papierrand, damit Kameras ihn auch
      auf dunklem Grund lesen. */
@@ -399,12 +429,12 @@ const STYLES = `
      Umbruch; der Text schrumpft stattdessen mit der Spalte. */
   /* wrap: schmal rutscht der Kurzbefehl-Knopf unter den QR-Code, statt
      die Seite querscrollen zu lassen. */
-  .qr-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: .9rem; }
+  .qr-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: ${ABSTAND.r95}; }
   .qr-zeile .zaehler { min-width: 0; }
   /* Neben dem Code stehen Knopf und Bildunterschrift untereinander; der
      Knopf traegt seine eigene Breite, nicht die der Spalte. */
   .qr-neben { display: flex; flex-direction: column; align-items: flex-start;
-    gap: .7rem; min-width: 0; }
+    gap: ${ABSTAND.r70}; min-width: 0; }
 
   /* Das i traegt seinen Hinweis selbst: beim Zeigen und beim Tastatur-Fokus,
      damit er nicht nur der Maus gehoert. Der Kasten haengt am Zeichen, ist
@@ -412,7 +442,7 @@ const STYLES = `
      Zeichen erbt. */
   /* Knopf und Zeichen auf einer Grundlinie mittig, mit Luft dazwischen --
      das Zeichen soll neben dem Knopf stehen, nicht an ihm kleben. */
-  .knopfzeile { display: flex; align-items: center; gap: 1.15rem;
+  .knopfzeile { display: flex; align-items: center; gap: ${ABSTAND.r110};
     flex-wrap: wrap; }
 
   .infozeichen { position: relative; display: inline-flex; align-items: center;
@@ -422,20 +452,20 @@ const STYLES = `
   .infozeichen .navicon { width: 1.53em; height: 1.53em; margin-right: 0; top: 0; }
   .infozeichen:hover, .infozeichen:focus { color: var(--tinte); }
   .infozeichen::after { content: attr(data-hinweis);
-    position: absolute; left: 0; top: calc(100% + .45rem); z-index: 5;
-    width: min(22rem, 78vw); padding: .6rem .75rem;
+    position: absolute; left: 0; top: calc(100% + .45rem); z-index: ${EBENE.kopf};
+    width: min(${MASS.hinweisbreite}, ${MASS.hinweisdeckel}); padding: ${ABSTAND.r60} ${ABSTAND.r70};
     background: var(--papier); color: var(--tinte);
-    border: 1px solid var(--linie); border-left: 4px solid var(--rand);
+    border: ${STRICH.haar} solid var(--linie); border-left: ${STRICH.balken} solid var(--rand);
     /* Kraeftiger Schatten: der Kasten liegt ueber dem Satz und muss sich
        deutlich von ihm abheben. */
-    border-radius: 4px; box-shadow: 0 8px 22px -8px rgb(var(--schatten) / .9);
-    font: 400 .78rem/1.55 var(--sans); text-align: left;
+    border-radius: ${RADIUS.klein}; box-shadow: ${SCHATTEN.schwebe} rgb(var(--schatten) / ${DECKKRAFT.hinweiskasten});
+    font: ${GEWICHT.normal} ${GRAD.winzig}/${ZEILE.luftig} var(--sans); text-align: left;
     /* Die Schritte stehen zeilenweise: die Umbrueche kommen aus dem
        data-Attribut und muessen erhalten bleiben. */
     white-space: pre-line;
     /* Nicht display:none: so bleibt der Text fuer Vorlesesoftware da und
        der Kasten laesst sich weich einblenden. */
-    opacity: 0; visibility: hidden; transition: opacity .12s ease; }
+    opacity: 0; visibility: hidden; transition: opacity ${DAUER.flink} ease; }
   /* Auch bei :focus, nicht nur :focus-visible -- auf dem Telefon gibt es
      kein Zeigen; dort oeffnet der Tipp den Hinweis. */
   .infozeichen:hover::after, .infozeichen:focus::after {
@@ -443,7 +473,7 @@ const STYLES = `
   /* Am rechten Spaltenrand liefe der Kasten sonst aus dem Satzspiegel. */
   .infozeichen:last-child::after { left: auto; right: 0; }
   .qr { width: 100%; height: auto; display: block;
-    background: var(--papier); padding: .35rem; border: 1px solid var(--linie); border-radius: 3px; }
+    background: var(--papier); padding: ${ABSTAND.r35}; border: ${STRICH.haar} solid var(--linie); border-radius: ${RADIUS.klein}; }
   /* Der Code ist ein Schalter, kein Knopf im Bleisatz: er traegt nichts als
      sich selbst. Angetippt waechst er auf Lesegroesse und legt sich beim
      naechsten Klick wieder ab -- angegeben wird nur die Breite, die Hoehe
@@ -452,25 +482,25 @@ const STYLES = `
     /* Breite und flex-basis zusammen: als Flex-Element bemisst sich der
        Schalter nach der Basis, ein Uebergang allein auf width bliebe
        stehen. */
-    width: 8.5rem; flex: 0 0 8.5rem;
+    width: ${MASS.qrKlein}; flex: 0 0 ${MASS.qrKlein};
     margin: 0; padding: 0; border: 0; font: inherit; color: inherit;
     max-width: 100%; cursor: zoom-in;
-    transition: width .2s ease, flex-basis .2s ease; }
+    transition: width ${DAUER.ruhig} ease, flex-basis ${DAUER.ruhig} ease; }
   /* Die Bleisatz-Gestalt der Knoepfe gilt hier nicht: der Code steht fuer
      sich, ohne Klotz, Kante und Schatten -- in jedem Zustand. */
   .qrschalter, .qrschalter:hover, .qrschalter:focus-visible, .qrschalter:active {
     background: none; transform: none; box-shadow: none; }
-  .qrschalter:focus-visible { outline: 2px solid var(--korrektur); outline-offset: 3px; }
+  .qrschalter:focus-visible { outline: ${STRICH.kraeftig} solid var(--korrektur); outline-offset: 3px; }
   /* Schlichte Laenge statt min(): Chrome haelt den Uebergang sonst am
      Anfangswert fest. Die Begrenzung uebernimmt max-width oben. */
-  .qrschalter.gross { width: 20rem; flex-basis: 20rem; cursor: zoom-out; }
+  .qrschalter.gross { width: ${MASS.qrGross}; flex-basis: ${MASS.qrGross}; cursor: zoom-out; }
 
-  h1 { font: 700 1.9rem/1.25 var(--mono); margin: 0 0 1.25rem; letter-spacing: .01em; }
+  h1 { font: ${GEWICHT.fett} ${GRAD.titel}/${ZEILE.knapp} var(--mono); margin: 0 0 ${ABSTAND.r125}; letter-spacing: ${SPERRUNG.fein}; }
   /* 1.2rem statt 1.15: ab 18.66px fett gilt Text als gross, und dort genuegt
      dem Balken ein Kontrast von 3 statt 4.5 — 0.8px, die die helle Schrift
      auf dem grauen Grund regelkonform machen. */
-  h2 { font: 700 1.2rem/1.3 var(--mono); letter-spacing: .01em;
-    color: var(--tinte); margin: 2.5rem 0 .75rem; }
+  h2 { font: ${GEWICHT.fett} ${GRAD.stark}/${ZEILE.satz} var(--mono); letter-spacing: ${SPERRUNG.fein};
+    color: var(--tinte); margin: ${ABSTAND.r250} 0 ${ABSTAND.r70}; }
   /* Abschnitts-Balken (Verwaltungslisten und Rubriken) ueber die volle
      Spaltenbreite: hell auf Karmin wie die aktive Ressortmarke, mit leiser
      Rundung. Fliesstext-Zwischentitel bleiben still in Tinte. */
@@ -487,24 +517,24 @@ const STYLES = `
        ein „g" vorkommt, darf die Lage nicht verschieben. Die Zeilenbox reserviert
        unten Platz fuer Unterlaengen, deshalb 0.68px mehr oben (.24 statt .2rem)
        und ebenso weniger unten; die Balkenhoehe bleibt gleich. */
-    padding: .24rem .7rem .16rem; }
+    padding: ${ABSTAND.r25} ${ABSTAND.r70} ${ABSTAND.r15}; }
   /* Die Zaehlweise sitzt rechts oben im Balken: zweiteilige Pille wie in der
      Ressortleiste, nur kleiner und auf den dunklen Grund abgestimmt. Die
      aktive Haelfte ist kein Link — sie zeigt den Stand, sie schaltet nicht. */
-  h2.balken { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-  .zaehlweise { display: inline-flex; border-radius: 999px; overflow: hidden;
-    background: color-mix(in srgb, var(--balkengrund) 70%, var(--papier));
-    font: 700 .7rem/1 var(--sans); letter-spacing: .02em; flex: none; }
-  .zaehlweise > * { padding: .4rem .7rem; text-decoration: none;
-    color: color-mix(in srgb, var(--balkenschrift) 70%, var(--balkengrund)); }
-  .zaehlweise > * + * { border-left: 2px solid var(--balkengrund); }
+  h2.balken { display: flex; align-items: center; justify-content: space-between; gap: ${ABSTAND.r100}; }
+  .zaehlweise { display: inline-flex; border-radius: ${RADIUS.voll}; overflow: hidden;
+    background: color-mix(in srgb, var(--balkengrund) ${ANTEIL.balkenpille}, var(--papier));
+    font: ${GEWICHT.fett} ${GRAD.winzig}/${ZEILE.eng} var(--sans); letter-spacing: ${SPERRUNG.fein}; flex: none; }
+  .zaehlweise > * { padding: ${ABSTAND.r35} ${ABSTAND.r70}; text-decoration: none;
+    color: color-mix(in srgb, var(--balkenschrift) ${ANTEIL.balkenpilleSchrift}, var(--balkengrund)); }
+  .zaehlweise > * + * { border-left: ${STRICH.kraeftig} solid var(--balkengrund); }
   .zaehlweise a:hover, .zaehlweise a:focus-visible {
-    background: color-mix(in srgb, var(--balkengrund) 45%, var(--papier));
+    background: color-mix(in srgb, var(--balkengrund) ${ANTEIL.balkenpilleHover}, var(--papier));
     color: var(--balkenschrift); }
   .zaehlweise [aria-current] { background: var(--papier); color: var(--tinte); }
   /* Rubriken bleiben die groesste Sprechstufe: zentriert und gesperrt. */
-  h2.rubrik { text-align: center; letter-spacing: .14em;
-    text-transform: uppercase; font-size: 1.25rem; margin-top: 3rem; }
+  h2.rubrik { text-align: center; letter-spacing: ${SPERRUNG.gesperrt};
+    text-transform: uppercase; font-size: ${GRAD.stark}; margin-top: ${ABSTAND.r300}; }
   h2.rubrik:first-child { margin-top: 0; }
   a { color: inherit; text-underline-offset: .2em; }
 
@@ -513,7 +543,7 @@ const STYLES = `
   /* Emoji: sie bringen ihre Farbe selbst mit, deshalb hier weder color noch
      Schriftwahl. Auf Apple-Systemen ist das rote Kreuz kraeftig, der Haken
      dunkel und handgezeichnet, der Bleistift gelb. */
-  .zeichen { font-size: 1.15em; line-height: 0; margin-right: .35em;
+  .zeichen { font-size: ${GRAD_EM.gross}; line-height: 0; margin-right: ${ABSTAND_EM.e35};
     vertical-align: 0; }
   /* Ausgeklammert, nicht gestrichen: URL, Titel und Notiz kommen ohne
      Zeichen aus, die Glyphen bleiben aber fuer eine Rueckkehr notiert.
@@ -528,9 +558,9 @@ const STYLES = `
      Versalien, im Randton. Beides ist Auszeichnungsebene, nicht Inhalt --
      dass sie gleich aussieht, macht das sichtbar. */
   label { display: flex; flex-wrap: wrap; align-items: baseline;
-    justify-content: space-between; gap: .2rem 1rem; margin: 0 0 .4rem;
-    font: 1.05rem/1.3 var(--mono); letter-spacing: .01em; color: var(--tinte); }
-  .feld { margin-bottom: 1.5rem; }
+    justify-content: space-between; gap: ${ABSTAND.r25} ${ABSTAND.r100}; margin: 0 0 ${ABSTAND.r35};
+    font: ${GRAD.grund}/${ZEILE.satz} var(--mono); letter-spacing: ${SPERRUNG.fein}; color: var(--tinte); }
+  .feld { margin-bottom: ${ABSTAND.r150}; }
   /* Wie ein gedrucktes Formular: keine weissen Kaesten auf dem Blatt, sondern
      Linien im Blatt. Einzeilige Angaben stehen auf einer Grundlinie; nur
      mehrzeilige Felder bekommen den duennen Rahmen, den auch gedruckte
@@ -548,10 +578,10 @@ const STYLES = `
     display: block;
     width: 100%; font: inherit;
     background: transparent; color: inherit;
-    border: none; border-bottom: 1px solid var(--rand); border-radius: 0;
-    padding: .4rem .15rem;
+    border: none; border-bottom: ${STRICH.haar} solid var(--rand); border-radius: 0;
+    padding: ${ABSTAND.r35} ${ABSTAND.r15};
   }
-  textarea { border: 1px solid var(--rand); padding: .5rem .6rem; }
+  textarea { border: ${STRICH.haar} solid var(--rand); padding: ${ABSTAND.r50} ${ABSTAND.r60}; }
   /* Gesperrt sieht gesperrt aus: ausgegraut, gestrichelte Grundlinie, und der
      Zeiger sagt es zusaetzlich. -webkit-text-fill-color, weil Safari die
      Schriftfarbe gesperrter Felder sonst selbst abdunkelt. */
@@ -567,22 +597,22 @@ const STYLES = `
   textarea:focus-visible { box-shadow: inset 0 0 0 1px var(--korrektur); }
 
   .arbeitsflaeche { display: grid; }
-  .abschluss { padding-top: 1.25rem; }
+  .abschluss { padding-top: ${ABSTAND.r125}; }
   .abschluss .feld { margin-bottom: 0; }
-  .abschluss button { width: 100%; margin-top: 0; min-height: 3.6rem; }
+  .abschluss button { width: 100%; margin-top: 0; min-height: ${MASS.knopfhoehe}; }
   /* Zitat und Vorschlag im festen Raster: ein Leerzeichen zu viel oder ein
      Buchstabendreher ist nur so zu sehen. */
-  #quoteBefore, #suggestionAfter { font: 1.05rem/1.6 var(--mono); min-height: 5.5rem; }
-  #quoteBefore { border-left: 7px solid var(--korrektur); }
-  #suggestionAfter { border-left: 7px solid var(--vorschlag); }
-  textarea { min-height: 4.5rem; resize: vertical; }
+  #quoteBefore, #suggestionAfter { font: ${GRAD.grund}/${ZEILE.luftig} var(--mono); min-height: ${MASS.feldMittel}; }
+  #quoteBefore { border-left: ${STRICH.markant} solid var(--korrektur); }
+  #suggestionAfter { border-left: ${STRICH.markant} solid var(--vorschlag); }
+  textarea { min-height: ${MASS.feldKlein}; resize: vertical; }
 
   /* Der Systempfeil ist auf jeder Plattform eine andere Form und passt zu keiner.
      Stattdessen derselbe Winkel wie das Einfuegezeichen am Rand, nur nach unten
      gedreht und mit runden Enden -- gezeichnet als Data-URI, damit nichts
      nachgeladen wird. */
   select {
-    -webkit-appearance: none; appearance: none; padding-right: 2.2rem;
+    -webkit-appearance: none; appearance: none; padding-right: ${ABSTAND.r225};
     background-image: ${pfeil(PALETTE.rand)};
     background-repeat: no-repeat; background-position: right .8rem center;
     background-size: .8rem auto;
@@ -590,32 +620,32 @@ const STYLES = `
   select:hover, select:focus-visible {
     background-image: ${pfeil(PALETTE.korrektur)};
   }
-  optgroup { font: 600 .8rem var(--mono); letter-spacing: .06em; color: var(--rand); }
-  optgroup option { font: 400 1rem var(--sans); letter-spacing: 0; color: var(--tinte); }
-  :focus-visible { outline: 2px solid var(--korrektur); outline-offset: 1px; }
+  optgroup { font: ${GEWICHT.halbfett} ${GRAD.klein} var(--mono); letter-spacing: ${SPERRUNG.leicht}; color: var(--rand); }
+  optgroup option { font: ${GEWICHT.normal} ${GRAD.grund} var(--sans); letter-spacing: ${SPERRUNG.keine}; color: var(--tinte); }
+  :focus-visible { outline: ${STRICH.kraeftig} solid var(--korrektur); outline-offset: 1px; }
 
 
   /* Kursiv, weil die Zusaetze erlaeutern und nicht benennen: sie gehoeren zu
      einer anderen Sprechebene als die Beschriftung links daneben. */
-  .zaehler { font: italic 400 .8rem/1.4 var(--sans); letter-spacing: 0;
+  .zaehler { font: italic 400 ${GRAD.klein}/${ZEILE.satz} var(--sans); letter-spacing: ${SPERRUNG.keine};
     text-transform: none; color: var(--rand); }
   /* Ganze Absaetze in dieser Nebenstimme wollen gelesen werden, nicht nur
      ueberflogen: sie bekommen Lesegroesse. Die kurzen Stempel an den
      Formularfeldern bleiben klein. */
-  p.zaehler { font-size: .9rem; line-height: 1.55; }
+  p.zaehler { font-size: ${GRAD.normal}; line-height: 1.55; }
   /* Automatisch befuellte Felder tragen ihren Hinweis als Stempel: hell auf
      Karmin, eckig wie die Ressortmarke, kursiv wie die uebrigen Zusaetze.
      Die Aussage steht im Text selbst, die Farbe traegt sie also nie allein. */
   .zaehler.erkannt { color: var(--papier); background: var(--korrektur);
-    padding: .05rem .25rem; }
+    padding: ${ABSTAND.r10} ${ABSTAND.r25}; }
   /* Das zugehoerige Feld nimmt einen Hauch der Stempelfarbe an, als haette
      das Stempelkissen aufs Papier abgefaerbt: der Wert kam aus der Automatik,
      nicht von Hand. Der Ton ist aus der Palette gemischt, kein eigener Wert. */
   .feld:has(.zaehler.erkannt) :is(input, select, textarea) {
-    background-color: color-mix(in oklab, var(--korrektur) 12%, var(--feld));
+    background-color: color-mix(in oklab, var(--korrektur) ${ANTEIL.erkanntesFeld}, var(--feld));
     /* Aufgehellt und kursiv, nicht voll und aufrecht: der Vorschlag ist erst
        Vermutung, kein Urteil -- die Kursive ist die Stimme der Automatik. */
-    color: color-mix(in oklab, var(--korrektur) 60%, var(--feld));
+    color: color-mix(in oklab, var(--korrektur) ${ANTEIL.erkannteSchrift}, var(--feld));
     font-style: italic; }
   /* Vor dem automatisch befuellten Feld steht der Zauberstab -- das vertraute
      Sinnbild fuers Auto-Ausfuellen, gezeichnet in der Stempelfarbe. Er sitzt
@@ -630,8 +660,8 @@ const STYLES = `
   /* Anzahl und Kategorie in einer Zeile: das schmale Zahlfeld steht vor der
      Auswahl, zusammen gelesen "2 | Zeichen fehlen". Das display:block der
      Felder wuerde das hidden-Attribut ueberstimmen, deshalb explizit. */
-  .kategoriezeile { display: flex; gap: .6rem; }
-  .kategoriezeile #errorCount { width: 4.5rem; flex: none; }
+  .kategoriezeile { display: flex; gap: ${ABSTAND.r60}; }
+  .kategoriezeile #errorCount { width: ${MASS.feldKlein}; flex: none; }
   .kategoriezeile select { flex: 1; min-width: 0; }
   #errorCount[hidden] { display: none; }
 
@@ -642,8 +672,8 @@ const STYLES = `
     /* Beschriftung unten rechts: dort endet der Blick nach dem Ausfuellen, und
        im hohen Knopf saehe zentrierter Text verloren aus. */
     display: flex; align-items: flex-end; justify-content: flex-end;
-    margin-top: .5rem; padding: .8rem .7rem .7rem 1.2rem; cursor: pointer;
-    font: 700 1.25rem/1 var(--mono); letter-spacing: .03em;
+    margin-top: ${ABSTAND.r50}; padding: ${ABSTAND.r80} ${ABSTAND.r70} ${ABSTAND.r70} ${ABSTAND.r125}; cursor: pointer;
+    font: ${GEWICHT.fett} ${GRAD.stark}/${ZEILE.eng} var(--mono); letter-spacing: ${SPERRUNG.leicht};
     /* Markant durch die Kontur, nicht durch die Flaeche: ein gefuellter Block
        erdrueckte das Blatt. Die Schrift steht in Tinte und bleibt voll lesbar;
        beim Ueberfahren fuellt der Rotstift. */
@@ -655,20 +685,20 @@ const STYLES = `
     background: var(--rand); color: var(--papier);
     /* Die Deckflaeche ist reine Fuellung ohne Kontur; der transparente Rahmen
        haelt nur die Geometrie der frueheren Kontur. */
-    border: 2px solid transparent; border-radius: 0;
-    transition: transform .09s ease, box-shadow .09s ease;
+    border: ${STRICH.kraeftig} solid transparent; border-radius: 0;
+    transition: transform ${DAUER.flink} ease, box-shadow ${DAUER.flink} ease;
     /* Die Grundflaeche (z=0) liegt exakt auf der Layoutposition, im Raster
        der Formularfelder (x wie y). In Ruhe schwebt die Deckflaeche um die
        Kantentiefe darueber, die Kanten fuehren auf die Grundflaeche zurueck,
        aus der der weiche Schlagschatten faellt. */
-    transform: translate(-5px, -5px);
-    box-shadow: ${klotzKanten(5)}, 9px 10px 10px -6px rgb(var(--schatten) / .35);
+    transform: translate(-${HUB.ruhe}px, -${HUB.ruhe}px);
+    box-shadow: ${klotzKanten(HUB.ruhe)}, ${SCHATTEN.klotz} rgb(var(--schatten) / ${DECKKRAFT.klotz});
   }
   /* Beim Zeigen hebt sich der Klotz weiter aus dem Blatt; die Grundflaeche
      bleibt im Raster verankert. */
   button:hover, button:focus-visible, a.knopf:hover, a.knopf:focus-visible {
-    transform: translate(-7px, -7px);
-    box-shadow: ${klotzKanten(7)}, 12px 13px 14px -7px rgb(var(--schatten) / .4);
+    transform: translate(-${HUB.gehoben}px, -${HUB.gehoben}px);
+    box-shadow: ${klotzKanten(HUB.gehoben)}, ${SCHATTEN.klotzGehoben} rgb(var(--schatten) / ${DECKKRAFT.klotzGehoben});
   }
   /* Beim Druecken kippt der Koerper ins Negativ: die Flaeche sinkt um die
      Kantentiefe unter die Grundflaeche. Die Aushoehlung zeigt dieselben
@@ -681,7 +711,7 @@ const STYLES = `
     /* Die Fuellung endet an der Innenkante des (transparenten) Rahmens: um
        die Vertiefung herum scheint das Blatt durch, kein grauer Saum. */
     background-clip: padding-box;
-    box-shadow: ${klotzKanten(5, true)}, inset 9px 10px 12px -5px rgb(var(--schatten) / .4);
+    box-shadow: ${klotzKanten(HUB.ruhe, true)}, ${SCHATTEN.klotzVertieft} rgb(var(--schatten) / ${DECKKRAFT.klotzVertieft});
   }
   /* Das Zeilenschaltungszeichen sagt, dass der Knopf auch mit der Eingabetaste
      ausgeloest wird. aria-hidden, weil das fuer Vorlesesoftware ohnehin gilt. */
@@ -694,7 +724,7 @@ const STYLES = `
      dessen align-items die Beschriftung an die Unterkante zieht. */
   .knopftext { display: block; white-space: nowrap; }
   button, a.knopf { white-space: nowrap; }
-  .taste { margin-left: .32em; font-size: 1.2em; opacity: .7; }
+  .taste { margin-left: ${ABSTAND_EM.e35}; font-size: ${GRAD_EM.gross}; opacity: ${DECKKRAFT.taste}; }
   /* Filter der Meldungsliste: eine Reihe, die schmal umbricht. Sie klebt
      unter dem Kopf (top setzt das Seitenskript aus dessen gemessener Hoehe);
      der Papiergrund deckt die durchlaufenden Zeilen ab. z-Index unter dem
@@ -702,15 +732,18 @@ const STYLES = `
   /* Fester Teil der Schale (siehe .listenrumpf): kein eigenes Kleben, die
      Seite selbst scrollt nicht. Tintenkante und Schatten trennen zum
      Scrollbereich. */
-  .filterzeile { display: flex; flex-wrap: wrap; gap: .4rem .5rem; align-items: center;
-    margin: 0; padding: .3rem 0 .45rem; position: relative; z-index: 1;
-    background: var(--papier); border-bottom: 1px solid var(--tinte);
-    box-shadow: 0 10px 16px -14px rgb(var(--schatten) / .48); }
+  .filterzeile { display: flex; flex-wrap: wrap; gap: ${ABSTAND.r35} ${ABSTAND.r50}; align-items: center;
+    margin: 0; padding: ${ABSTAND.r35} 0 ${ABSTAND.r35}; position: relative; z-index: ${EBENE.imBlatt};
+    background: var(--papier); border-bottom: ${STRICH.haar} solid var(--tinte);
+    box-shadow: 0 ${SCHATTEN.leiste} rgb(var(--schatten) / ${DECKKRAFT.leiste}); }
   /* Die Trefferzahl vor den Filtern: dicktengleich und ruhig, kein Wert mit
      Bedeutung, nur die Antwort auf "wie viele sind das gerade?". */
-  .trefferzahl { font: 700 .95rem/1 var(--mono); color: var(--rand);
-    padding-right: .35rem; }
-  .filterzeile select, .filterzeile input { width: auto; margin: 0; }
+  .trefferzahl { font: ${GEWICHT.fett} ${GRAD.normal}/${ZEILE.eng} var(--mono); color: var(--rand);
+    padding-right: ${ABSTAND.r35}; }
+  /* Eine Schrift fuer alle Bedienteile: ohne sie erben nur die Selects im
+     Label die Schreibmaschine, der Rest faellt auf die Grundschrift. */
+  .filterzeile select, .filterzeile input { width: auto; margin: 0;
+    font: ${GRAD.normal}/${ZEILE.satz} var(--mono); }
   /* Breit ist das Filterfeld unsichtbare Verpackung um den Select. */
   .filterfeld { display: contents; }
   .filterfeld .navicon { display: none; }
@@ -719,12 +752,17 @@ const STYLES = `
   .meldungsliste .sp-kategorie .langform,
   .meldungsliste .sp-kategorie .kurzform {
     background: var(--korrektur); color: var(--papier);
-    font-size: .85rem; line-height: 1; border-radius: 4px; padding: 4px;
+    font-size: ${GRAD_EM.pille}; line-height: 1; border-radius: ${RADIUS.klein}; padding: ${ABSTAND.px4};
     white-space: nowrap; }
   .meldungsliste .sp-kategorie .langform { display: inline-block; }
   .sp-kategorie .kurzform { display: none; }
+  /* Weiche Kategorien (WEICHE_FEHLERARTEN) treten leiser auf. Der Text
+     bleibt weiss -- dunkel deshalb Licht statt Papier. */
+  .meldungsliste .sp-kategorie.weich .langform,
+  .meldungsliste .sp-kategorie.weich .kurzform {
+    background: var(--korrektur-weich); color: rgb(var(--licht)); }
   /* Der Rueckweg aus dem Detail: als Tippziel gepolstert. */
-  .zurueckliste { display: inline-block; padding: .5rem 0; }
+  .zurueckliste { display: inline-block; padding: ${ABSTAND.r50} 0; }
 
   /* Der Schweregrad als Chip in derselben Form. Die Toene sind vom
      Korrekturrot aus im Farbton verschoben (relative Farbsyntax, keine
@@ -734,25 +772,27 @@ const STYLES = `
      nur hier, in der nicht-oeffentlichen Liste (Zuruf vom 15.8.2026). */
   .meldungsliste .sp-ausgang, .meldungsliste .sp-datum { white-space: nowrap; }
   .meldungsliste .nrim, .meldungsliste .sp-ausgang .kurzform { display: none; }
-  /* Die Titelzelle scrollt ohne sichtbaren Balken (das Wischen bleibt). */
-  .meldungsliste td.sp-artikel { scrollbar-width: none; }
+  /* Die Titelzelle scrollt ohne sichtbaren Balken. Die Geste endet in ihr,
+     sonst liest der Browser sie als "eine Seite zurueck" (Finger; das
+     Mausrad faengt das Seitenskript ab). */
+  .meldungsliste td.sp-artikel { scrollbar-width: none; overscroll-behavior-x: contain; }
   .meldungsliste td.sp-artikel::-webkit-scrollbar { display: none; }
   .meldungsliste .gradchip { display: inline-block;
     background: var(--korrektur); color: var(--papier);
-    font-size: .85rem; line-height: 1; border-radius: 999px; padding: 4px 9px;
+    font-size: ${GRAD_EM.pille}; line-height: 1; border-radius: ${RADIUS.voll}; padding: ${ABSTAND.px4} ${ABSTAND.px9};
     white-space: nowrap; }
   /* Volle Toene statt abgedunkelt; auf den hellen traegt Schwarz den Text. */
   .meldungsliste .gradchip.grad-2 {
-    background: hsl(from var(--korrektur) calc(h + 42) 92% 58%);
+    background: hsl(from var(--korrektur) calc(h + ${SCHWEREGRAD_TON.mittel.drehung}) ${SCHWEREGRAD_TON.mittel.saettigung} ${SCHWEREGRAD_TON.mittel.helligkeit});
     color: rgb(var(--schatten)); }
   .meldungsliste .gradchip.grad-1 {
-    background: hsl(from var(--korrektur) calc(h + 58) 95% 55%);
+    background: hsl(from var(--korrektur) calc(h + ${SCHWEREGRAD_TON.leicht.drehung}) ${SCHWEREGRAD_TON.leicht.saettigung} ${SCHWEREGRAD_TON.leicht.helligkeit});
     color: rgb(var(--schatten)); }
   /* Ohne die betonte Unterkante der Formularfelder: hier sind es Werkzeuge
      in einer Leiste, keine Eingaben im Blatt. */
   .filterzeile select, .filterzeile input[type="search"] {
     border-bottom: 0; }
-  .filterzeile input[type="search"] { flex: 1; min-width: 12rem; }
+  .filterzeile input[type="search"] { flex: 1; min-width: ${MASS.suchbreite}; }
 
   /* Blaettern unter der Meldungsliste: dieselben Bleisatz-Kloetze wie die
      freistehenden Knoepfe, nur kleiner. Die aktive Seite steht als
@@ -762,11 +802,11 @@ const STYLES = `
      Klotz-Geometrie ein (Hub 7px, Kanten 5px), sonst blitzten die Zeilen
      um die Knoepfe herum durch. Tintenkante und Schatten spiegeln die
      Filterzeile. */
-  .seitenblaettern { display: flex; flex-wrap: wrap; gap: .3rem .7rem;
+  .seitenblaettern { display: flex; flex-wrap: wrap; gap: ${ABSTAND.r35} ${ABSTAND.r70};
     justify-content: center; align-items: center;
-    margin: 0; padding: .55rem 0 .6rem; position: relative; z-index: 1;
-    background: var(--papier); border-top: 1px solid var(--tinte);
-    box-shadow: 0 -10px 16px -14px rgb(var(--schatten) / .48); }
+    margin: 0; padding: ${ABSTAND.r50} 0 ${ABSTAND.r60}; position: relative; z-index: ${EBENE.imBlatt};
+    background: var(--papier); border-top: ${STRICH.haar} solid var(--tinte);
+    box-shadow: 0 -${SCHATTEN.leiste} rgb(var(--schatten) / ${DECKKRAFT.leiste}); }
 
   /* Die Meldungsliste scrollt wie jede Seite: erst zieht der Titel davon,
      der klebende Kopf bleibt stehen -- und die Filterzeile klebt buendig
@@ -777,27 +817,36 @@ const STYLES = `
   body:has(.listenrumpf) { padding-bottom: 0; }
   body:has(.listenrumpf) .klebekopf { margin-bottom: 0; }
   body:has(.listenrumpf) .blatt { width: 100%;
-    padding-top: 0; padding-bottom: var(--leistehoehe, 6rem); }
+    padding-top: 0; padding-bottom: var(--leistehoehe, ${ABSTAND.r600}); }
   body:has(.listenrumpf) .filterzeile { position: sticky;
-    top: var(--kopfhoehe, 4.6rem); z-index: 4; }
+    top: var(--kopfhoehe, ${MASS.kopfhoehe}); z-index: ${EBENE.leiste}; }
   body:has(.listenrumpf) .seitenblaettern { position: fixed;
     bottom: var(--fusshoehe, 2rem); left: 50%; transform: translateX(-50%);
-    width: min(100% - 2.5rem, var(--mass) - 2.5rem); z-index: 4; }
+    width: min(100% - ${MASS.schalenluft}, var(--mass) - ${MASS.schalenluft}); z-index: ${EBENE.leiste}; }
   /* Die Fusszeile steht auf jeder Seite fest am unteren Rand -- eine Regel
      fuer alle (Entscheidung vom 13.8.2026). Unter der Liste war sie das
      schon; sie bekommt dadurch keine zweite Fixierung, sondern dieselbe.
      Was sich unterscheidet, steht weiter unten: Linie und Luft oben. */
   .fusszeile { position: fixed; bottom: 0;
-    left: 50%; transform: translateX(-50%); z-index: 4;
-    width: min(100% - 2.5rem, var(--mass) - 2.5rem);
+    left: 50%; transform: translateX(-50%); z-index: ${EBENE.leiste};
+    width: min(100% - ${MASS.schalenluft}, var(--mass) - ${MASS.schalenluft});
     margin: 0; background: var(--papier); }
-  .listenrumpf table { margin-top: .25rem; }
+  .listenrumpf table { margin-top: ${ABSTAND.r25}; }
+  /* Die Spaltenkoepfe kleben unter der Filterzeile (Halt = gemessene Hoehe
+     von Kopf und Zeile) und liegen unter ihr, statt sie zu verdecken. Die
+     Linie als Innenschatten: border-collapse laesst den Rahmen mitscrollen. */
+  body:has(.listenrumpf) .meldungsliste thead th {
+    position: sticky; top: var(--kopfleiste, ${MASS.kopfhoehe});
+    z-index: ${EBENE.imBlatt}; background: var(--papier);
+    border-bottom-color: transparent;
+    box-shadow: inset 0 -${STRICH.haar} 0
+      color-mix(in srgb, var(--tinte) ${ANTEIL.trennlinie}, transparent); }
   /* Breite Arbeits-Tabellen (Medien, Kategorien, Meldungen): der Inhalt
      scrollt IN der Seite quer, nie die Seite selbst. Die Grenze liegt dort,
      wo die breiteste Tabelle noch passt. */
   /* Breit nimmt der Titel die Restbreite der Tabelle und kuerzt mit
      Ellipse (max-width 0 zwingt die Spalte auf den uebrigen Raum). */
-  @media (min-width: 60.0625rem) {
+  @media (min-width: ${UMBRUCH.abBreit}) {
     .meldungsliste td.sp-artikel { width: 100%; max-width: 0;
       overflow-x: auto; white-space: nowrap; }
   }
@@ -805,11 +854,11 @@ const STYLES = `
      verzichtet aufs Querscrollen -- Datum und Medium treten ab (stehen im
      Detail), die Nummer rueckt zur Kennung, der Ausgang traegt die
      Kurzform, der Titel nimmt die Restbreite und scrollt in der Zelle. */
-  @media (min-width: 40.0625rem) and (max-width: 60rem) {
+  @media (min-width: ${UMBRUCH.abTablet}) and (max-width: ${UMBRUCH.tablet}) {
     .querblatt .meldungsliste { width: 100%; min-width: 0; }
     .meldungsliste .sp-datum, .meldungsliste .sp-medium { display: none; }
     .meldungsliste .sp-nr { display: none; }
-    .meldungsliste .nrim { display: inline; font: 700 .95rem/1.4 var(--mono);
+    .meldungsliste .nrim { display: inline; font: ${GEWICHT.fett} ${GRAD.normal}/${ZEILE.satz} var(--mono);
       color: var(--rand); }
     .meldungsliste td.sp-kennung { white-space: nowrap; }
     .meldungsliste td.sp-artikel { width: 100%; max-width: 0;
@@ -817,34 +866,35 @@ const STYLES = `
     .meldungsliste .sp-ausgang .langform { display: none; }
     .meldungsliste .sp-ausgang .kurzform { display: inline; }
   }
-  @media (max-width: 60rem) {
-    .querblatt { overflow-x: auto; }
+  @media (max-width: ${UMBRUCH.tablet}) {
+    /* Wie an der Titelzelle: die Geste endet am Rand der Tabelle. */
+    .querblatt { overflow-x: auto; overscroll-behavior-x: contain; }
     .querblatt table { width: max-content; min-width: 100%; }
 
     /* Entfernen-Knopf rechts und Namensspalte links bleiben beim
        Querscrollen stehen; der Papiergrund deckt die durchlaufenden
        Zellen ab. */
     .querblatt th.aktion, .querblatt td.aktion { position: sticky; right: 0;
-      background: var(--papier); z-index: 1; }
+      background: var(--papier); z-index: ${EBENE.imBlatt}; }
     .querblatt .namenfest th:first-child, .querblatt .namenfest td:first-child {
-      position: sticky; left: 0; background: var(--papier); z-index: 1; }
+      position: sticky; left: 0; background: var(--papier); z-index: ${EBENE.imBlatt}; }
     /* Domains reihen sich sonst ungebremst: Deckel und Ellipse, die volle
        Liste steht im title. */
-    .querblatt .sp-domain { max-width: 13rem;
+    .querblatt .sp-domain { max-width: ${MASS.domainbreite};
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   }
-  @media (max-width: 48rem) {
+  @media (max-width: ${UMBRUCH.schmal}) {
     /* Randlos ueber die volle Breite: die zentrierte Spalte liesse Streifen
        frei, durch die der scrollende Inhalt vorbeizoege. */
     body:has(.listenrumpf) .seitenblaettern, .fusszeile {
       width: 100%; max-width: none; left: 0; transform: none; }
   }
   body:has(.listenrumpf) .blatt th,
-  body:has(.listenrumpf) .blatt td { padding: .22rem .5rem; }
+  body:has(.listenrumpf) .blatt td { padding: ${ABSTAND.r25} ${ABSTAND.r50}; }
   /* Telefon: aus jeder Meldungszeile wird eine Karte. Datum, Medium und
      Grad treten ab (stehen im Detail); die Kategorie schliesst als Band in
      Korrekturrot ab und trennt so zur naechsten Karte. */
-  @media (max-width: 40rem) {
+  @media (max-width: ${UMBRUCH.telefon}) {
     .querblatt .meldungsliste { width: 100%; min-width: 0; }
     /* Nur Medien und Kategorien: Icon als Beschriftung, der Select selbst
        zeigt kurz das Gewaehlte (Breitendeckel + Ellipse). Der Ausgang
@@ -852,48 +902,48 @@ const STYLES = `
     .filterzeile select[name="ausgang"] { display: none; }
     /* Eine Zeile fuer alles: die Selects geben ab, das Suchfeld schrumpft. */
     .filterzeile { flex-wrap: nowrap; }
-    .filterzeile input[type="search"] { flex: 1 1 5rem; min-width: 4.5rem; }
+    .filterzeile input[type="search"] { flex: 1 1 ${MASS.suchbreiteFluss}; min-width: ${MASS.suchbreiteSchmal}; }
     .filterfeld { display: flex; flex-wrap: nowrap; align-items: center;
-      gap: .3rem; flex: 0 1 auto; min-width: 0; }
+      gap: ${ABSTAND.r35}; flex: 0 1 auto; min-width: 0; }
     .filterfeld .navicon { display: block; width: 1em; height: 1em;
       margin: 0; flex: none; color: var(--rand); }
-    .filterfeld select { min-width: 0; max-width: 6.5rem;
+    .filterfeld select { min-width: 0; max-width: ${MASS.filterselect};
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .meldungsliste, .meldungsliste tbody { display: block; }
     .meldungsliste thead, .meldungsliste .sp-medium { display: none; }
     /* Die Karte hebt sich leicht vom Papier ab: Richtung Licht gemischt,
        aber nicht reinweiss. */
-    .meldungsliste tr { background: color-mix(in srgb, rgb(var(--licht)) 80%, var(--papier));
+    .meldungsliste tr { background: color-mix(in srgb, rgb(var(--licht)) ${ANTEIL.karte}, var(--papier));
       display: flex; flex-wrap: wrap; align-items: baseline;
-      margin: .55rem 0; border: 1px solid var(--linie); }
+      margin: ${ABSTAND.r50} 0; border: ${STRICH.haar} solid var(--linie); }
     /* tr td: hebt die Spezifitaet ueber die Polster-Regel des Blattes. */
     .meldungsliste tr td { display: block; border-bottom: 0; }
     /* Zeile 1: Nr · Kennung — Datum rechts. */
     .meldungsliste tr td.sp-nr { order: 1; padding-right: 0;
-      font: 700 .95rem/1.4 var(--mono); color: var(--rand); }
+      font: ${GEWICHT.fett} ${GRAD.normal}/${ZEILE.satz} var(--mono); color: var(--rand); }
     .meldungsliste tr td.sp-nr::after { content: "\u00a0·\u00a0"; }
     .meldungsliste tr td.sp-kennung { order: 2; padding-left: 0; }
     .meldungsliste tr td.sp-datum { order: 3; margin-left: auto;
-      font-size: .85rem; color: var(--rand); }
+      font-size: ${GRAD.klein}; color: var(--rand); }
     /* Zeile 2: die Ueberschrift, auf zwei Zeilen gekappt. */
     .meldungsliste tr td.sp-artikel { order: 4; width: 100%; max-width: none;
       padding-top: 0; white-space: normal;
       display: -webkit-box; -webkit-box-orient: vertical;
       -webkit-line-clamp: 2; overflow: hidden; }
     /* Zeile 3: der Kategorie-Chip (Kurzform) voran, dann Grad · Ausgang. */
-    .meldungsliste tr td.sp-kategorie { order: 5; margin-left: .5rem;
+    .meldungsliste tr td.sp-kategorie { order: 5; margin-left: ${ABSTAND.r50};
       align-self: center; padding: 0; }
     .meldungsliste tr td.sp-grad { order: 6;
-      font-size: .85rem; color: var(--rand); }
+      font-size: ${GRAD.klein}; color: var(--rand); }
     /* Die eigene Schlusszeile der Karte traegt die volle Bezeichnung. */
     .meldungsliste tr td.sp-ausgang { order: 7; margin-left: auto;
-      font-size: .85rem; color: var(--rand); white-space: nowrap; }
+      font-size: ${GRAD.klein}; color: var(--rand); white-space: nowrap; }
     .meldungsliste .sp-kategorie .langform { display: none; }
     .sp-kategorie .kurzform { display: inline-block; }
     /* Kennzahl-Kacheln paarweise: vier Aussagen, halber Scrollweg.
        div-Praefix: die Basisregel steht spaeter im Blatt. */
-    div.eckdaten { grid-template-columns: 1fr 1fr; gap: .6rem; }
-    div.kennzahl { padding: .6rem .65rem; }
+    div.eckdaten { grid-template-columns: 1fr 1fr; gap: ${ABSTAND.r60}; }
+    div.kennzahl { padding: ${ABSTAND.r60} ${ABSTAND.r60}; }
 
     /* Lange Erlaeuterungen: zwei Zeilen, Antippen klappt auf. */
     p.zaehler, .kennzahl-erklaerung { display: -webkit-box;
@@ -904,7 +954,7 @@ const STYLES = `
      .fussinhalt) -- so steht die Herkunftszeile auf jeder Seite gleich
      hoch ueber der Unterkante (Entscheidung vom 13.8.2026). Oben bleibt
      es knapp: darueber liegt die Blaetterreihe. */
-  body:has(.listenrumpf) .fussinhalt { padding: .2rem 0 .6rem; border-top: 0; }
+  body:has(.listenrumpf) .fussinhalt { padding: ${ABSTAND.r25} 0 ${ABSTAND.r60}; border-top: 0; }
 
   /* Flach gehalten: die Knoepfe behalten ihre Masse, nur die Reihe verliert
      die zusaetzlichen Innenraender. */
@@ -912,36 +962,36 @@ const STYLES = `
   .seitenblaettern .seitenrand { margin-top: 0; }
   /* zurueck und vor ruecken von den Seitenzahlen ab: Randsteine, keine
      Glieder der Zahlenreihe. */
-  .seitenblaettern > :first-child { margin-right: 1.1rem; }
-  .seitenblaettern > :last-child { margin-left: 1.1rem; }
+  .seitenblaettern > :first-child { margin-right: ${ABSTAND.r110}; }
+  .seitenblaettern > :last-child { margin-left: ${ABSTAND.r110}; }
   .seitenblaettern a.knopf, .seitenblaettern .seitenknopf-aktiv {
-    font-size: .95rem; padding: .5rem .8rem .42rem; min-height: 0; }
+    font-size: ${GRAD.normal}; padding: ${ABSTAND.r50} ${ABSTAND.r80} ${ABSTAND.r35}; min-height: 0; }
   /* Der Block ist ein <nav>: die Kopfzeilen-Regeln (nav a) wuerden hier
      roten Unterstrich und Tinte beim Zeigen hineintragen. Der Klotz behaelt
      stattdessen Papierschrift und kommt ohne Unterstrich aus. */
   .seitenblaettern a.knopf, .seitenblaettern a.knopf:hover,
   .seitenblaettern a.knopf:focus-visible {
     color: var(--papier); border-bottom: 0; }
-  .seitenknopf-aktiv { display: inline-flex; margin-top: .5rem;
-    font: 700 .95rem/1 var(--mono); letter-spacing: .03em;
+  .seitenknopf-aktiv { display: inline-flex; margin-top: ${ABSTAND.r50};
+    font: ${GEWICHT.fett} ${GRAD.normal}/${ZEILE.eng} var(--mono); letter-spacing: ${SPERRUNG.leicht};
     background: var(--rand); color: var(--papier);
-    border: 2px solid transparent; border-radius: 0;
+    border: ${STRICH.kraeftig} solid transparent; border-radius: 0;
     background-clip: padding-box;
-    box-shadow: ${klotzKanten(5, true)}, inset 9px 10px 12px -5px rgb(var(--schatten) / .4); }
+    box-shadow: ${klotzKanten(HUB.ruhe, true)}, ${SCHATTEN.klotzVertieft} rgb(var(--schatten) / ${DECKKRAFT.klotzVertieft}); }
   /* zurueck/vor ohne Ziel: derselbe Klotz-Koerper, aber auf z = 0 -- weder
      gehoben noch vertieft, keine Kanten, kein Schatten. Die Flaeche liegt
      flach auf dem Blatt, hell und stark zurueckgenommen: erkennbar Teil der
      Reihe, erkennbar ohne Funktion. */
-  .seitenrand { display: inline-flex; align-items: center; margin-top: .5rem;
-    font: 700 .95rem/1 var(--mono); letter-spacing: .03em;
-    padding: .5rem .8rem .42rem; border: 2px solid transparent; border-radius: 0;
-    background: color-mix(in srgb, var(--rand) 20%, var(--papier));
-    color: color-mix(in srgb, var(--rand) 55%, var(--papier));
+  .seitenrand { display: inline-flex; align-items: center; margin-top: ${ABSTAND.r50};
+    font: ${GEWICHT.fett} ${GRAD.normal}/${ZEILE.eng} var(--mono); letter-spacing: ${SPERRUNG.leicht};
+    padding: ${ABSTAND.r50} ${ABSTAND.r80} ${ABSTAND.r35}; border: ${STRICH.kraeftig} solid transparent; border-radius: 0;
+    background: color-mix(in srgb, var(--rand) ${ANTEIL.seitenrandGrund}, var(--papier));
+    color: color-mix(in srgb, var(--rand) ${ANTEIL.seitenrandSchrift}, var(--papier));
     transform: none; box-shadow: none; }
   /* Anker-Zitate im Meldungsdetail: die Fundstelle traegt Gewicht, der
      Kontext die Nebenstimme. */
-  blockquote.anker { margin: 0 0 1rem; padding: .6rem .9rem;
-    border-left: 3px solid var(--linie); font: 1rem/1.6 var(--mono); }
+  blockquote.anker { margin: 0 0 ${ABSTAND.r100}; padding: ${ABSTAND.r60} ${ABSTAND.r95};
+    border-left: ${STRICH.balken} solid var(--linie); font: ${GRAD.grund}/${ZEILE.luftig} var(--mono); }
   /* Der Einfuegeknopf steht links vor dem Fundstellen-Feld: ein
      Geisterknopf -- nur das Zeichen, kein Klotz, kein Rahmen. In Ruhe grau
      wie der Tabellen-Griff, unter dem Zeiger Tinte; er tritt erst hervor,
@@ -950,30 +1000,30 @@ const STYLES = `
   .feldzeile { position: relative; }
   /* Der Einfuege-Hinweis ist kurz und darf deshalb etwas groesser sprechen
      als die uebrigen Zusaetze. */
-  #einfuege-hinweis { font-size: .95rem; }
+  #einfuege-hinweis { font-size: ${GRAD.normal}; }
   /* Die gesperrte Fundstelle ist leicht zurueckgenommen -- lesbar, aber
      erkennbar "uebernommen, nicht in Arbeit". Der Zeiger laedt zum
      Entsperren ein. */
   .feldzeile textarea[readonly] { cursor: pointer;
     background: var(--linie);
-    border-color: color-mix(in srgb, var(--linie) 60%, var(--rand));
-    color: color-mix(in srgb, var(--tinte) 62%, var(--linie)); }
+    border-color: color-mix(in srgb, var(--linie) ${ANTEIL.gesperrtRahmen}, var(--rand));
+    color: color-mix(in srgb, var(--tinte) ${ANTEIL.gesperrtSchrift}, var(--linie)); }
   button.einfuegeknopf, button.einfuegeknopf:hover, button.einfuegeknopf:focus-visible,
   button.einfuegeknopf:active {
     background: none; transform: none; box-shadow: none; }
   button.einfuegeknopf {
     display: inline-flex; align-items: center; justify-content: center;
     width: 2rem; height: 2rem;
-    margin: 0 0 .25rem; padding: .3rem; border: 0; min-height: 0;
-    color: var(--rand); cursor: pointer; transition: color .12s ease; }
+    margin: 0 0 ${ABSTAND.r25}; padding: ${ABSTAND.r35}; border: 0; min-height: 0;
+    color: var(--rand); cursor: pointer; transition: color ${DAUER.flink} ease; }
   /* display schlaegt das hidden-Attribut -- ausdruecklich wieder herstellen. */
   button.einfuegeknopf[hidden] { display: none; }
   button.einfuegeknopf:hover, button.einfuegeknopf:focus-visible { color: var(--tinte); }
-  button.einfuegeknopf .navicon { width: 1.15rem; height: 1.15rem; margin: 0; }
+  button.einfuegeknopf .navicon { width: ${MASS.zeilenicon}; height: ${MASS.zeilenicon}; margin: 0; }
   /* Sobald links vom Blatt Rand frei ist, haengt der Knopf dort: vor dem
      Feld, nicht in dessen Spalte -- das Feld behaelt die volle Breite.
      Schmaler steht er ueber dem Feld, denn dort gibt es keinen Rand. */
-  @media (min-width: 78rem) {
+  @media (min-width: ${UMBRUCH.weit}) {
     button.einfuegeknopf { position: absolute; top: .1rem;
       right: calc(100% + .45rem); margin: 0; }
   }
@@ -987,7 +1037,7 @@ const STYLES = `
        Abstand eines <button> mit dem Rand des Absatzes zusammen, bei einem
        <a> nicht -- die beiden Knoepfe saessen sonst unterschiedlich tief. */
     display: inline-flex;
-    font-size: 1rem; padding: .62rem 1.05rem .58rem;
+    font-size: ${GRAD.grund}; padding: ${ABSTAND.r60} ${ABSTAND.r100} ${ABSTAND.r50};
     /* Feste Zeilenhoehe: sonst hebt ein Zeichen in der Beschriftung die
        Zeilenbox an und der Knopf wuerde hoeher als sein Nachbar ohne
        Zeichen. So haben alle Knoepfe im Fliesstext dieselben Masse. */
@@ -1000,104 +1050,104 @@ const STYLES = `
      neben dem Hinweis und soll sie nicht beherrschen -- deshalb der Ton der
      Zaehler, kein Kasten. */
   button.textknopf { display: inline; background: none; border: 0; box-shadow: none;
-    padding: 0; margin-left: .5rem; transform: none;
-    font: italic 400 .8rem/1.4 var(--sans); color: var(--rand);
+    padding: 0; margin-left: ${ABSTAND.r50}; transform: none;
+    font: italic 400 ${GRAD.klein}/${ZEILE.satz} var(--sans); color: var(--rand);
     text-decoration: underline; text-underline-offset: .2em; cursor: pointer; }
   button.textknopf:hover { color: var(--tinte); box-shadow: none; transform: none; }
 
-  .hinweis { padding: .85rem 1rem; margin: 0 0 1.5rem;
-    background: var(--feld); border: 1px solid var(--linie);
-    border-left: 7px solid var(--rand); border-radius: 6px; }
-  .hinweis p { margin: 0 0 .5rem; }
+  .hinweis { padding: ${ABSTAND.r80} ${ABSTAND.r100}; margin: 0 0 ${ABSTAND.r150};
+    background: var(--feld); border: ${STRICH.haar} solid var(--linie);
+    border-left: ${STRICH.markant} solid var(--rand); border-radius: ${RADIUS.mittel}; }
+  .hinweis p { margin: 0 0 ${ABSTAND.r50}; }
   .hinweis p:last-child { margin-bottom: 0; }
 
   /* Die Kennung ist das, wonach spaeter gesucht wird — also im Raster und fett. */
-  .kennung { font: 700 1.05em var(--mono); letter-spacing: .04em; }
+  .kennung { font: ${GEWICHT.fett} ${GRAD_EM.gehoben} var(--mono); letter-spacing: ${SPERRUNG.leicht}; }
 
-  table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+  table { width: 100%; border-collapse: collapse; margin-top: ${ABSTAND.r100}; }
   /* Feste Aufteilung fuer die Auswertung: alle Spalten gleich breit,
      unabhaengig davon, wie lang die laengste Zelle gerade ist -- sonst
      wandern die Kanten mit dem Bestand. Verwaltungstabellen tragen dagegen
      einen Griff und eine Schaltflaeche, die nur so breit sein sollen wie
      noetig; dort bemisst der Browser die Spalten am Inhalt. */
   table.gleichspaltig { table-layout: fixed; }
-  th { font: 1rem/1.3 var(--mono); letter-spacing: .01em; color: var(--tinte); }
-  th, td { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid var(--linie);
+  th { font: ${GRAD.grund}/${ZEILE.satz} var(--mono); letter-spacing: ${SPERRUNG.fein}; color: var(--tinte); }
+  th, td { text-align: left; padding: ${ABSTAND.r35} ${ABSTAND.r50}; border-bottom: ${STRICH.haar} solid var(--linie);
     vertical-align: middle; }
   form.inline { display: inline; }
   /* Die Mailvorschau zeigt das fertige HTML der Mail in einem Rahmen; darueber
      stehen Empfaenger und Betreff wie im Kopf eines Mailprogramms. */
-  .mailkopf { font: .9rem/1.6 var(--mono); color: var(--tinte);
-    border: 1px solid var(--linie); border-bottom: none; padding: .6rem .9rem;
+  .mailkopf { font: ${GRAD.normal}/${ZEILE.luftig} var(--mono); color: var(--tinte);
+    border: ${STRICH.haar} solid var(--linie); border-bottom: none; padding: ${ABSTAND.r60} ${ABSTAND.r95};
     background: var(--feld); }
-  .mailkopf .zaehler { display: inline; margin-right: .5rem; }
+  .mailkopf .zaehler { display: inline; margin-right: ${ABSTAND.r50}; }
   /* Bilanz: Kennzahlen als Kaesten mit duenner Kante, keine Flaechen und
      keine Ampelfarben -- ein Wert ist ein Wert, kein Urteil (§2.2). */
-  .eckdaten { display: grid; gap: 1rem; margin: 0 0 1.25rem;
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
-  .kennzahl { display: flex; flex-direction: column; gap: .15rem;
-    border: 1px solid var(--linie); padding: .8rem .9rem; background: var(--feld); }
-  .kennzahl-titel { font: 700 .8rem/1.4 var(--mono); letter-spacing: .1em;
+  .eckdaten { display: grid; gap: ${ABSTAND.r100}; margin: 0 0 ${ABSTAND.r125};
+    grid-template-columns: repeat(auto-fit, minmax(${MASS.kachel}, 1fr)); }
+  .kennzahl { display: flex; flex-direction: column; gap: ${ABSTAND.r15};
+    border: ${STRICH.haar} solid var(--linie); padding: ${ABSTAND.r80} ${ABSTAND.r95}; background: var(--feld); }
+  .kennzahl-titel { font: ${GEWICHT.fett} ${GRAD.klein}/${ZEILE.satz} var(--mono); letter-spacing: ${SPERRUNG.weit};
     text-transform: uppercase; color: var(--rand); }
-  .kennzahl-wert { font: 700 2rem/1.15 var(--mono); color: var(--tinte); }
-  .kennzahl-wert.klein { font-size: 1.15rem; line-height: 1.4; }
+  .kennzahl-wert { font: ${GEWICHT.fett} ${GRAD.titel}/${ZEILE.titel} var(--mono); color: var(--tinte); }
+  .kennzahl-wert.klein { font-size: ${GRAD.stark}; line-height: 1.4; }
   /* Fehlende Aussage sieht aus wie fehlende Aussage: leise, nicht als Null. */
-  .kennzahl-leer { font: italic 400 1.15rem/1.4 var(--sans); color: var(--rand); }
-  .kennzahl-fuss { font: .78rem/1.4 var(--mono); color: var(--tinte); }
-  .kennzahl-erklaerung { font: italic 400 .8rem/1.45 var(--sans); color: var(--rand);
-    margin-top: .35rem; }
+  .kennzahl-leer { font: italic 400 ${GRAD.stark}/${ZEILE.satz} var(--sans); color: var(--rand); }
+  .kennzahl-fuss { font: ${GRAD.winzig}/${ZEILE.satz} var(--mono); color: var(--tinte); }
+  .kennzahl-erklaerung { font: italic 400 ${GRAD.klein}/${ZEILE.satz} var(--sans); color: var(--rand);
+    margin-top: ${ABSTAND.r35}; }
 
   /* Waagerechte Balken: Name links, Spur, Zahl rechts auf fester Breite,
      damit die Ziffern untereinander stehen. */
-  .verteilung { display: flex; flex-direction: column; gap: .3rem; margin-bottom: 1.5rem; }
+  .verteilung { display: flex; flex-direction: column; gap: ${ABSTAND.r35}; margin-bottom: ${ABSTAND.r150}; }
   /* Summe vor der Spur, schlicht: der Blick liest Kategorie, Menge, Verteilung. */
-  .balkenzeile { display: grid; grid-template-columns: minmax(6rem, 12rem) 2.5rem 1fr;
-    align-items: center; gap: .75rem; }
-  .balkenname { font: .9rem/1.4 var(--sans); }
+  .balkenzeile { display: grid; grid-template-columns: minmax(${MASS.balkennameMin}, ${MASS.balkenname}) ${MASS.balkenmenge} 1fr;
+    align-items: center; gap: ${ABSTAND.r70}; }
+  .balkenname { font: ${GRAD.normal}/${ZEILE.satz} var(--sans); }
   /* Spur deutlich heller als das Linien-Grau: 60 % davon auf Papier. */
   /* 1.5-fache Hoehe (1.05 -> 1.58rem): die Segmente und ihre Beschriftung
      brauchen Luft, seit die Menge als Marke im Balken sitzt. */
-  .balkenspur { display: block; height: 1.58rem;
-    background: color-mix(in srgb, var(--linie) 60%, var(--papier)); }
+  .balkenspur { display: block; height: ${MASS.balkenspur};
+    background: color-mix(in srgb, var(--linie) ${ANTEIL.balkenspur}, var(--papier)); }
   .balkenfuellung { display: flex; height: 100%; background: var(--korrektur); }
   /* Medien-Segmente: von links nach rechts ansteigend heller (gemischt aus der
      Palette, keine eigenen Farbwerte), "uebrige" stets am hellsten. Dazwischen
      eine duenne Trennlinie in Papierweiss. */
   .balkenteil { display: flex; align-items: center; height: 100%; background: var(--korrektur);
     color: var(--papier); container-type: inline-size; overflow: hidden; }
-  .balkenteil:nth-child(2) { background: color-mix(in srgb, var(--korrektur) 82%, var(--papier)); }
-  .balkenteil:nth-child(3) { background: color-mix(in srgb, var(--korrektur) 64%, var(--papier)); }
-  .balkenteil:nth-child(n + 4) { background: color-mix(in srgb, var(--korrektur) 46%, var(--papier)); }
+  .balkenteil:nth-child(2) { background: color-mix(in srgb, var(--korrektur) ${ANTEIL.segmentZwei}, var(--papier)); }
+  .balkenteil:nth-child(3) { background: color-mix(in srgb, var(--korrektur) ${ANTEIL.segmentDrei}, var(--papier)); }
+  .balkenteil:nth-child(n + 4) { background: color-mix(in srgb, var(--korrektur) ${ANTEIL.segmentWeitere}, var(--papier)); }
   /* "uebrige" traegt keinen Namen — eine diagonale Schraffur genuegt. */
   /* Schraffur: 2px/2px im 150-Grad-Winkel, Karmin 50 % auf 25 %. */
   .balkenteil.uebrige { background: repeating-linear-gradient(150deg,
-    color-mix(in srgb, var(--korrektur) 50%, var(--papier)) 0 2px,
-    color-mix(in srgb, var(--korrektur) 25%, var(--papier)) 2px 4px); }
-  .balkenteil + .balkenteil { border-left: 1px solid var(--papier); }
-  .balkenteilname { display: inline-flex; align-items: center; gap: .3rem;
-    font: 700 .76rem/1 var(--sans); padding: 0 .3rem;
+    color-mix(in srgb, var(--korrektur) ${ANTEIL.schraffurHell}, var(--papier)) 0 2px,
+    color-mix(in srgb, var(--korrektur) ${ANTEIL.schraffurDunkel}, var(--papier)) 2px 4px); }
+  .balkenteil + .balkenteil { border-left: ${STRICH.haar} solid var(--papier); }
+  .balkenteilname { display: inline-flex; align-items: center; gap: ${ABSTAND.r35};
+    font: ${GEWICHT.fett} ${GRAD.winzig}/${ZEILE.eng} var(--sans); padding: 0 ${ABSTAND.r35};
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* Die Menge des Mediums als Marke direkt rechts neben seinem Namen —
      rund bis zwei Stellen, darueber waechst sie zur Pille. */
   .teilzahl { display: inline-flex; align-items: center; justify-content: center;
-    min-width: 1.05rem; height: 1.05rem; padding: 0 .22rem; border-radius: 999px;
-    background: color-mix(in srgb, var(--papier) 85%, transparent);
-    color: var(--tinte); font-size: .7rem; flex: none; }
+    min-width: 1.05rem; height: 1.05rem; padding: 0 ${ABSTAND.r25}; border-radius: ${RADIUS.voll};
+    background: color-mix(in srgb, var(--papier) ${ANTEIL.teilzahl}, transparent);
+    color: var(--tinte); font-size: ${GRAD.winzig}; flex: none; }
   /* In zu schmalen Segmenten faellt der Name weg — der Tooltip bleibt. */
-  @container (max-width: 3.5rem) { .balkenteilname { display: none; } }
-  .balkenwert { font: 700 .85rem/1.4 var(--mono); text-align: right; }
+  @container (max-width: ${UMBRUCH.segmentEng}) { .balkenteilname { display: none; } }
+  .balkenwert { font: ${GEWICHT.fett} ${GRAD.klein}/${ZEILE.satz} var(--mono); text-align: right; }
 
   /* Verlauf: senkrechte Balken auf gemeinsamer Grundlinie, seitlich
      scrollbar -- eine Zeitreihe waechst mit den Monaten. */
-  .verlauf { display: flex; align-items: flex-end; gap: .4rem; height: 9rem;
-    margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: .2rem; }
+  .verlauf { display: flex; align-items: flex-end; gap: ${ABSTAND.r35}; height: ${MASS.verlaufhoehe};
+    margin-bottom: ${ABSTAND.r150}; overflow-x: auto; padding-bottom: ${ABSTAND.r25}; }
   /* max-width, damit wenige Monate keine plakativen Bloecke werden. */
   .verlaufsspalte { display: flex; flex-direction: column; align-items: center;
-    justify-content: flex-end; height: 100%; min-width: 2.4rem; max-width: 4rem; flex: 1; }
+    justify-content: flex-end; height: 100%; min-width: ${MASS.saeuleMin}; max-width: ${MASS.saeuleMax}; flex: 1; }
   .verlaufsbalken { display: block; width: 100%; background: var(--korrektur);
     min-height: 2px; }
-  .verlaufswert { font: 700 .8rem/1.4 var(--mono); color: var(--tinte); }
-  .verlaufsmonat { font: .74rem/1.4 var(--mono); color: var(--rand); margin-top: .25rem;
+  .verlaufswert { font: ${GEWICHT.fett} ${GRAD.klein}/${ZEILE.satz} var(--mono); color: var(--tinte); }
+  .verlaufsmonat { font: ${GRAD.winzig}/${ZEILE.satz} var(--mono); color: var(--rand); margin-top: ${ABSTAND.r25};
     white-space: nowrap; }
 
   /* Toasts im Blattstil: Papier auf Korrekturrot, Schreibmaschine, keine
@@ -1107,12 +1157,12 @@ const STYLES = `
      Der Aus-Zustand liegt weit genug oben, dass er auch unterhalb des
      klebenden Kopfs startend aus dem Bild faehrt. */
   .toastify.hinweistoast { background: var(--korrektur); color: var(--papier);
-    font: 700 1rem/1.5 var(--mono); letter-spacing: .03em;
-    border-radius: .2rem; padding: .6rem 1rem;
-    box-shadow: 0 6px 18px rgb(var(--schatten) / .4);
+    font: ${GEWICHT.fett} ${GRAD.grund}/${ZEILE.luftig} var(--mono); letter-spacing: ${SPERRUNG.leicht};
+    border-radius: ${RADIUS.klein}; padding: ${ABSTAND.r60} ${ABSTAND.r100};
+    box-shadow: ${SCHATTEN.toast} rgb(var(--schatten) / ${DECKKRAFT.toast});
     /* Ueber Kopf und Filterzeile geschichtet — nichts verdeckt ihn. Und
        kein Klickziel: was unter ihm liegt, bleibt sofort bedienbar. */
-    z-index: 6; pointer-events: none; cursor: default;
+    z-index: ${EBENE.toast}; pointer-events: none; cursor: default;
     /* Die Ruheposition setzt das Skript als Variable; !important schlaegt
        Toastifys nachtraegliches Inline-top -- sonst springt die Einfahrt. */
     top: var(--toastruhe, 6rem) !important;
@@ -1121,19 +1171,19 @@ const STYLES = `
        Toastify fuegt das Element ohnehin schon fertig eingeblendet ein.
        Die Ausfahrt ist die gespiegelte Einfahrt; das Skript setzt dafuer
        die ab-Klasse und entfernt den Toast erst nach der Animation. */
-    opacity: 1; transform: translateY(-24rem); }
+    opacity: 1; transform: translateY(-${MASS.toastweg}); }
   .toastify.hinweistoast.on {
     transform: translateY(0);
-    animation: toasteinfahrt .4s cubic-bezier(.215, .61, .355, 1); }
+    animation: toasteinfahrt .4s ${KURVE.ein}; }
   .toastify.hinweistoast.ab {
-    animation: toastausfahrt .4s cubic-bezier(.645, 0, .785, .39) forwards; }
+    animation: toastausfahrt .4s ${KURVE.aus} forwards; }
   @keyframes toasteinfahrt {
-    from { transform: translateY(-24rem); }
+    from { transform: translateY(-${MASS.toastweg}); }
     to { transform: translateY(0); }
   }
   @keyframes toastausfahrt {
     from { transform: translateY(0); }
-    to { transform: translateY(-24rem); }
+    to { transform: translateY(-${MASS.toastweg}); }
   }
 
   /* Ganz unten, unter dem Blatt: ein leiser Hinweis auf die Herkunft. Er
@@ -1154,86 +1204,86 @@ const STYLES = `
     animation-timeline: scroll(root);
     /* Voll, solange Inhalt hinter der Zeile liegt; verklingt auf den
        letzten 4rem und ist ganz unten aus. */
-    animation-range: calc(100% - 4rem) 100%; }
+    animation-range: ${SCROLLWEG.fuss}; }
   /* In den Keyframes, nicht in der Regel: so bleibt der Schatten aus, wo
      die Seite gar nicht scrollt -- dann verdeckt die Zeile nichts. */
   @keyframes fussschatten {
-    from { box-shadow: 0 34px 26px 40px rgb(var(--schatten) / .55); }
-    to { box-shadow: 0 48px 16px 40px rgb(var(--schatten) / 0); }
+    from { box-shadow: 0 ${SCHATTEN.schaleNah} rgb(var(--schatten) / ${DECKKRAFT.schale}); }
+    to { box-shadow: 0 ${SCHATTEN.schaleFern} rgb(var(--schatten) / 0); }
   }
   /* Der Text haelt Abstand vom Rand, die Linie darueber nicht. Ueber und
      unter dem Text liegt derselbe Weissraum (.6rem): die Zeile sitzt in
      ihrem Streifen mittig, statt nach unten zu rutschen. */
   body:not(:has(.listenrumpf)) .fussinhalt {
-    padding: .5625rem 1.25rem; /* 9px */ }
+    padding: ${ABSTAND.r50} ${ABSTAND.r125}; /* 9px */ }
   /* Der Inhalt endet ueber der festen Zeile, nicht darunter: etwas mehr
      als ihre Hoehe, damit die letzte Zeile frei steht. Unter der Liste
      besorgt das die gemessene Leistenhoehe am Blatt. */
-  body:not(:has(.listenrumpf)) { padding-bottom: 4rem; }
+  body:not(:has(.listenrumpf)) { padding-bottom: ${ABSTAND.r400}; }
   /* Der Strich sitzt am inneren Kasten, nicht am aeusseren: sonst liefe er
      um den Innenabstand des Blattes breiter als alles darueber. */
   /* Unter der Zeile bleibt nur ein schmaler Rand: die Seite soll dort enden,
      nicht ausklingen. */
-  .fussinhalt { margin: 0; padding: 1rem 0 .6rem;
-    border-top: 2px solid var(--linie); text-align: center;
-    font: .8rem/1.6 var(--mono); letter-spacing: .05em;
-    color: color-mix(in srgb, var(--rand) 70%, var(--tinte)); }
+  .fussinhalt { margin: 0; padding: ${ABSTAND.r100} 0 ${ABSTAND.r60};
+    border-top: ${STRICH.kraeftig} solid var(--linie); text-align: center;
+    font: ${GRAD.klein}/${ZEILE.luftig} var(--mono); letter-spacing: ${SPERRUNG.leicht};
+    color: color-mix(in srgb, var(--rand) ${ANTEIL.fusszeile}, var(--tinte)); }
   /* Die Adresse ist der Zweck der Zeile: sie steht in Tinte und traegt den
      Rotstift-Unterstrich der uebrigen Verweise. */
-  .fussinhalt a { color: var(--tinte); font-weight: 700;
-    text-decoration-color: color-mix(in srgb, var(--korrektur) 40%, transparent);
-    text-decoration-thickness: 1px; text-underline-offset: .28em;
-    transition: text-decoration-color .15s ease, text-decoration-thickness .15s ease; }
+  .fussinhalt a { color: var(--tinte); font-weight: ${GEWICHT.fett};
+    text-decoration-color: color-mix(in srgb, var(--korrektur) ${ANTEIL.fussUnterstrich}, transparent);
+    text-decoration-thickness: ${STRICH.haar}; text-underline-offset: .28em;
+    transition: text-decoration-color ${DAUER.flink} ease, text-decoration-thickness ${DAUER.flink} ease; }
   /* In Ruhe nur angedeutet, beim Zeigen der volle Rotstift. */
   .fussinhalt a:hover, .fussinhalt a:focus-visible {
-    text-decoration-color: var(--korrektur); text-decoration-thickness: 2px; }
+    text-decoration-color: var(--korrektur); text-decoration-thickness: ${STRICH.kraeftig}; }
 
   /* Fliesstext der Methodik schmal halten: lange Zeilen liest niemand. */
   .prosa-schmal { max-width: 40rem; }
   /* Unter der Bilanz laeuft der Vorbehalt zweispaltig wie das Blatt: drei
      kurze Absaetze nebeneinander lesen sich schneller als eine lange Fahne.
      Die Spalten duerfen dafuer weiter als die schmale Lesebreite reichen. */
-  @media (min-width: 48rem) {
-    .prosa-zweispaltig { max-width: none; columns: 2; column-gap: 2.75rem;
+  @media (min-width: ${UMBRUCH.schmal}) {
+    .prosa-zweispaltig { max-width: none; columns: 2; column-gap: ${ABSTAND.r275};
       column-rule: 1px solid var(--linie); }
     /* Die Absaetze duerfen umbrechen wie im Blatt -- sonst faellt einer ganz
        in die linke Spalte und die Fahnen werden ungleich lang. */
     .prosa-zweispaltig p:first-child { margin-top: 0; }
   }
-  .prosa-schmal p { margin: 0 0 .8rem; }
+  .prosa-schmal p { margin: 0 0 ${ABSTAND.r80}; }
 
   /* Die Korrekturfahne zeigt den Wortunterschied der beiden Fassungen:
      Getilgtes durchgestrichen in Karmin, Eingefuegtes unterstrichen in Gruen.
      Beide tragen Strich und Farbe -- keines der Mittel steht allein. */
-  .fahne { font: 1.05rem/1.6 var(--mono); margin: 0 0 1rem; }
+  .fahne { font: ${GRAD.grund}/${ZEILE.luftig} var(--mono); margin: 0 0 ${ABSTAND.r100}; }
   .fahne del { color: var(--korrektur); text-decoration: line-through;
-    text-decoration-thickness: 2px; }
+    text-decoration-thickness: ${STRICH.kraeftig}; }
   .fahne ins { color: var(--vorschlag); text-decoration: underline;
-    text-decoration-thickness: 2px; }
-  .mailvorschau { border: 1px solid var(--linie); margin: 0 0 1.5rem; overflow-x: auto; }
+    text-decoration-thickness: ${STRICH.kraeftig}; }
+  .mailvorschau { border: ${STRICH.haar} solid var(--linie); margin: 0 0 ${ABSTAND.r150}; overflow-x: auto; }
   /* Die ganze Zeile ist das Klickziel -- beim Zeigen fuellt sie sich einen Hauch
      dunkler, nicht invers. Formulare und Griff sind davon ausgenommen. */
   tr[data-href] { cursor: pointer; }
   /* Objektnamen in den Zeilen: Schreibmaschine fett statt Unterstreichung --
      die ganze Zeile ist ohnehin das Klickziel, der Link braucht keine eigene
      Auszeichnung mehr. */
-  td a { font: 700 .95rem/1.4 var(--mono); letter-spacing: .01em;
+  td a { font: ${GEWICHT.fett} ${GRAD.normal}/${ZEILE.satz} var(--mono); letter-spacing: ${SPERRUNG.fein};
     color: var(--tinte); text-decoration: none; }
-  tr[data-href]:hover td { background: color-mix(in oklab, var(--tinte) 6%, var(--papier)); }
+  tr[data-href]:hover td { background: color-mix(in oklab, var(--tinte) ${ANTEIL.zeileUnterZeiger}, var(--papier)); }
   /* Knoepfe in Tabellenzeilen sind Werkzeug, nicht Ziel der Seite: nuechtern,
      rechteckig, ueber die volle Zeilenhoehe -- der Rotstift kommt beim Zeigen.
      height:100% braucht die 1px-Hoehe an der Zelle, sonst loest es sich nicht auf. */
   /* Die Schaltflaeche steht am rechten Rand der Zeile, die Angaben links --
      dazwischen bleibt Luft, statt dass beides aneinanderklebt. */
-  td.aktion, th.aktion { padding: 0 0 0 2rem; width: 1%; height: 1px;
+  td.aktion, th.aktion { padding: 0 0 0 ${ABSTAND.r200}; width: 1%; height: 1px;
     text-align: right; }
   td.aktion form { display: block; height: 100%; }
   table button {
-    display: flex; align-items: center; margin: 0; padding: 0 .7rem; min-height: 0;
+    display: flex; align-items: center; margin: 0; padding: 0 ${ABSTAND.r70}; min-height: 0;
     height: 100%; width: 100%;
-    font: .8rem/1.4 var(--mono); letter-spacing: .02em; text-transform: none;
+    font: ${GRAD.klein}/${ZEILE.satz} var(--mono); letter-spacing: ${SPERRUNG.fein}; text-transform: none;
     background: transparent; color: var(--rand);
-    border: none; border-left: 1px solid var(--linie); border-radius: 0;
+    border: none; border-left: ${STRICH.haar} solid var(--linie); border-radius: 0;
     box-shadow: none; transition: none; transform: none;
   }
   table button:hover, table button:focus-visible {
@@ -1245,14 +1295,14 @@ const STYLES = `
      die Rueckfrage offen ist) in Form und Lage. */
   table button:active {
     background: var(--korrektur); color: var(--papier);
-    border: none; border-left: 1px solid var(--korrektur); border-radius: 0;
+    border: none; border-left: ${STRICH.haar} solid var(--korrektur); border-radius: 0;
     transform: none; box-shadow: none;
   }
   /* Gezogen wird die ganze Zeile; das Zeichen davor zeigt es an. Sein
      Trennstrich bleibt aus, damit die Linie erst am Text beginnt. */
   tbody tr[draggable="true"] { cursor: grab; }
   tbody tr[draggable="true"] .griff { border-bottom-color: transparent; }
-  tr.zieht { opacity: .4; }
+  tr.zieht { opacity: ${DECKKRAFT.gezogeneZeile}; }
   /* Einfuegemarke: eine karminrote Linie an der Kante, an der die gezogene
      Zeile beim Loslassen einsortiert wuerde. Als Innenschatten auf den Zellen,
      weil border-collapse Zeilenraender verschluckt. */
@@ -1262,23 +1312,26 @@ const STYLES = `
      unter dem Zeiger in voller Farbe -- so tritt es erst hervor, wenn die
      Zeile gemeint ist. Groesser als der Text, damit es als Griff lesbar ist. */
   .griff { color: var(--rand); user-select: none; width: 2rem;
-    font-size: 1.7rem; line-height: 1; text-align: center;
-    opacity: .33; transition: opacity .12s ease; }
+    font-size: ${GRAD.gross}; line-height: 1; text-align: center;
+    opacity: ${DECKKRAFT.ziehgriff}; transition: opacity ${DAUER.flink} ease; }
   tbody tr:hover .griff, tbody tr:focus-within .griff { opacity: 1; }
 
   /* Sortierbare Spaltenkoepfe: der Pfeil steht erst da, wenn nach dieser
      Spalte sortiert wurde -- vorher zeigt nur der Zeiger, dass sich klicken
      lohnt. Ohne JavaScript bleibt die Serverreihenfolge (alphabetisch). */
   /* Bilanz-Medienliste: Namen und Zahlen fett (Wunsch vom 7.8.2026). */
-  table.medienliste td { font-weight: 700; }
-  table.sortierbar th[role="button"] { cursor: pointer; user-select: none; }
+  table.medienliste td { font-weight: ${GEWICHT.fett}; }
+  /* Beschriftung und Pfeil auf einer Zeile: sonst bricht der Pfeil in
+     schmalen Spalten um und hebt die Beschriftung eine halbe Zeile. */
+  table.sortierbar th[role="button"] { cursor: pointer; user-select: none;
+    white-space: nowrap; }
   table.sortierbar th[role="button"]:hover,
   table.sortierbar th[role="button"]:focus-visible { color: var(--korrektur); }
   /* Der Platz fuer den Pfeil steht von Anfang an: sonst wuerde die Spalte beim
      ersten Klick um seine Breite springen. Das leere Zeichen haelt ihn frei. */
   table.sortierbar th[role="button"]::after {
-    content: "▲"; display: inline-block; width: 1em; margin-left: .2em;
-    font-size: .8em; visibility: hidden;
+    content: "▲"; display: inline-block; width: 1em; margin-left: ${ABSTAND_EM.e20};
+    font-size: ${GRAD_EM.pille}; visibility: hidden;
   }
   table.sortierbar th[aria-sort="ascending"]::after { content: "▲"; visibility: visible; }
   table.sortierbar th[aria-sort="descending"]::after { content: "▼"; visibility: visible; }
@@ -1296,14 +1349,14 @@ const STYLES = `
   /* Ab Tabletbreite bekommt die Seite mehr Raum, und die beiden Fassungen
      ruecken nebeneinander. Darunter bleibt es einspaltig -- untereinander sind
      zwei kurze Textfelder besser lesbar als zwei sehr schmale. */
-  @media (min-width: 62rem) {
+  @media (min-width: ${UMBRUCH.pille}) {
     .blatt, .kopfinhalt, .fusszeile { max-width: var(--mass); }
     /* Hauptspalte traegt Artikel und Korrektur, Nebenspalte die Einordnung.
        Die Aufteilung folgt der Arbeit, nicht dem verfuegbaren Platz. */
-    .arbeitsflaeche { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 0 2.25rem; }
+    .arbeitsflaeche { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 0 ${ABSTAND.r225}; }
     /* Gleiche Feldhoehen in beiden Spalten: Beschriftungen und Abstaende sind
        ohnehin identisch, damit liegen die Zeilen exakt uebereinander. */
-    #quoteBefore, #suggestionAfter, #comment { min-height: 9rem; }
+    #quoteBefore, #suggestionAfter, #comment { min-height: ${MASS.feldGross}; }
     /* Die Nebenspalte fuellt die Zeilenhoehe; der Knopf wird ans untere Ende
        geschoben und schliesst damit buendig mit dem letzten Textfeld links ab. */
     .nebenspalte { display: flex; flex-direction: column; }
@@ -1312,7 +1365,7 @@ const STYLES = `
        exakt uebereinander. */
     .nebenspalte .abschluss { margin-top: auto; }
     .hauptspalte > .feld:last-child { margin-bottom: 0; }
-    .nebenspalte .abschluss button { min-height: 9rem; }
+    .nebenspalte .abschluss button { min-height: ${MASS.feldGross}; }
     /* Verwaltungsformulare (Zeilenraster): die Spalten-Wrapper loesen sich im
        Raster auf, jedes Feldpaar teilt sich eine echte Rasterzeile -- so
        stehen die Zeilen beider Spalten exakt nebeneinander, auch wenn rechts
@@ -1355,15 +1408,15 @@ const STYLES = `
   /* Schmale Schirme: kompakter Kopf wie die mobile Ausgabe einer Zeitung --
      kleinerer Titel, das Datum rueckt unter den Untertitel, die Ressortleiste
      wird zur seitlich scrollbaren Zeile. */
-  @media (max-width: 40rem) {
-    .markenzeile { padding: 1rem 0 .5rem; }
-    .marke { font-size: 1.7rem; }
-    .untertitel { font-size: .74rem; letter-spacing: .1em; }
+  @media (max-width: ${UMBRUCH.telefon}) {
+    .markenzeile { padding: ${ABSTAND.r100} 0 ${ABSTAND.r50}; }
+    .marke { font-size: ${GRAD.gross}; }
+    .untertitel { font-size: ${GRAD.winzig}; letter-spacing: ${SPERRUNG.weit}; }
     /* Nur am Telefon ersetzt "15. Aug." das lange Datum; die kleine Marke
        entfaellt. */
     .datum-lang { display: none; }
     .datum-kurz { display: block; }
-    .datumszeile .kopfinhalt { justify-content: center; gap: .75rem; }
+    .datumszeile .kopfinhalt { justify-content: center; gap: ${ABSTAND.r70}; }
     .datum { position: static; transform: none; }
     .klebemarke { display: none; }
     /* Das ganze Band darf weichen, sobald gescrollt wird: der klebende Kopf
@@ -1372,18 +1425,18 @@ const STYLES = `
     .datumszeile { overflow: hidden;
       animation: bandweicht linear both;
       animation-timeline: scroll(root);
-      animation-range: 1rem 5rem; }
+      animation-range: ${SCROLLWEG.band}; }
 
     /* Die Ressorts bleiben eine Zeile; die Verwaltungspille rutscht darunter
        in eine eigene, zentrierte Reihe — statt die Zeile zu verlaengern. */
-    nav { flex-wrap: wrap; justify-content: center; row-gap: .1rem; }
-    nav a { white-space: nowrap; font-size: .8rem; padding: .55rem .7rem .45rem; }
+    nav { flex-wrap: wrap; justify-content: center; row-gap: ${ABSTAND.r10}; }
+    nav a { white-space: nowrap; font-size: ${GRAD.klein}; padding: ${ABSTAND.r50} ${ABSTAND.r70} ${ABSTAND.r35}; }
     nav > a:first-child { margin-left: 0; }
     /* Die Hauptreihe weicht dem Aufklapper; die Verwaltungspille steht
        rechts daneben in derselben Zeile. */
     nav > a { display: none; }
     .navklapp { display: block; }
-    nav { justify-content: center; gap: .6rem; align-items: center; }
+    nav { justify-content: center; gap: ${ABSTAND.r60}; align-items: center; }
     .randressorts { position: static; transform: none; margin: 0; align-self: center; }
 
     /* Am Telefon scrollt die Herkunftszeile mit dem Blatt statt fest zu
@@ -1391,7 +1444,7 @@ const STYLES = `
        bleibt sie Teil der festen Schale. */
     body:not(:has(.listenrumpf)) .fusszeile { position: static;
       animation: none; box-shadow: none; }
-    body:not(:has(.listenrumpf)) { padding-bottom: .5rem; }
+    body:not(:has(.listenrumpf)) { padding-bottom: ${ABSTAND.r50}; }
 
     /* Bilanz: die Namensspalte so schmal wie ihr laengster Eintrag, die
        Zahlen bekommen den Rest. table-Selektor, sonst gewinnt gleichspaltig. */
@@ -1405,33 +1458,33 @@ const STYLES = `
        scrollt der Kasten selbst — abgeschnitten wird nichts. */
     .mailvorschau { overflow-x: auto; }
     .mailvorschau table { width: 100% !important; max-width: 100% !important; }
-    .mailvorschau td { padding-left: .35rem !important; padding-right: .35rem !important; }
+    .mailvorschau td { padding-left: ${ABSTAND.r35} !important; padding-right: ${ABSTAND.r35} !important; }
     .mailvorschau div { max-width: 100%; box-sizing: border-box; }
     /* Artikeladressen sind lang und kennen keine Trennstelle — ohne das
        hielten sie die Tabelle auf ihrer Mindestbreite. */
     .mailvorschau a, .mailvorschau p, .mailvorschau div { overflow-wrap: anywhere; }
-    .mailkopf { font-size: .78rem; word-break: break-word; }
+    .mailkopf { font-size: ${GRAD.winzig}; word-break: break-word; }
 
     /* Schriftstaffel fuers Telefon: Fliesstext bleibt bei 16 px (darunter
        zoomen Browser beim Tippen in Felder), alles Ausgezeichnete rueckt
        eine Stufe herunter — die Verhaeltnisse bleiben, die Seite wird
        ruhiger und nichts bricht mehr unschoen um. */
-    h1 { font-size: 1.35rem; margin-bottom: 1rem; }
-    h2 { font-size: 1rem; }
-    h2.rubrik { font-size: 1.05rem; margin-top: 2rem; }
-    .prosa .einstieg { font-size: 1.05rem; }
-    button, a.knopf { font-size: .95rem; padding: .7rem .6rem .6rem .9rem; }
-    .kennzahl-wert { font-size: 1.6rem; }
-    .kennzahl-wert.klein { font-size: 1rem; }
-    .balkenname { font-size: .8rem; }
-    .balkenwert { font-size: .78rem; }
-    .balkenteilname { font-size: .7rem; }
+    h1 { font-size: ${GRAD.stark}; margin-bottom: ${ABSTAND.r100}; }
+    h2 { font-size: ${GRAD.grund}; }
+    h2.rubrik { font-size: ${GRAD.grund}; margin-top: ${ABSTAND.r200}; }
+    .prosa .einstieg { font-size: ${GRAD.grund}; }
+    button, a.knopf { font-size: ${GRAD.normal}; padding: ${ABSTAND.r70} ${ABSTAND.r60} ${ABSTAND.r60} ${ABSTAND.r95}; }
+    .kennzahl-wert { font-size: ${GRAD.gross}; }
+    .kennzahl-wert.klein { font-size: ${GRAD.grund}; }
+    .balkenname { font-size: ${GRAD.klein}; }
+    .balkenwert { font-size: ${GRAD.winzig}; }
+    .balkenteilname { font-size: ${GRAD.winzig}; }
     /* Untergrenze 11px: darunter wird die Schreibmaschine unleserlich. */
-    .teilzahl { min-width: .95rem; height: .95rem; font-size: .6875rem; }
-    .zaehlweise { font-size: .6875rem; }
-    .verlaufsmonat, .verlaufswert { font-size: .6875rem; }
-    .trefferWechsel { font-size: .78rem; }
-    .trefferSatz { font-size: .8rem; }
+    .teilzahl { min-width: .95rem; height: .95rem; font-size: ${GRAD.winzig}; }
+    .zaehlweise { font-size: ${GRAD.winzig}; }
+    .verlaufsmonat, .verlaufswert { font-size: ${GRAD.winzig}; }
+    .trefferWechsel { font-size: ${GRAD.winzig}; }
+    .trefferSatz { font-size: ${GRAD.klein}; }
   }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

@@ -15,6 +15,17 @@ const FARB_MELDUNG =
   "Farbwert als Literal. Farben stehen in PALETTE/PALETTE_DUNKEL " +
   "(packages/shared/src/constants.ts) und werden von dort bezogen.";
 
+/**
+ * Dasselbe für die Abstufungen: Anteil in `color-mix`, Deckkraft, Farbdrehung
+ * stehen in ANTEIL / DECKKRAFT / SCHWEREGRAD_TON. `opacity: 0`/`1` und
+ * `/ 0` bleiben erlaubt — Zustände, keine Abstufungen.
+ */
+/* Schrägstrich escaped: der Selektor liest den Ausdruck als /…/-Literal. */
+const ABSTUFUNGSLITERAL = String.raw`color-mix\([^;]*\d\s*%|\)\s*\/\s*0?\.\d|opacity:\s*0?\.\d|hsl\([^;]*\d`;
+const ABSTUFUNGS_MELDUNG =
+  "Abstufung als Literal. Anteile, Deckkraft und Farbdrehungen stehen in " +
+  "ANTEIL/DECKKRAFT/SCHWEREGRAD_TON (packages/shared/src/constants.ts).";
+
 export default tseslint.config(
   { ignores: ["**/dist/**", "**/build/**", "**/migrations/**", "fixtures.local/**"] },
   js.configs.recommended,
@@ -27,6 +38,11 @@ export default tseslint.config(
         "error",
         { selector: `Literal[value=/${FARBLITERAL}/]`, message: FARB_MELDUNG },
         { selector: `TemplateElement[value.raw=/${FARBLITERAL}/]`, message: FARB_MELDUNG },
+        { selector: `Literal[value=/${ABSTUFUNGSLITERAL}/]`, message: ABSTUFUNGS_MELDUNG },
+        {
+          selector: `TemplateElement[value.raw=/${ABSTUFUNGSLITERAL}/]`,
+          message: ABSTUFUNGS_MELDUNG,
+        },
       ],
     },
   },

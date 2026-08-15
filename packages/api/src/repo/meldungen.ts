@@ -47,6 +47,8 @@ export interface MeldungsZeile {
   headline: string | null;
   articleUrl: string;
   kategorie: string;
+  /** Schluessel der Kategorie — die Liste erkennt daran die weichen. */
+  kategorieKey: string;
   severity: number;
   outcome: Ausgang;
   respondedAt: number | null;
@@ -96,6 +98,7 @@ export function listeMeldungen(
       n.headline,
       n.article_url AS articleUrl,
       e.label AS kategorie,
+      e.key AS kategorieKey,
       n.severity,
       n.outcome,
       n.responded_at AS respondedAt
