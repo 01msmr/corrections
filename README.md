@@ -122,7 +122,9 @@ aus einer Quelle generiert: `tools/iconsErzeugen.py`.
   eine Sperrliste (`FORBIDDEN_PUBLIC_FIELDS`) wird zur Laufzeit rekursiv
   geprüft und auf Typ-Ebene beim Kompilieren.
 - **Kein Ranking.** Keine Bestenlisten, keine Ampelfarben auf Werten,
-  Quoten nie ohne n.
+  Quoten nie ohne n. Einzige Ausnahme: In der nicht-öffentlichen
+  Meldungsliste trägt der Schweregrad Farbstufen — er bewertet die eigene
+  Meldung, kein Medium.
 - Zitierte Fundstellen ≤ 280 Zeichen; sie gehen nur an die Redaktion des
   Textes und in die nicht-öffentliche Ablage.
 
