@@ -218,6 +218,8 @@ export const MASS = {
   /** QR-Bild des Kurzbefehls: in der Zeile und aufgeklappt. */
   qrKlein: "8.5rem",
   qrGross: "20rem",
+  /** Grundbreite des Textes neben dem QR-Bild; darunter bricht die Zeile um. */
+  qrneben: "14rem",
   /** Eingabefelder: Anzahl, Textfeld, Zitat, aufgeklapptes Feld. */
   feldKlein: "4.5rem",
   feldMittel: "5.5rem",

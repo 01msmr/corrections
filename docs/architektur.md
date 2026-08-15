@@ -196,7 +196,9 @@ ohne dass Korrekturen verloren gehen; die letzte Domain bleibt stehen.
 
 Auszeichnungsfarbe ist Kirschrot `#bb2233` (dunkel `#e07b86`), Schwarz für
 Schatten als `PALETTE.schatten`. **Eine Lint-Regel verbietet Farbliterale**
-außerhalb von `constants.ts` — der Deploy bricht sonst ab.
+außerhalb von `constants.ts` — der Deploy bricht sonst ab. Seit dem
+16.8.2026 gilt dasselbe für die Abstufungen und alle Maße (siehe „Maße als
+Skalen").
 
 ### Offen
 
@@ -362,3 +364,56 @@ Schreiben in `repo/artikelChecks.ts`):
 
 Der Ausgang einer Meldung bleibt unberührt; ein Befund ist Evidenz, keine
 Entscheidung.
+
+## Ergänzungen (Stand 16. August 2026)
+
+### Maße als Skalen
+
+Alle Zahlen mit Gestaltungsbedeutung stehen in `packages/shared/src/masse.ts`:
+`GRAD`, `GRAD_EM`, `ZEILE`, `ABSTAND`, `ABSTAND_EM`, `STRICH`, `RADIUS`,
+`DAUER`, `SPERRUNG`, `GEWICHT`, `EBENE`, dazu `UMBRUCH`, `SCHATTEN`,
+`SCROLLWEG`, `KURVE`, `HUB` und `MASS`. Die Farbabstufungen (`ANTEIL`,
+`DECKKRAFT`, `SCHWEREGRAD_TON`) bleiben in `constants.ts` neben der Palette.
+Das Stylesheet wählt eine Stufe, statt einen Wert zu setzen; eine zweite
+Lint-Regel weist Literale ab.
+
+Die Skalen sind aus den gewachsenen Werten verdichtet: 20 Schriftgrade wurden
+8, 45 Abstände wurden 20, 11 Zeilenhöhen 6, 6 Dauern 4, und 19 Mischanteile
+fielen auf ein 5er-Raster. Zusammengelegt wurde, wo der Unterschied unter
+einem Pixel lag.
+
+**Ausnahme `UMBRUCH`:** dort wird nicht gerundet. Die `.0625rem`-Werte sind
+die Ein-Pixel-Partner ihrer Grenze (`max-width: 60rem` endet, wo
+`min-width: 60.0625rem` beginnt); laufen sie auseinander, klafft genau ein
+Pixel, in dem keine der beiden Ansichten greift.
+
+Schrift in Chips und Pillen steht als Faktor (`GRAD_EM.pille`, 0,85 der
+Umgebung) statt als feste Stufe. Sie muss kleiner sein als ihre Zeile — sonst
+tragen Polster und Rundung die Marke über die Zeilenhöhe hinaus — und folgt
+als Faktor jeder Umgebung.
+
+**Beim Arbeiten:** `@korrektur/shared` wird über sein `dist` aufgelöst. Nach
+einer Änderung dort erst `pnpm --filter @korrektur/shared build`, sonst sieht
+`packages/api` sie weder beim Typecheck noch zur Laufzeit.
+
+### Meldungsliste: Kopfzeile, Filterzeile, weiche Kategorien
+
+- Die **Spaltenköpfe kleben** unter der Filterzeile; ihr Halt ist die
+  gemessene Höhe von Kopf und Filterzeile zusammen (beide schrumpfen beim
+  Scrollen). Die Trennlinie darunter ist ein Innenschatten, weil
+  `border-collapse` den Rahmen einer klebenden Zelle mitscrollen lässt.
+- Der immer vorhandene **Sortierpfeil** — Platzhalter, damit die Spalte beim
+  ersten Klick nicht springt — brach in den schmalsten Spalten um und hob
+  deren Beschriftung um eine halbe Zeile. `white-space: nowrap` auf den
+  sortierbaren Köpfen.
+- In der **Filterzeile** tragen alle Bedienteile dieselbe Schrift. Zuvor
+  ließ `input, select { font: inherit }` nur die beiden Selects in ihrem
+  Label die Schreibmaschine erben; Ausgang und Suchfeld fielen auf die
+  Grundschrift zurück und wurden dadurch drei Pixel höher.
+- **Weiche Kategorien** (`WEICHE_FEHLERARTEN`) tragen einen blasseren Chip:
+  Korrekturrot auf 0,6 verrechnet, hell vor Weiß, dunkel vor Schwarz — nicht
+  per `opacity`, sonst verblasste die Beschriftung mit.
+- Das **Quer-Scrollen der Artikeltitel** löste die History-Geste des Browsers
+  aus, sobald die Geste ins Leere lief. `preventDefault` steht jetzt vor der
+  Prüfung, ob es etwas zu schieben gibt; für den Finger zusätzlich
+  `overscroll-behavior-x: contain`.

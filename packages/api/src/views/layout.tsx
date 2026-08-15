@@ -433,8 +433,10 @@ const STYLES = `
   .qr-zeile .zaehler { min-width: 0; }
   /* Neben dem Code stehen Knopf und Bildunterschrift untereinander; der
      Knopf traegt seine eigene Breite, nicht die der Spalte. */
+  /* Kleine Grundbreite, damit der Text neben dem Code bleibt: bei
+     flex-wrap wird umbrochen, bevor geschrumpft wird. */
   .qr-neben { display: flex; flex-direction: column; align-items: flex-start;
-    gap: ${ABSTAND.r70}; min-width: 0; }
+    gap: ${ABSTAND.r70}; min-width: 0; flex: 1 1 ${MASS.qrneben}; }
 
   /* Das i traegt seinen Hinweis selbst: beim Zeigen und beim Tastatur-Fokus,
      damit er nicht nur der Maus gehoert. Der Kasten haengt am Zeichen, ist

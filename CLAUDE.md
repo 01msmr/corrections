@@ -54,6 +54,11 @@ Ist der Altbestand drin, kann die Route entfallen: eine Zeile in `app.ts` (§11.
 - Parser und Normalisierer sind reine Funktionen ohne IO. IO nur in `db/client.ts`,
   `article/fetch.ts`, `dispatch/send.ts`, `inbox/postfach.ts`, `repo/*.ts`.
 - Zeitstempel als UTC-Epoch-Sekunden (int) in der Datenbank, Formatierung nur in der Ansicht.
+- Keine Werte im Stylesheet: Farben in `PALETTE`, Abstufungen in `ANTEIL`/`DECKKRAFT`,
+  alle Maße in `packages/shared/src/masse.ts`. Zwei Lint-Regeln weisen Literale ab.
+  Eine neue Stelle nimmt die nächstliegende Stufe; eine neue Stufe nur, wenn keine passt.
+- Nach Änderungen in `shared` erst `pnpm --filter @korrektur/shared build` — `api`
+  löst das Paket über sein `dist` auf und sieht sie sonst nicht.
 - Datenbankänderungen nur über Drizzle-Migrationen. Ausnahme: die Kennzahlen-Views,
   die beim Start aus den Konstanten in `shared` neu erzeugt werden.
 - **`author` wird nicht erhoben, nicht gespeichert, nicht extrahiert.**

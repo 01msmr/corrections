@@ -129,12 +129,17 @@ aus einer Quelle generiert: `tools/iconsErzeugen.py`.
   Meldung, kein Medium.
 - Zitierte Fundstellen ≤ 280 Zeichen; sie gehen nur an die Redaktion des
   Textes und in die nicht-öffentliche Ablage.
+- **Keine Werte im Stylesheet.** Farben stehen in `PALETTE`, ihre
+  Abstufungen in `ANTEIL`/`DECKKRAFT`, alle Maße in `masse.ts`
+  (Schriftgrade, Zeilenhöhen, Abstände, Radien, Dauern, Umbruchpunkte,
+  Ebenen). Zwei Lint-Regeln weisen Literale ab; die Oberfläche wählt eine
+  Stufe, statt einen Wert zu setzen.
 
 ## Struktur
 
 | Pfad | Inhalt |
 |---|---|
-| `packages/shared` | Zod-Schemas, Palette, reine Erkennungs-/Normalisierungs-/Benennungsfunktionen — einzige Typquelle |
+| `packages/shared` | Zod-Schemas, Palette und Maße, reine Erkennungs-/Normalisierungs-/Benennungsfunktionen — einzige Typquelle |
 | `packages/api` | Server: Formulare, Versand, Bilanz, Verwaltung, Datenbank (Drizzle + SQLite), Worker |
 | `packages/backfill` | Einmalwerkzeuge für den Altbestand |
 | `tools/` | Icon-Generator; im Bündel zusätzlich die Einmalwerkzeuge (Backfill-Import, Bestätigungen, Papierkorb) |
@@ -156,6 +161,10 @@ pnpm bundle      # esbuild-Bündel für die Produktion
 
 `web.ts` validiert die Umgebung beim Start und bricht ohne vollständige
 Konfiguration ab; `.env.example` listet alle Variablen.
+
+`@korrektur/shared` wird über sein `dist` aufgelöst. Nach einer Änderung dort
+erst `pnpm --filter @korrektur/shared build`, sonst sieht `packages/api` sie
+weder beim Typecheck noch zur Laufzeit.
 
 ## Deployment
 

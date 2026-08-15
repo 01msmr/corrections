@@ -123,7 +123,7 @@ export const UeberSeite: FC<{ betreiber?: boolean }> = ({ betreiber = false }) =
 
       <h2 class="rubrik">Aus der Werkstatt</h2>
       <p>
-        Diese Web-App „Korrektuhren“ (im Titel bewusst falsch geschrieben) ;-) ist das Produkt einer Woche von mir und Claude. Es werden keine personenbezogenen Daten erhoben.
+        Diese Web-App „Korrektuhren“ (im Titel bewusst falsch geschrieben ;-) ist das Produkt einer Woche von mir und Claude. Es werden keine personenbezogenen Daten erhoben.
       </p>
       <p>
         Fehlerkategorie und Schweregrad schlägt die Seite selbst vor: Sie vergleicht beide
