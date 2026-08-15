@@ -220,6 +220,14 @@ const STYLES = `
     from { box-shadow: 0 -48px 16px 40px rgb(var(--schatten) / 0); }
     to { box-shadow: 0 -34px 26px 40px rgb(var(--schatten) / .55); }
   }
+  /* Auf der Meldungsliste klebt unterhalb schon die Filterzeile mit
+     eigener Kante -- der Kopf traegt dort nur ein Viertel des Schattens,
+     sonst stapeln sich zwei Trenner. */
+  body:has(.listenrumpf) .klebekopf { animation-name: kopfschattenleise; }
+  @keyframes kopfschattenleise {
+    from { box-shadow: 0 -48px 16px 40px rgb(var(--schatten) / 0); }
+    to { box-shadow: 0 -34px 26px 40px rgb(var(--schatten) / .14); }
+  }
   /* Schmal gibt das Band beim Scrollen seine Zeile frei; der Kopf schrumpft
      dabei um genau diese Zeile. */
   @keyframes bandweicht {
@@ -292,6 +300,19 @@ const STYLES = `
   /* Trennstrich im Seiten-Hintergrund: wirkt wie ein Spalt in der Pille. */
   .randressorts a + a { border-left: 2px solid var(--papier);
     padding-left: calc(.55rem - 1px); }
+  /* Oberhalb des Telefons: 1px vom Polster in den Aussenabstand verlagert
+     -- die Pille wirkt eine Spur kompakter und steht freier. */
+  @media (min-width: 40.0625rem) {
+    .randressorts { margin: 2px; }
+    /* Breit haengt die Pille absolut und zentriert sich per transform --
+       eine vertikale Margin schoebe sie aus der Mitte. */
+    @media (min-width: 62.0625rem) {
+      .randressorts { margin: 0 2px 0 0; }
+    }
+    .randressorts a { padding: calc(.65rem - 2px) calc(.95rem - 2px); }
+    .randressorts a:first-child { padding-right: calc(.55rem - 2px); }
+    .randressorts a + a { padding-left: calc(.55rem - 2px); }
+  }
   .randressorts a:hover, .randressorts a:focus-visible {
     background: color-mix(in srgb, var(--linie) 90%, rgb(var(--schatten)));
     color: var(--tinte); }
