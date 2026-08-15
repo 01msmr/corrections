@@ -216,23 +216,15 @@ export const BilanzSeite: FC<{
               titel="Korrekturquote"
               stand={bilanz.korrektur}
               leerGrund="noch kein Artikel nachgeprüft"
-              erlaeuterung="Anteil der Korrekturen, nach denen der Artikel nachweislich berichtigt wurde — bestätigt von Hand, nicht automatisch. Ungeprüfte Artikel zählen nicht als „nicht korrigiert“."
+              erlaeuterung="Anteil der Korrekturen, nach denen der Artikel nachweislich berichtigt wurde."
             />
             <Quote
               titel="Antwortquote"
               stand={bilanz.antwort}
               leerGrund="noch kein Postfach-Abgleich gelaufen"
-              erlaeuterung="Anteil der versendeten Korrekturen, auf die eine Redaktion geantwortet hat. Automatische Eingangsbestätigungen zählen nicht."
+              erlaeuterung="Anteil der versendeten Korrekturen, auf die eine Redaktion geantwortet hat."
             />
           </div>
-          <p class="zaehler">
-            Beide Quoten brauchen Daten, die erst im Betrieb entstehen: zugeordnete
-            Antworten aus dem Postfach und wiederholte Artikel-Prüfungen. Solange die
-            fehlen, bleibt das Feld leer — eine Null stünde sonst für „keine Redaktion
-            hat reagiert“, und das wäre eine Aussage über uns, nicht über die
-            Redaktionen.
-          </p>
-
           <h2 class="balken">Was auffällt<Zaehlweise mitWeichen={mitWeichen} weicheNamen={weicheNamen} /></h2>
           <Verteilung werte={bilanz.fehlerarten} grundanteil={grundanteil} />
 
@@ -240,8 +232,10 @@ export const BilanzSeite: FC<{
           <Verteilung werte={bilanz.schwere} />
 
           <h2 class="balken">Verlauf<Zaehlweise mitWeichen={mitWeichen} weicheNamen={weicheNamen} /></h2>
+          {/* Neuester Monat zuerst, dann rueckwaerts: der aktuelle Stand
+              steht sichtbar vorn, auch wenn die Reihe quer scrollt. */}
           <div class="verlauf">
-            {bilanz.verlauf.map((wert) => (
+            {[...bilanz.verlauf].reverse().map((wert) => (
               <div class="verlaufsspalte" title={`${wert.anzahl} im ${wert.monat}`}>
                 <span class="verlaufswert">{wert.anzahl}</span>
                 <span

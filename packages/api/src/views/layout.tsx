@@ -281,8 +281,10 @@ const STYLES = `
     .randressorts { position: static; transform: none; margin-left: auto;
       align-self: center; }
   }
+  /* Vertikal grosszuegiger als die Schrift verlangt: die Pille ist ein
+     haeufiges Tippziel (~34px Hoehe). */
   .randressorts a { border-bottom: none; color: var(--tinte);
-    padding: calc(.45rem - 1px) calc(.95rem - 1px); }
+    padding: calc(.65rem - 1px) calc(.95rem - 1px); }
   /* Am Spalt stossen zwei Innenabstaende aufeinander und ergaeben sonst
      doppelt so viel Luft wie an den runden Aussenkanten. Innen daher knapper,
      damit die Pille in beiden Ansichten gleichmaessig wirkt. */
@@ -299,8 +301,12 @@ const STYLES = `
   .randressorts .navicon { display: none; }
   @media (max-width: 62rem) {
     .randressorts .ressorttext { display: none; }
-    .randressorts .navicon { display: block; width: 1.05em; height: 1.05em;
-      margin: 0; position: relative; top: .12em; }
+    .randressorts .navicon { display: block; width: 1.575em; height: 1.575em;
+      margin: 0; }
+    /* Das groessere Icon frisst das Polster: die Pille bleibt so hoch wie
+       der Aufklapper daneben, das Icon mittig darin. */
+    .randressorts a { display: flex; align-items: center;
+      padding-top: calc(.35rem - 1px); padding-bottom: calc(.35rem - 1px); }
   }
   /* Der Aufklapper der schmalen Navigation: die Zeile oben traegt den
      aktiven Bereich wie die aktive Ressortmarke (hell auf Karmin), die
@@ -370,7 +376,9 @@ const STYLES = `
 
   /* Der Hinweis steht neben dem Code, nicht darunter — deshalb kein
      Umbruch; der Text schrumpft stattdessen mit der Spalte. */
-  .qr-zeile { display: flex; align-items: center; gap: .9rem; }
+  /* wrap: schmal rutscht der Kurzbefehl-Knopf unter den QR-Code, statt
+     die Seite querscrollen zu lassen. */
+  .qr-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: .9rem; }
   .qr-zeile .zaehler { min-width: 0; }
   /* Neben dem Code stehen Knopf und Bildunterschrift untereinander; der
      Knopf traegt seine eigene Breite, nicht die der Spalte. */
@@ -466,7 +474,7 @@ const STYLES = `
   .zaehlweise { display: inline-flex; border-radius: 999px; overflow: hidden;
     background: color-mix(in srgb, var(--balkengrund) 70%, var(--papier));
     font: 700 .7rem/1 var(--sans); letter-spacing: .02em; flex: none; }
-  .zaehlweise > * { padding: .28rem .6rem; text-decoration: none;
+  .zaehlweise > * { padding: .4rem .7rem; text-decoration: none;
     color: color-mix(in srgb, var(--balkenschrift) 70%, var(--balkengrund)); }
   .zaehlweise > * + * { border-left: 2px solid var(--balkengrund); }
   .zaehlweise a:hover, .zaehlweise a:focus-visible {
@@ -694,6 +702,9 @@ const STYLES = `
     white-space: nowrap; }
   .meldungsliste .sp-kategorie .langform { display: inline-block; }
   .sp-kategorie .kurzform { display: none; }
+  /* Der Rueckweg aus dem Detail: als Tippziel gepolstert. */
+  .zurueckliste { display: inline-block; padding: .5rem 0; }
+
   /* Der Schweregrad als Chip in derselben Form. Die Toene sind vom
      Korrekturrot aus im Farbton verschoben (relative Farbsyntax, keine
      eigenen Werte): schwer bleibt Karmin, mittel dreht nach Orange,
@@ -858,6 +869,11 @@ const STYLES = `
       font-size: .85rem; color: var(--rand); white-space: nowrap; }
     .meldungsliste .sp-kategorie .langform { display: none; }
     .sp-kategorie .kurzform { display: inline-block; }
+    /* Kennzahl-Kacheln paarweise: vier Aussagen, halber Scrollweg.
+       div-Praefix: die Basisregel steht spaeter im Blatt. */
+    div.eckdaten { grid-template-columns: 1fr 1fr; gap: .6rem; }
+    div.kennzahl { padding: .6rem .65rem; }
+
     /* Lange Erlaeuterungen: zwei Zeilen, Antippen klappt auf. */
     p.zaehler, .kennzahl-erklaerung { display: -webkit-box;
       -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
@@ -1389,28 +1405,10 @@ const STYLES = `
     .balkenname { font-size: .8rem; }
     .balkenwert { font-size: .78rem; }
     .balkenteilname { font-size: .7rem; }
-    .teilzahl { min-width: .95rem; height: .95rem; font-size: .64rem; }
-    .zaehlweise { font-size: .64rem; }
-    .trefferWechsel { font-size: .78rem; }
-    .trefferSatz { font-size: .8rem; }
-
-    /* Schriftstaffel fuers Telefon: Fliesstext bleibt bei 16 px (darunter
-       zoomen Browser beim Tippen in Felder), alles Ausgezeichnete rueckt
-       eine Stufe herunter — die Verhaeltnisse bleiben, die Seite wird
-       ruhiger und nichts bricht mehr unschoen um. */
-    h1 { font-size: 1.35rem; margin-bottom: 1rem; }
-    h2 { font-size: 1rem; }
-    h2.rubrik { font-size: 1.05rem; margin-top: 2rem; }
-    .prosa .einstieg { font-size: 1.05rem; }
-    button, a.knopf { font-size: .95rem; padding: .7rem .6rem .6rem .9rem; }
-    .kennzahl-wert { font-size: 1.6rem; }
-    .kennzahl-wert.klein { font-size: 1rem; }
-    .balkenname { font-size: .8rem; }
-    .balkenwert { font-size: .78rem; }
-    .balkenteilname { font-size: .7rem; }
-    .teilzahl { min-width: .95rem; height: .95rem; font-size: .64rem; }
-    .zaehlweise { font-size: .64rem; }
-    .verlaufsmonat, .verlaufswert { font-size: .68rem; }
+    /* Untergrenze 11px: darunter wird die Schreibmaschine unleserlich. */
+    .teilzahl { min-width: .95rem; height: .95rem; font-size: .6875rem; }
+    .zaehlweise { font-size: .6875rem; }
+    .verlaufsmonat, .verlaufswert { font-size: .6875rem; }
     .trefferWechsel { font-size: .78rem; }
     .trefferSatz { font-size: .8rem; }
   }

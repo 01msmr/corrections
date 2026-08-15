@@ -402,7 +402,7 @@ export const MeldungsAnsicht: FC<{ detail: MeldungsDetail; hinweis?: string | un
       </form>
 
       <p>
-        <a href="/admin/meldungen">← zurück zur Liste</a>
+        <a class="zurueckliste" href="/admin/meldungen">← zurück zur Liste</a>
       </p>
     </Layout>
   );
