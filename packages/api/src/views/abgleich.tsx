@@ -168,6 +168,19 @@ export const AbgleichSeite: FC<{
                 ) : null}
               </p>
             )}
+            {/* Offen wird gegen den Artikel verglichen, und dafuer braucht es
+                beide Fassungen im Wortlaut -- aus der Fahne allein liest sich
+                der eigene Vorschlag nicht ab. */}
+            {offen ? (
+              <>
+                <p class="abgleichbeleg">
+                  <span class="belegmarke">gemeldet</span> {fall.quoteBefore}
+                </p>
+                <p class="abgleichbeleg">
+                  <span class="belegmarke">vorgeschlagen</span> {fall.suggestion}
+                </p>
+              </>
+            ) : null}
             {/* Eine Antwort ist eine Behauptung. "Wir haben das bereits
                 korrigiert" steht auch dort, wo nichts geaendert wurde -- als
                 hoefliche Form von "wir diskutieren das nicht". Ohne Beleg im

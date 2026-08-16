@@ -372,6 +372,11 @@ describe("Ausgangs-Abgleich", () => {
       await app.request("/admin/abgleich?alle=1", { headers: { authorization: AUTH } })
     ).text();
     expect(html).toContain("Höflichkeitsformel");
+    /* Beide Fassungen im Wortlaut -- daran wird der Artikel gemessen. */
+    expect(html).toContain("gemeldet");
+    expect(html).toContain("vorgeschlagen");
+    expect(html).toContain("Der Mietwgaen stand bereit.");
+    expect(html).toContain("Der Mietwagen stand bereit.");
 
     await app.request(`/admin/abgleich/${id}?stelle=0&alle=1`, {
       method: "POST",
