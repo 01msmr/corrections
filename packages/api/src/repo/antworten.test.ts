@@ -6,6 +6,7 @@ import { seed } from "../db/seed.js";
 import { createOutlet } from "./outlets.js";
 import {
   ladeAntwortKandidaten,
+  listeBestaetigungen,
   macheAuszuegeLesbar,
   nimmBestaetigungenZurueck,
   vermerkeAntwort,
@@ -126,6 +127,23 @@ describe("Bestaetigungen zuruecknehmen", () => {
       excerpt: "Gern sichten und bearbeiten wir Ihren Hinweis.",
     });
     expect(zaehleBestaetigungen(db, passt)).toEqual({ ereignisse: 1, meldungen: 1 });
+    expect(db.select().from(responseEvents).all()).toHaveLength(1);
+  });
+
+  /* Vor dem Loeschen sichten: die Entscheidung faellt am Wortlaut. */
+  it("legt dieselben Treffer mit Kennung und Wortlaut vor", () => {
+    const id = meldung();
+    vermerkeAntwort(db, id, {
+      receivedAt: JETZT,
+      rawMessageId: "sicht-1",
+      fromAddr: "leserservice@spiegel.de",
+      excerpt: "Gern sichten und bearbeiten wir Ihren Hinweis.",
+    });
+    const liste = listeBestaetigungen(db, passt);
+    expect(liste).toHaveLength(1);
+    expect(liste[0]?.correctionId).toBe(id);
+    expect(liste[0]?.excerpt).toContain("Gern sichten");
+    expect(liste[0]?.outcomeVorher).toBe("acknowledged");
     expect(db.select().from(responseEvents).all()).toHaveLength(1);
   });
 

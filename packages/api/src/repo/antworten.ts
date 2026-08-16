@@ -107,6 +107,14 @@ function bestaetigungsEreignisse(db: Db, passt: (text: string) => boolean): Best
 }
 
 /** Zaehlt sie, ohne etwas zu aendern. */
+/** Dieselben Treffer zum Sichten, bevor jemand sie loescht. */
+export function listeBestaetigungen(
+  db: Db,
+  passt: (text: string) => boolean,
+): BestaetigungsZeile[] {
+  return bestaetigungsEreignisse(db, passt);
+}
+
 export function zaehleBestaetigungen(
   db: Db,
   passt: (text: string) => boolean,

@@ -3,6 +3,7 @@ import { createDb } from "../db/client.js";
 import { loadWorkerEnv } from "../env.js";
 import { passtAufBestaetigungsmuster } from "../inbox/bestaetigung.js";
 import {
+  listeBestaetigungen,
   macheAuszuegeLesbar,
   nimmBestaetigungenZurueck,
   zaehleBestaetigungen,
@@ -11,7 +12,8 @@ import {
 /**
  * Einmalwerkzeug: Eingangsbestaetigungen, die als Antwort gezaehlt wurden,
  * weil die Erkennung ihre Formulierung noch nicht kannte. Ohne Argument
- * wird nur gezaehlt; erst `--loeschen` nimmt sie zurueck.
+ * wird nur gezaehlt, `--zeigen` legt sie zum Lesen vor; erst `--loeschen`
+ * nimmt sie zurueck.
  *
  * Laeuft auf dem Server ueber "Skript ausfuehren": `npm run bestaetigungen`
  * bzw. `npm run bestaetigungen:loeschen`.
@@ -25,6 +27,22 @@ function main(): void {
     console.log(
       JSON.stringify({ level: "info", msg: "auszuege lesbar gemacht", geaendert: macheAuszuegeLesbar(db) }),
     );
+    return;
+  }
+
+  if (process.argv.includes("--zeigen")) {
+    /* Eine Zeile je Ereignis, damit der Blick ueber die Formulierungen
+       geht -- die Entscheidung faellt am Wortlaut, nicht an der Zahl. */
+    for (const zeile of listeBestaetigungen(db, passtAufBestaetigungsmuster)) {
+      console.log(
+        JSON.stringify({
+          ref: zeile.ref,
+          von: zeile.fromAddr,
+          ausgang: zeile.outcomeVorher,
+          auszug: (zeile.excerpt ?? "").replace(/\s+/g, " ").slice(0, 180),
+        }),
+      );
+    }
     return;
   }
 

@@ -11,8 +11,11 @@ und stellt beides auswertbar dar. Spec: `docs/superpowers/specs/2026-08-01-korre
 
 ### Betrieb (Server, über Plesk → Node.js → „Skript ausführen", nur der Name)
 - `worker` — Posteingang und fällige Artikel-Prüfungen von Hand
-- `bestaetigungen` / `bestaetigungen:loeschen` — fälschlich gezählte
-  Eingangsbestätigungen zählen bzw. zurücknehmen (mit JSON-Sicherung)
+- `bestaetigungen` / `bestaetigungen:zeigen` / `bestaetigungen:loeschen` —
+  fälschlich gezählte Eingangsbestätigungen zählen, im Wortlaut sichten bzw.
+  zurücknehmen (mit JSON-Sicherung). Vor dem Löschen sichten: die Muster
+  entscheiden am Text, und eine widersprechende Antwort sieht einer
+  Bestätigung ähnlich.
 - `auszuege` — gespeicherte Antwort-Auszüge nachträglich lesbar machen
 - `papierkorb` — Formulierungen im Papierkorb sichten (nur lesend)
 
