@@ -793,6 +793,8 @@ const STYLES = `
     padding: ${ABSTAND.px4} ${ABSTAND.px9}; border-radius: ${RADIUS.voll};
     background: var(--balkengrund); color: var(--balkenschrift);
     font: ${GEWICHT.fett} ${GRAD_EM.pille}/${ZEILE.eng} var(--sans); white-space: nowrap; }
+  /* Der Rat zum Befund: eine Nebenstimme, keine zweite Aussage. */
+  .belegrat { color: var(--rand); font-style: italic; }
   .abgleichtasten { display: flex; flex-wrap: wrap; align-items: center; gap: ${ABSTAND.r70}; }
   .abgleichtasten form { margin: 0; }
 

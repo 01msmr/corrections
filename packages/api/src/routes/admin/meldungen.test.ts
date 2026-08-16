@@ -193,8 +193,9 @@ describe("Ausgangs-Abgleich", () => {
     auszug: string,
     befund: "changed_as_suggested" | "unchanged",
     sicherheit = 100,
+    ankerguete: "exact" | "context" | "none" = "exact",
   ): string {
-    const id = meldung({ outcome: "acknowledged", respondedAt: JETZT });
+    const id = meldung({ outcome: "acknowledged", respondedAt: JETZT, anchorQuality: ankerguete });
     db.insert(responseEvents)
       .values({
         id: createId(),
@@ -223,10 +224,6 @@ describe("Ausgangs-Abgleich", () => {
     const doppelt = mitBelegen("Wir haben den Fehler korrigiert.", "changed_as_suggested");
     mitBelegen("Wir haben Ihren Hinweis erhalten.", "changed_as_suggested");
     mitBelegen("Wir haben den Fehler korrigiert.", "unchanged");
-    /* Rueckfall-Befund: die Berichtigung stand irgendwo im Artikel, nicht
-       nachweislich an unserer Fundstelle. */
-    mitBelegen("Wir haben den Fehler korrigiert.", "changed_as_suggested", 50);
-
     const antwort = await app.request("/admin/abgleich", { headers: { authorization: AUTH } });
     expect(antwort.status).toBe(200);
     const html = await antwort.text();
@@ -264,8 +261,27 @@ describe("Ausgangs-Abgleich", () => {
     expect(html).toContain("</span> Fundstelle");
   });
 
+  /* Ohne Anker ist der Rueckfall nicht die schwaechere, sondern die einzig
+     moegliche Methode -- der Fall gehoert in die Warteschlange, benannt. */
+  it("nimmt den Altbestand ohne Anker auf und benennt ihn", async () => {
+    mitBelegen("Wir haben den Fehler korrigiert.", "changed_as_suggested", 50, "none");
+    const html = await (
+      await app.request("/admin/abgleich", { headers: { authorization: AUTH } })
+    ).text();
+    expect(html).toContain("1 von 1");
+    expect(html).toContain("keine Anker");
+  });
+
+  it("benennt gerissene Anker als solche", async () => {
+    mitBelegen("Wir haben den Fehler korrigiert.", "changed_as_suggested", 50, "exact");
+    const html = await (
+      await app.request("/admin/abgleich", { headers: { authorization: AUTH } })
+    ).text();
+    expect(html).toContain("greifen aber nicht mehr");
+  });
+
   it("erklaert die leere Warteschlange mit Zahlen", async () => {
-    mitBelegen("Wir haben den Fehler korrigiert.", "changed_as_suggested", 50);
+    /* Beide fallen durch: der eine am Befund, der andere am Wortlaut. */
     mitBelegen("Wir haben den Fehler korrigiert.", "unchanged");
     mitBelegen("Wir haben Ihren Hinweis erhalten.", "changed_as_suggested");
 
@@ -275,10 +291,10 @@ describe("Ausgangs-Abgleich", () => {
     expect(html).toContain("Nichts abzugleichen");
     const zahl = (zeile: string): string =>
       html.split(zeile)[1]?.match(/<td>(\d+)<\/td>/)?.[1] ?? "";
-    expect(zahl("Antwort erhalten")).toBe("3");
-    expect(zahl("nennt die Antwort eine Korrektur")).toBe("2");
-    expect(zahl("Sicherheit 100")).toBe("0");
-    expect(zahl("Rückfall gefunden (50)")).toBe("1");
+    expect(zahl("Antwort erhalten")).toBe("2");
+    expect(zahl("nennt die Antwort eine Korrektur")).toBe("1");
+    expect(zahl("Anker gegriffen")).toBe("0");
+    expect(zahl("ohne greifende Anker")).toBe("0");
     expect(zahl("anderer Befund")).toBe("1");
   });
 

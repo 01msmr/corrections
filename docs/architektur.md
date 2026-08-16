@@ -471,11 +471,23 @@ zeigt die Fälle, in denen **beide** dasselbe sagen — `nenntKorrektur` auf dem
 Auszug (dieselbe reine Funktion, die eine Bestätigung von einer Antwort
 trennt) und `quote_state = 'changed_as_suggested'` in der jüngsten Prüfung.
 
-Dabei zählt nur der starke Befund (`match_confidence = 100`): Anker gegriffen,
-Text zwischen ihnen genau die Berichtigung. `pruefung.ts` vergibt denselben
-Zustand auch im Rückfall mit Sicherheit 50 — dort steht die Berichtigung nur
-irgendwo im Artikel, was bei kurzen Vorschlägen Zufall sein kann. Die Karte
-nennt die Sicherheit, damit sichtbar bleibt, worauf die Zeile beruht.
+`pruefung.ts` vergibt `changed_as_suggested` auf zwei Wegen: Anker gegriffen
+und der Text zwischen ihnen genau die Berichtigung (Sicherheit 100), oder im
+Rückfall die Berichtigung irgendwo im Artikel (50). Eine Beschränkung auf 100
+lag nahe — und leerte die Warteschlange vollständig: **der gesamte Altbestand
+trägt `anchor_quality = 'none'`**, denn beim Import aus alten Mails gab es
+keine Anker zu speichern. Für ihn ist der Rückfall nicht die schwächere,
+sondern die einzig mögliche Methode.
+
+Die Karte benennt deshalb die *Ursache* statt der Zahl:
+
+| Lage | heißt | Rat |
+|---|---|---|
+| `anker` | Anker gegriffen, Stelle trägt die Berichtigung | nichts weiter |
+| `altbestand` | Meldung ohne Anker, Berichtigung steht im Artikel | bei kurzen Formulierungen hineinsehen |
+| `gerissen` | Anker waren da und greifen nicht mehr | Artikel hat sich geändert, hineinsehen |
+
+Sortiert wird danach: das Eindeutige zuerst, was einen Blick braucht danach.
 
 Ein Fall je Bildschirm, wie in der Backfill-Review: Eingabetaste übernimmt
 (setzt „korrigiert wie vorgeschlagen"), X überspringt, ein Verweis führt ins

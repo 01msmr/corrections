@@ -25,19 +25,29 @@ export interface AbgleichZeile {
   antwortAm: number;
   geprueftAm: number;
   sicherheit: number;
+  ankerlage: Ankerlage;
 }
 
-/**
- * Nur der starke Befund zaehlt: Anker gegriffen, und der Text zwischen ihnen
- * ist genau die Berichtigung. Der Rueckfall (die Berichtigung steht irgendwo
- * im Artikel, Sicherheit 50) belegt nicht, dass *unsere* Fundstelle geaendert
- * wurde -- bei kurzen Vorschlaegen kann er Zufall sein.
- */
+/** Anker gegriffen und der Text zwischen ihnen genau die Berichtigung. */
 const SICHER = 100;
+
+/**
+ * Worauf der Befund beruht -- das entscheidet, wie schwer er wiegt:
+ *
+ * - `anker`: Anker gegriffen, die gemeldete Stelle traegt jetzt die
+ *   Berichtigung. Nichts weiter zu pruefen.
+ * - `altbestand`: Die Meldung hat gar keine Anker (aus alten Mails
+ *   uebernommen, `anchor_quality = 'none'`). Der Rueckfall ist dort nicht
+ *   die schwaechere, sondern die einzig moegliche Methode.
+ * - `gerissen`: Anker waren da und haben nicht gegriffen -- der Artikel hat
+ *   sich im Umfeld geaendert. Ein Blick hinein lohnt.
+ */
+export type Ankerlage = "anker" | "altbestand" | "gerissen";
 
 /** Eine beantwortete Meldung samt juengstem Befund -- die Rohmenge. */
 interface RohZeile extends AbgleichZeile {
   befund: string | null;
+  ankerguete: string;
 }
 
 /**
@@ -52,7 +62,7 @@ function ladeRohzeilen(db: Db): RohZeile[] {
       c.article_url AS articleUrl, c.quote_before AS quoteBefore,
       c.suggestion_after AS suggestion, r.excerpt AS auszug, r.received_at AS antwortAm,
       a.checked_at AS geprueftAm, a.match_confidence AS sicherheit,
-      a.quote_state AS befund
+      a.quote_state AS befund, c.anchor_quality AS ankerguete
     FROM corrections c
     JOIN outlets o ON o.id = c.outlet_id
     JOIN error_types e ON e.id = c.error_type_id
@@ -72,15 +82,23 @@ function ladeRohzeilen(db: Db): RohZeile[] {
   `);
 }
 
+function ankerlage(zeile: RohZeile): Ankerlage {
+  if ((zeile.sicherheit ?? 0) >= SICHER) return "anker";
+  return zeile.ankerguete === "none" ? "altbestand" : "gerissen";
+}
+
 export function ladeAbgleichKandidaten(db: Db): AbgleichZeile[] {
-  return ladeRohzeilen(db).filter(
-    (zeile) =>
-      /* Den Wortlaut prueft eine reine Funktion, nicht SQL -- dieselbe, die
-         entscheidet, ob eine Mail mehr ist als eine Eingangsbestaetigung. */
-      nenntKorrektur(zeile.auszug ?? "") &&
-      zeile.befund === "changed_as_suggested" &&
-      (zeile.sicherheit ?? 0) >= SICHER,
-  );
+  const reihenfolge: Record<Ankerlage, number> = { anker: 0, altbestand: 1, gerissen: 2 };
+  return ladeRohzeilen(db)
+    .filter(
+      (zeile) =>
+        /* Den Wortlaut prueft eine reine Funktion, nicht SQL -- dieselbe, die
+           entscheidet, ob eine Mail mehr ist als eine Eingangsbestaetigung. */
+        nenntKorrektur(zeile.auszug ?? "") && zeile.befund === "changed_as_suggested",
+    )
+    .map((zeile) => ({ ...zeile, ankerlage: ankerlage(zeile) }))
+    /* Das Eindeutige zuerst; was einen Blick braucht, kommt danach. */
+    .sort((a, b) => reihenfolge[a.ankerlage] - reihenfolge[b.ankerlage] || a.antwortAm - b.antwortAm);
 }
 
 /**
@@ -104,8 +122,8 @@ export function ladeAbgleichLage(db: Db): AbgleichLage {
     beantwortet: zeilen.length,
     nenntKorrektur: mitAussage.length,
     ohnePruefung: mitAussage.filter((z) => z.befund === null).length,
-    starkGeaendert: geaendert.filter((z) => (z.sicherheit ?? 0) >= SICHER).length,
-    schwachGeaendert: geaendert.filter((z) => (z.sicherheit ?? 0) < SICHER).length,
+    starkGeaendert: geaendert.filter((z) => ankerlage(z) === "anker").length,
+    schwachGeaendert: geaendert.filter((z) => ankerlage(z) !== "anker").length,
     andererBefund: mitAussage.filter(
       (z) => z.befund !== null && z.befund !== "changed_as_suggested",
     ).length,

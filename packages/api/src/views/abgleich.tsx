@@ -1,6 +1,6 @@
 import type { FC } from "hono/jsx";
 import { SACHAUSSAGE_MUSTER } from "@korrektur/shared";
-import type { AbgleichLage, AbgleichZeile } from "../repo/abgleich.js";
+import type { AbgleichLage, AbgleichZeile, Ankerlage } from "../repo/abgleich.js";
 import { Layout } from "./layout.js";
 
 /**
@@ -23,6 +23,21 @@ function kernsatz(auszug: string): string {
   });
   return (treffer ?? saetze[0] ?? auszug).trim();
 }
+
+/** Was die Prüfung gesehen hat -- und wie schwer das wiegt. */
+const BEFUND: Record<Ankerlage, { satz: string; rat?: string }> = {
+  anker: {
+    satz: "Fundstelle zwischen ihren Ankern gefunden und wie vorgeschlagen geändert.",
+  },
+  altbestand: {
+    satz: "Die Berichtigung steht im Artikel. Diese Meldung stammt aus dem Altbestand und trägt keine Anker — mehr lässt sich nicht feststellen.",
+    rat: "Bei kurzen Formulierungen lohnt der Blick in den Artikel.",
+  },
+  gerissen: {
+    satz: "Die Berichtigung steht im Artikel, die Anker der Fundstelle greifen aber nicht mehr.",
+    rat: "Der Artikel hat sich im Umfeld geändert — hier lohnt der Blick hinein.",
+  },
+};
 
 export const AbgleichSeite: FC<{
   faelle: AbgleichZeile[];
@@ -48,8 +63,8 @@ export const AbgleichSeite: FC<{
               <tr><td>Meldungen auf „Antwort erhalten"</td><td>{lage.beantwortet}</td></tr>
               <tr><td>davon nennt die Antwort eine Korrektur</td><td>{lage.nenntKorrektur}</td></tr>
               <tr><td>davon noch ohne Artikel-Prüfung</td><td>{lage.ohnePruefung}</td></tr>
-              <tr><td>davon geändert, Anker gegriffen (Sicherheit 100)</td><td>{lage.starkGeaendert}</td></tr>
-              <tr><td>davon geändert, nur im Rückfall gefunden (50)</td><td>{lage.schwachGeaendert}</td></tr>
+              <tr><td>davon geändert, Anker gegriffen</td><td>{lage.starkGeaendert}</td></tr>
+              <tr><td>davon geändert, ohne greifende Anker</td><td>{lage.schwachGeaendert}</td></tr>
               <tr><td>davon anderer Befund (unverändert, anders, verschwunden)</td><td>{lage.andererBefund}</td></tr>
             </tbody>
           </table>
@@ -81,8 +96,10 @@ export const AbgleichSeite: FC<{
             </p>
             <p class="abgleichbeleg">
               <span class="belegmarke">Prüfung {datum(fall.geprueftAm)}</span>{" "}
-              Fundstelle zwischen ihren Ankern gefunden und wie vorgeschlagen
-              geändert (Sicherheit {fall.sicherheit}).
+              {BEFUND[fall.ankerlage].satz}
+              {BEFUND[fall.ankerlage].rat ? (
+                <span class="belegrat"> {BEFUND[fall.ankerlage].rat}</span>
+              ) : null}
             </p>
             <div class="abgleichtasten">
               <form method="post" action={`/admin/abgleich/${fall.id}?stelle=${stelle}`}>
