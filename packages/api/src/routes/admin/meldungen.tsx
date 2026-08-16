@@ -135,12 +135,14 @@ export function meldungenRoutes(deps: { db: Db; env: Env }): Hono {
     const fall = ladeAbgleichKandidaten(deps.db).find((k) => k.id === id);
     if (!fall) return c.notFound();
 
-    /* Das Korrektur-Datum kommt aus der Pruefung: sie hat die Aenderung
-       gesehen, die Antwort hat sie nur angekuendigt. */
+    /* Korrigiert wurde, als die Redaktion es schrieb -- nicht, als unsere
+       Pruefung es bemerkte. Die Antwort in dieser Warteschlange nennt die
+       Korrektur (sonst waere der Fall nicht hier), taugt also als Datum;
+       die Pruefung laeuft erst Tage spaeter und verzerrte die Dauer. */
     const gesetzt = setzeAusgang(deps.db, id, {
       outcome: "corrected",
       respondedAt: fall.antwortAm,
-      correctedAt: fall.geprueftAm,
+      correctedAt: fall.antwortAm,
     });
     if (!gesetzt) return c.notFound();
     const stelle = c.req.query("stelle") ?? "0";

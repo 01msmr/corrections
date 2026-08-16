@@ -242,7 +242,8 @@ describe("Ausgangs-Abgleich", () => {
 
     const zeile = db.select().from(corrections).all().find((c) => c.id === id);
     expect(zeile?.outcome).toBe("corrected");
-    expect(zeile?.correctedAt).toBe(JETZT + 1000);
+    /* Das Datum der Antwort, nicht das der Pruefung (JETZT + 1000). */
+    expect(zeile?.correctedAt).toBe(JETZT);
     expect(zeile?.respondedAt).toBe(JETZT);
     /* Ohne die manuelle Bestaetigung zaehlt die Korrekturquote den Fall
        nicht -- die Kennzahlen-Views verlangen Datum UND verification. */

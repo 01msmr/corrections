@@ -496,9 +496,12 @@ Sitzung — Übernehmen nimmt den Fall aus der Liste, danach steht an derselben
 Stelle der nächste; Weiter zählt eins hoch. Damit ist die Seite anhaltbar und
 ohne Zustand.
 
-Das Korrektur-Datum kommt aus der Prüfung, nicht aus der Antwort: die Prüfung
-hat die Änderung gesehen, die Antwort hat sie nur behauptet. Der Ausgang wird
-weiterhin von Hand gesetzt — ein Befund ist Evidenz, keine Entscheidung (§9).
+Das Korrektur-Datum kommt aus der **Antwort**: Korrigiert wurde, als die
+Redaktion es schrieb, nicht als unsere Prüfung es bemerkte — die läuft erst
+Tage später und verzerrte jede daraus gerechnete Dauer. Die Antwort in dieser
+Warteschlange nennt die Korrektur, sonst wäre der Fall nicht hier. Der Ausgang
+wird weiterhin von Hand gesetzt — ein Befund ist Evidenz, keine Entscheidung
+(§9).
 
 ### Warum die Korrekturquote auf null stand
 
