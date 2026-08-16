@@ -50,6 +50,7 @@ interface RohZeile extends AbgleichZeile {
   befund: string | null;
   ankerguete: string;
   beobachtet: string | null;
+  status: number | null;
 }
 
 /**
@@ -65,7 +66,7 @@ function ladeRohzeilen(db: Db): RohZeile[] {
       c.suggestion_after AS suggestion, r.excerpt AS auszug, r.received_at AS antwortAm,
       a.checked_at AS geprueftAm, a.match_confidence AS sicherheit,
       a.quote_state AS befund, c.anchor_quality AS ankerguete,
-      a.observed_text AS beobachtet
+      a.observed_text AS beobachtet, a.http_status AS status
     FROM corrections c
     JOIN outlets o ON o.id = c.outlet_id
     JOIN error_types e ON e.id = c.error_type_id
@@ -126,6 +127,10 @@ export interface AbgleichLage {
      Redaktion und funktioniert wie vorgesehen, ein gescheiterter Abruf ist
      unser Problem. */
   robotsAusschluss: number;
+  /* Der Abruf gelang (HTTP 200), der Text taugte aber nicht -- so sieht eine
+     Bezahlschranke aus: geliefert wird Abo-Werbung, kein Artikel. */
+  bezahlschranke: number;
+  /* Alles Uebrige: HTTP-Fehler, Umleitung, keine Antwort. */
   abrufGescheitert: number;
 }
 
@@ -149,8 +154,11 @@ export function ladeAbgleichLage(db: Db): AbgleichLage {
     robotsAusschluss: mitAussage.filter(
       (z) => z.befund === "unreachable" && z.beobachtet === ROBOTS_VERMERK,
     ).length,
+    bezahlschranke: mitAussage.filter(
+      (z) => z.befund === "unreachable" && z.beobachtet !== ROBOTS_VERMERK && z.status === 200,
+    ).length,
     abrufGescheitert: mitAussage.filter(
-      (z) => z.befund === "unreachable" && z.beobachtet !== ROBOTS_VERMERK,
+      (z) => z.befund === "unreachable" && z.beobachtet !== ROBOTS_VERMERK && z.status !== 200,
     ).length,
   };
 }
