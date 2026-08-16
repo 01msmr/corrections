@@ -40,21 +40,55 @@ const BEFUND: Record<Ankerlage, { satz: string; rat?: string }> = {
   },
 };
 
+/** Was die Prüfung sah -- in der offenen Schlange steht auch das Negative. */
+const PRUEFTEXT: Record<string, string> = {
+  changed_as_suggested: "Berichtigung steht im Artikel.",
+  unchanged: "Fundstelle unverändert — die Antwort sagt etwas anderes.",
+  changed_otherwise: "Anders geändert als vorgeschlagen.",
+  passage_gone: "Fundstelle nicht mehr im Text.",
+  unreachable: "Artikel nicht lesbar (Bezahlschranke oder Abruf gescheitert).",
+};
+
+/** Die Ausgänge, die aus einer Antwort folgen können. */
+const AUSWAHL = [
+  { wert: "corrected", text: "korrigiert wie vorgeschlagen", taste: "⏎" },
+  { wert: "corrected_other", text: "anders korrigiert" },
+  { wert: "rejected", text: "als richtig benannt" },
+] as const;
+
 export const AbgleichSeite: FC<{
   faelle: AbgleichZeile[];
   lage: AbgleichLage;
   stelle: number;
+  /** Offene Schlange: alle Beantworteten, entschieden wird am Wortlaut. */
+  offen?: boolean;
   hinweis?: string | undefined;
-}> = ({ faelle, lage, stelle, hinweis }) => {
+}> = ({ faelle, lage, stelle, offen = false, hinweis }) => {
   const fall = faelle[stelle];
   return (
     <Layout title="Ausgang abgleichen" aktiv="abgleich" betreiber>
       {hinweis ? <p class="zaehler" aria-live="polite">{hinweis}</p> : null}
+      {/* Zwei Schlangen, ein Umschalter: streng verlangt den Doppelbeleg,
+          offen legt jede beantwortete Meldung vor. */}
+      <p class="zaehlweise abgleichwahl">
+        {offen ? (
+          <a href="/admin/abgleich">mit Doppelbeleg</a>
+        ) : (
+          <span aria-current="true">mit Doppelbeleg</span>
+        )}
+        {offen ? (
+          <span aria-current="true">alle Antworten</span>
+        ) : (
+          <a href="/admin/abgleich?alle=1">alle Antworten</a>
+        )}
+      </p>
       {!fall ? (
         <>
           <p class="prosa">
             {faelle.length === 0
-              ? "Nichts abzugleichen: keine Meldung, bei der Antwort und Artikel-Prüfung dasselbe sagen."
+              ? offen
+                ? "Nichts offen: zu jeder beantworteten Meldung steht ein Ausgang."
+                : "Nichts abzugleichen: keine Meldung, bei der Antwort und Artikel-Prüfung dasselbe sagen."
               : "Durch. Alle Fälle dieser Runde sind gesichtet."}
           </p>
           {/* Woran es liegt, steht hier statt in einem Werkzeug -- die Frage
@@ -115,22 +149,45 @@ export const AbgleichSeite: FC<{
               <span class="belegmarke">Antwort {datum(fall.antwortAm)}</span>{" "}
               {kernsatz(fall.auszug)}
             </p>
-            <p class="abgleichbeleg">
-              <span class="belegmarke">Prüfung {datum(fall.geprueftAm)}</span>{" "}
-              {BEFUND[fall.ankerlage].satz}
-              {BEFUND[fall.ankerlage].rat ? (
-                <span class="belegrat"> {BEFUND[fall.ankerlage].rat}</span>
-              ) : null}
-            </p>
+            {fall.befund === null ? (
+              <p class="abgleichbeleg">
+                <span class="belegmarke">Prüfung</span>{" "}
+                <span class="belegrat">steht noch aus.</span>
+              </p>
+            ) : offen && fall.befund !== "changed_as_suggested" ? (
+              <p class="abgleichbeleg">
+                <span class="belegmarke">Prüfung {datum(fall.geprueftAm)}</span>{" "}
+                {PRUEFTEXT[fall.befund] ?? fall.befund}
+              </p>
+            ) : (
+              <p class="abgleichbeleg">
+                <span class="belegmarke">Prüfung {datum(fall.geprueftAm)}</span>{" "}
+                {BEFUND[fall.ankerlage].satz}
+                {BEFUND[fall.ankerlage].rat ? (
+                  <span class="belegrat"> {BEFUND[fall.ankerlage].rat}</span>
+                ) : null}
+              </p>
+            )}
             <div class="abgleichtasten">
-              <form method="post" action={`/admin/abgleich/${fall.id}?stelle=${stelle}`}>
-                <button type="submit" id="uebernehmen">
-                  <span class="knopftext">
-                    korrigiert wie vorgeschlagen<span class="taste">⏎</span>
-                  </span>
-                </button>
-              </form>
-              <a class="knopf" id="weiter" href={`/admin/abgleich?stelle=${stelle + 1}`}>
+              {(offen ? AUSWAHL : AUSWAHL.slice(0, 1)).map((wahl, i) => (
+                <form
+                  method="post"
+                  action={`/admin/abgleich/${fall.id}?stelle=${stelle}${offen ? "&alle=1" : ""}`}
+                >
+                  <input type="hidden" name="ausgang" value={wahl.wert} />
+                  <button type="submit" id={i === 0 ? "uebernehmen" : undefined}>
+                    <span class="knopftext">
+                      {wahl.text}
+                      {"taste" in wahl ? <span class="taste">{wahl.taste}</span> : null}
+                    </span>
+                  </button>
+                </form>
+              ))}
+              <a
+                class="knopf"
+                id="weiter"
+                href={`/admin/abgleich?stelle=${stelle + 1}${offen ? "&alle=1" : ""}`}
+              >
                 <span class="knopftext">
                   weiter<span class="taste">X</span>
                 </span>

@@ -516,3 +516,22 @@ Die Regel steht jetzt in `setzeAusgang`: Ein Korrekturdatum entsteht nur von
 Hand, wer es setzt, bestätigt damit — `verification` folgt dem Datum, in beide
 Richtungen. Die Migration `20260816011500_manuelle-bestaetigung-nachziehen`
 stellt denselben Zusammenhang in Bestandsdaten her.
+
+### Zwei Warteschlangen
+
+Der Doppelbeleg ist streng, und für den Altbestand kommt er selten zustande:
+72 Antworten nennen eine Korrektur, aber nur 6 hatten den zweiten Beleg — die
+übrigen scheitern nicht an der Redaktion, sondern am Abruf (Bezahlschranke,
+ungeprüft). Deshalb hat `/admin/abgleich` einen zweiten Modus (`?alle=1`):
+
+| | mit Doppelbeleg | alle Antworten |
+|---|---|---|
+| Auswahl | Antwort nennt Korrektur **und** Prüfung bestätigt | jede Meldung auf „Antwort erhalten" |
+| Antworttext | nur der Kernsatz | ganz — er ist die Entscheidungsgrundlage |
+| Prüfung | als Beleg | auch das Widersprechende, im Klartext |
+| Ausgänge | korrigiert wie vorgeschlagen | dazu anders korrigiert, als richtig benannt |
+
+Vorne steht in der offenen Schlange, was eine Korrektur nennt. Ein
+Korrekturdatum entsteht nur bei den beiden Korrektur-Ausgängen — „als richtig
+benannt" ist eine Antwort, aber keine Korrektur, und zählt entsprechend nicht
+in die Quote.

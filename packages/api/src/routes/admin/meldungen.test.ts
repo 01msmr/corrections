@@ -304,6 +304,38 @@ describe("Ausgangs-Abgleich", () => {
     expect(zahl("Bezahlschranke")).toBe("0");
   });
 
+  it("legt in der offenen Schlange auch das Widersprechende vor", async () => {
+    /* Kein Doppelbeleg: Pruefung sagt unveraendert, Antwort sagt korrigiert. */
+    mitBelegen("Wir haben den Fehler korrigiert.", "unchanged");
+    const eng = await (
+      await app.request("/admin/abgleich", { headers: { authorization: AUTH } })
+    ).text();
+    expect(eng).toContain("Nichts abzugleichen");
+
+    const html = await (
+      await app.request("/admin/abgleich?alle=1", { headers: { authorization: AUTH } })
+    ).text();
+    expect(html).toContain("1 von 1");
+    expect(html).toContain("die Antwort sagt etwas anderes");
+    expect(html).toContain("als richtig benannt");
+  });
+
+  it("setzt in der offenen Schlange den gewaehlten Ausgang", async () => {
+    const id = mitBelegen("Wir bleiben bei unserer Fassung.", "unchanged");
+    const antwort = await app.request(`/admin/abgleich/${id}?stelle=0&alle=1`, {
+      method: "POST",
+      headers: { authorization: AUTH, "content-type": "application/x-www-form-urlencoded" },
+      body: "ausgang=rejected",
+    });
+    expect(antwort.status).toBe(303);
+
+    const zeile = db.select().from(corrections).all().find((c) => c.id === id);
+    expect(zeile?.outcome).toBe("rejected");
+    /* Keine Korrektur, also kein Korrekturdatum und keine Bestaetigung. */
+    expect(zeile?.correctedAt).toBeNull();
+    expect(zeile?.verification).toBe("none");
+  });
+
   it("sperrt auch den Abgleich ohne Auth", async () => {
     expect((await app.request("/admin/abgleich")).status).toBe(401);
   });

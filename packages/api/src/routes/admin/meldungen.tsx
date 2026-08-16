@@ -2,7 +2,11 @@ import { Hono } from "hono";
 import { adminAuth } from "../../auth.js";
 import type { Db } from "../../db/client.js";
 import type { Env } from "../../env.js";
-import { ladeAbgleichKandidaten, ladeAbgleichLage } from "../../repo/abgleich.js";
+import {
+  ladeAbgleichKandidaten,
+  ladeAbgleichLage,
+  ladeAlleBeantworteten,
+} from "../../repo/abgleich.js";
 import { listErrorTypes } from "../../repo/errorTypes.js";
 import {
   istAusgang,
@@ -117,7 +121,8 @@ export function meldungenRoutes(deps: { db: Db; env: Env }): Hono {
    * eins hoch. Damit ist die Seite anhaltbar und ohne Zustand.
    */
   app.get("/admin/abgleich", (c) => {
-    const faelle = ladeAbgleichKandidaten(deps.db);
+    const offen = c.req.query("alle") === "1";
+    const faelle = offen ? ladeAlleBeantworteten(deps.db) : ladeAbgleichKandidaten(deps.db);
     const roh = Number.parseInt(c.req.query("stelle") ?? "0", 10);
     const stelle = Number.isFinite(roh) && roh > 0 ? roh : 0;
     return c.html(
@@ -125,28 +130,41 @@ export function meldungenRoutes(deps: { db: Db; env: Env }): Hono {
         faelle={faelle}
         lage={ladeAbgleichLage(deps.db)}
         stelle={stelle}
+        offen={offen}
         hinweis={c.req.query("gesetzt") === "1" ? "Ausgang gesetzt." : undefined}
       />,
     );
   });
 
-  app.post("/admin/abgleich/:id", (c) => {
+  app.post("/admin/abgleich/:id", async (c) => {
     const id = c.req.param("id");
-    const fall = ladeAbgleichKandidaten(deps.db).find((k) => k.id === id);
+    const offen = c.req.query("alle") === "1";
+    const fall = (offen ? ladeAlleBeantworteten(deps.db) : ladeAbgleichKandidaten(deps.db)).find(
+      (k) => k.id === id,
+    );
     if (!fall) return c.notFound();
+
+    /* Die strenge Schlange kennt nur einen Ausgang, die offene drei. */
+    const body = await c.req.parseBody();
+    const gewaehlt = typeof body["ausgang"] === "string" ? body["ausgang"] : "corrected";
+    if (!istAusgang(gewaehlt)) return c.text("Unbekannter Ausgang", 400);
 
     /* Korrigiert wurde, als die Redaktion es schrieb -- nicht, als unsere
        Pruefung es bemerkte. Die Antwort in dieser Warteschlange nennt die
        Korrektur (sonst waere der Fall nicht hier), taugt also als Datum;
        die Pruefung laeuft erst Tage spaeter und verzerrte die Dauer. */
+    /* Ein Korrekturdatum nur, wo tatsaechlich korrigiert wurde -- "als
+       richtig benannt" ist eine Antwort, aber keine Korrektur. */
+    const korrigiert = gewaehlt === "corrected" || gewaehlt === "corrected_other";
     const gesetzt = setzeAusgang(deps.db, id, {
-      outcome: "corrected",
+      outcome: gewaehlt,
       respondedAt: fall.antwortAm,
-      correctedAt: fall.antwortAm,
+      correctedAt: korrigiert ? fall.antwortAm : null,
     });
     if (!gesetzt) return c.notFound();
     const stelle = c.req.query("stelle") ?? "0";
-    return c.redirect(`/admin/abgleich?stelle=${stelle}&gesetzt=1`, 303);
+    const modus = offen ? "&alle=1" : "";
+    return c.redirect(`/admin/abgleich?stelle=${stelle}${modus}&gesetzt=1`, 303);
   });
 
   return app;

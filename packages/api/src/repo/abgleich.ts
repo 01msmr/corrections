@@ -27,6 +27,9 @@ export interface AbgleichZeile {
   geprueftAm: number;
   sicherheit: number;
   ankerlage: Ankerlage;
+  /** Nur in der offenen Warteschlange gezeigt: was die Pruefung sah. */
+  befund: string | null;
+  status: number | null;
 }
 
 /** Anker gegriffen und der Text zwischen ihnen genau die Berichtigung. */
@@ -46,11 +49,9 @@ const SICHER = 100;
 export type Ankerlage = "anker" | "altbestand" | "gerissen";
 
 /** Eine beantwortete Meldung samt juengstem Befund -- die Rohmenge. */
-interface RohZeile extends AbgleichZeile {
-  befund: string | null;
+interface RohZeile extends Omit<AbgleichZeile, "ankerlage"> {
   ankerguete: string;
   beobachtet: string | null;
-  status: number | null;
 }
 
 /**
@@ -89,6 +90,24 @@ function ladeRohzeilen(db: Db): RohZeile[] {
 function ankerlage(zeile: RohZeile): Ankerlage {
   if ((zeile.sicherheit ?? 0) >= SICHER) return "anker";
   return zeile.ankerguete === "none" ? "altbestand" : "gerissen";
+}
+
+/**
+ * Die offene Warteschlange: jede beantwortete Meldung ohne gesetzten Ausgang,
+ * unabhaengig davon, was die Pruefung sagt. Entschieden wird hier am Wortlaut
+ * der Antwort -- fuer den Altbestand ist das oft die einzige Quelle, weil der
+ * Artikel hinter einer Bezahlschranke liegt.
+ *
+ * Vorne steht, was eine Korrektur nennt: dort ist am ehesten etwas zu tun.
+ */
+export function ladeAlleBeantworteten(db: Db): AbgleichZeile[] {
+  return ladeRohzeilen(db)
+    .map((zeile) => ({ ...zeile, ankerlage: ankerlage(zeile) }))
+    .sort((a, b) => {
+      const aNennt = nenntKorrektur(a.auszug ?? "") ? 0 : 1;
+      const bNennt = nenntKorrektur(b.auszug ?? "") ? 0 : 1;
+      return aNennt - bNennt || a.antwortAm - b.antwortAm;
+    });
 }
 
 export function ladeAbgleichKandidaten(db: Db): AbgleichZeile[] {
