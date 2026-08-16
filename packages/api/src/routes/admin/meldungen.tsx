@@ -1,4 +1,4 @@
-import { QUOTE_MAX_LENGTH } from "@korrektur/shared";
+import { ARTIKEL_MAX_LENGTH, QUOTE_MAX_LENGTH } from "@korrektur/shared";
 import { Hono } from "hono";
 import { adminAuth } from "../../auth.js";
 import type { Db } from "../../db/client.js";
@@ -8,6 +8,8 @@ import {
   ladeAbgleichLage,
   ladeAlleBeantworteten,
 } from "../../repo/abgleich.js";
+import { beurteileFundstelle } from "../../article/pruefung.js";
+import { vermerkeCheck } from "../../repo/artikelChecks.js";
 import { listErrorTypes } from "../../repo/errorTypes.js";
 import {
   istAusgang,
@@ -91,7 +93,9 @@ export function meldungenRoutes(deps: { db: Db; env: Env }): Hono {
             ? c.req.query("datum") === "1"
               ? "Ausgang gespeichert; als Korrekturdatum gilt der Tag der Antwort."
               : "Ausgang gespeichert."
-            : undefined
+            : c.req.query("geprueft") === "1"
+              ? "Gegen den eingefügten Text geprüft."
+              : undefined
         }
       />,
     );
@@ -150,7 +154,13 @@ export function meldungenRoutes(deps: { db: Db; env: Env }): Hono {
         lage={ladeAbgleichLage(deps.db)}
         stelle={stelle}
         offen={offen}
-        hinweis={c.req.query("gesetzt") === "1" ? "Ausgang gesetzt." : undefined}
+        hinweis={
+          c.req.query("geprueft") === "1"
+            ? "Gegen den eingefügten Text geprüft."
+            : c.req.query("gesetzt") === "1"
+              ? "Ausgang gesetzt."
+              : undefined
+        }
       />,
     );
   });
@@ -186,6 +196,49 @@ export function meldungenRoutes(deps: { db: Db; env: Env }): Hono {
     const stelle = c.req.query("stelle") ?? "0";
     const modus = offen ? "&alle=1" : "";
     return c.redirect(`/admin/abgleich?stelle=${stelle}${modus}&gesetzt=1`, 303);
+  });
+
+  /**
+   * Prueft die Fundstelle gegen einen eingefuegten Artikeltext. Fuer Artikel
+   * hinter einer Bezahlschranke: Der Betreiber oeffnet sie angemeldet in
+   * seinem Browser und fuegt den Text hier ein -- Zugangsdaten bleiben dort,
+   * wo sie hingehoeren, der Server sieht sie nie.
+   *
+   * Beurteilt wird mit derselben reinen Funktion wie beim eigenen Abruf; der
+   * Befund landet als gewoehnliche Pruefung, nur mit vermerkter Herkunft.
+   * Der Artikeltext selbst wird nicht abgelegt (§12).
+   */
+  app.post("/admin/meldungen/:id/pruefen", async (c) => {
+    const id = c.req.param("id");
+    const detail = leseMeldung(deps.db, id);
+    if (!detail) return c.notFound();
+
+    const body = await c.req.parseBody();
+    const roh = typeof body["artikelText"] === "string" ? body["artikelText"] : "";
+    const text = roh.trim().slice(0, ARTIKEL_MAX_LENGTH);
+    if (text.length === 0) return c.text("Kein Artikeltext", 400);
+
+    const m = detail.meldung;
+    const befund = beurteileFundstelle({
+      artikelText: text,
+      quoteBefore: m.quoteBefore,
+      suggestionAfter: m.suggestionAfter,
+      prefix: m.quotePrefix,
+      suffix: m.quoteSuffix,
+    });
+    vermerkeCheck(deps.db, id, {
+      checkedAt: Math.floor(Date.now() / 1000),
+      httpStatus: null,
+      zustand: befund.zustand,
+      beobachtet: befund.beobachtet,
+      sicherheit: befund.sicherheit,
+      quelle: "eingefuegt",
+    });
+
+    const ziel = c.req.query("zurueck") === "abgleich"
+      ? `/admin/abgleich?stelle=${c.req.query("stelle") ?? "0"}&alle=1&geprueft=1`
+      : `/admin/meldungen/${id}?geprueft=1`;
+    return c.redirect(ziel, 303);
   });
 
   return app;

@@ -73,6 +73,8 @@ export interface CheckVermerk {
   checkedAt: number;
   httpStatus: number | null;
   zustand: Fundstellenzustand | "unreachable";
+  /** Vorgabe "abruf"; "eingefuegt", wenn der Text aus dem Browser kam. */
+  quelle?: "abruf" | "eingefuegt";
   beobachtet: string | null;
   sicherheit: number | null;
 }
@@ -88,6 +90,7 @@ export function vermerkeCheck(db: Db, correctionId: string, vermerk: CheckVermer
       quoteState: vermerk.zustand,
       matchConfidence: vermerk.sicherheit,
       observedText: vermerk.beobachtet,
+      quelle: vermerk.quelle ?? "abruf",
       pageTextHash: null,
     })
     .run();

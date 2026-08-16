@@ -157,6 +157,11 @@ export const articleChecks = sqliteTable(
       enum: ["unchanged", "changed_as_suggested", "changed_otherwise", "passage_gone", "unreachable"],
     }).notNull(),
     matchConfidence: integer("match_confidence"),
+    /** Woher der Text kam: der eigene Abruf oder der angemeldete Browser des
+     *  Betreibers (Bezahlschranke). Die Herkunft gehoert zum Befund. */
+    quelle: text("quelle", { enum: ["abruf", "eingefuegt"] })
+      .notNull()
+      .default("abruf"),
     /** Intern (§12). */
     observedText: text("observed_text"),
     pageTextHash: text("page_text_hash"),

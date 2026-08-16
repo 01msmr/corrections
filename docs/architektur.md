@@ -551,3 +551,24 @@ Wird **anders korrigiert** gewählt, gehört der tatsächliche neue Wortlaut
 festgehalten (`corrections.corrected_text`, von Hand erfasst; die automatische
 Prüfung legt ihren eigenen Fund in `article_checks.observed_text` ab). Sonst
 bliebe der Ausgang eine Behauptung ohne den Text, auf den er sich beruft.
+
+### Bezahlschranke: der Text kommt aus dem Browser
+
+Hinter der Schranke sieht unser Abruf nur Abo-Werbung — der Befund lautet
+`unreachable`, und die Meldung bleibt aus dem Korrektur-Nenner. Für diese
+Fälle nimmt `POST /admin/meldungen/:id/pruefen` einen **eingefügten**
+Artikeltext entgegen: Der Betreiber öffnet den Artikel angemeldet in seinem
+Browser, kopiert den Text, fügt ihn in der offenen Warteschlange ein.
+
+Beurteilt wird mit derselben reinen Funktion wie beim eigenen Abruf
+(`beurteileFundstelle`); der Befund landet als gewöhnliche Prüfung, nur mit
+`article_checks.quelle = 'eingefuegt'` statt `'abruf'`. Der Artikeltext selbst
+wird nicht abgelegt — wie beim Erfassen dient er dem Prüfen und Verankern
+(§12).
+
+**Warum nicht mit Zugangsdaten auf dem Server:** Abo-Verträge untersagen
+automatisierten Zugriff praktisch durchgängig; das Projekt fragt die
+robots.txt, drosselt und nennt sich im User-Agent — eine Anmeldung zum
+Umgehen einer Schranke wäre das Gegenteil davon; und es wäre das erste
+Geheimnis mit persönlichem Bezug in der Serverumgebung. So bleiben die
+Zugangsdaten im Browser, und bei jedem Abruf ist ein Mensch dabei.

@@ -803,6 +803,12 @@ const STYLES = `
   .abgleichwahl { display: inline-flex; margin: 0 0 ${ABSTAND.r100}; }
   /* Der Rat zum Befund: eine Nebenstimme, keine zweite Aussage. */
   .belegrat { color: var(--rand); font-style: italic; }
+  /* Die Einfuege-Pruefung steht zwischen Beleg und Entscheidung: sie kann
+     den Befund noch aendern, auf den die Knoepfe sich stuetzen. */
+  .einfuegepruefung { margin: ${ABSTAND.r80} 0; }
+  .einfuegepruefung label { font: ${GRAD.klein}/${ZEILE.satz} var(--sans); color: var(--rand);
+    display: block; margin-bottom: ${ABSTAND.r25}; }
+  .einfuegepruefung textarea { font: ${GRAD.klein}/${ZEILE.satz} var(--mono); }
   .abgleichtasten { display: flex; flex-wrap: wrap; align-items: center; gap: ${ABSTAND.r70}; }
   .abgleichtasten form { margin: 0; display: flex; align-items: flex-end; gap: ${ABSTAND.r35}; }
   /* Das Feld gehoert zum Knopf daneben, nicht ins Blatt: schmaler und ohne

@@ -388,6 +388,37 @@ describe("Ausgangs-Abgleich", () => {
     expect(zeile?.correctedText).toBe("entscheiden können wird.");
   });
 
+  it("prueft gegen eingefuegten Text und vermerkt die Herkunft", async () => {
+    const id = mitBelegen("Wir haben das bereits korrigiert.", "unreachable");
+    const artikel = "Vorspann. Der Mietwagen stand bereit. Und weiter im Text.";
+
+    const antwort = await app.request(`/admin/meldungen/${id}/pruefen?zurueck=abgleich&stelle=0`, {
+      method: "POST",
+      headers: { authorization: AUTH, "content-type": "application/x-www-form-urlencoded" },
+      body: `artikelText=${encodeURIComponent(artikel)}`,
+    });
+    expect(antwort.status).toBe(303);
+    expect(antwort.headers.get("location")).toContain("geprueft=1");
+
+    const checks = db.select().from(articleChecks).all().filter((a) => a.correctionId === id);
+    const neuster = checks[checks.length - 1];
+    /* Die Berichtigung steht im Text -- ohne Anker im Rueckfall erkannt. */
+    expect(neuster?.quoteState).toBe("changed_as_suggested");
+    expect(neuster?.quelle).toBe("eingefuegt");
+    /* Der Artikeltext selbst wird nicht abgelegt. */
+    expect(neuster?.pageTextHash).toBeNull();
+  });
+
+  it("weist eine Pruefung ohne Text ab", async () => {
+    const id = mitBelegen("Wir haben das bereits korrigiert.", "unreachable");
+    const antwort = await app.request(`/admin/meldungen/${id}/pruefen`, {
+      method: "POST",
+      headers: { authorization: AUTH, "content-type": "application/x-www-form-urlencoded" },
+      body: "artikelText=%20%20",
+    });
+    expect(antwort.status).toBe(400);
+  });
+
   it("sperrt auch den Abgleich ohne Auth", async () => {
     expect((await app.request("/admin/abgleich")).status).toBe(401);
   });

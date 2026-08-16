@@ -191,6 +191,23 @@ export const AbgleichSeite: FC<{
                 der Antwort — und der kann eine Höflichkeitsformel sein.
               </p>
             ) : null}
+            {/* Hinter der Bezahlschranke sieht unser Abruf nur Abo-Werbung.
+                Der Betreiber oeffnet den Artikel angemeldet und fuegt den Text
+                ein; geprueft wird damit wie beim eigenen Abruf, gespeichert
+                wird nur der Befund. */}
+            {offen && fall.befund !== "changed_as_suggested" ? (
+              <form
+                class="einfuegepruefung"
+                method="post"
+                action={`/admin/meldungen/${fall.id}/pruefen?zurueck=abgleich&stelle=${stelle}`}
+              >
+                <label for="artikelText">
+                  Artikeltext einfügen (bei Bezahlschranke: angemeldet öffnen, Text kopieren)
+                </label>
+                <textarea id="artikelText" name="artikelText" rows={3} />
+                <button type="submit">gegen diesen Text prüfen</button>
+              </form>
+            ) : null}
             <div class="abgleichtasten">
               {(offen ? AUSWAHL : AUSWAHL.slice(0, 1)).map((wahl, i) => (
                 <form

@@ -22,6 +22,8 @@ export interface AbgleichZeile {
   articleUrl: string;
   quoteBefore: string;
   suggestion: string;
+  prefix: string | null;
+  suffix: string | null;
   auszug: string;
   antwortAm: number;
   geprueftAm: number;
@@ -64,7 +66,8 @@ function ladeRohzeilen(db: Db): RohZeile[] {
     SELECT
       c.id, c.ref, o.name AS medium, e.label AS kategorie, c.headline,
       c.article_url AS articleUrl, c.quote_before AS quoteBefore,
-      c.suggestion_after AS suggestion, r.excerpt AS auszug, r.received_at AS antwortAm,
+      c.suggestion_after AS suggestion, c.quote_prefix AS prefix, c.quote_suffix AS suffix,
+      r.excerpt AS auszug, r.received_at AS antwortAm,
       a.checked_at AS geprueftAm, a.match_confidence AS sicherheit,
       a.quote_state AS befund, c.anchor_quality AS ankerguete,
       a.observed_text AS beobachtet, a.http_status AS status

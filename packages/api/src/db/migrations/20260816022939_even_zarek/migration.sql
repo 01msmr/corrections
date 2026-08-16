@@ -1,0 +1,1 @@
+ALTER TABLE `article_checks` ADD `quelle` text DEFAULT 'abruf' NOT NULL;
