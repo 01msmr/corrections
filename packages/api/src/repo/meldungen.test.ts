@@ -158,4 +158,16 @@ describe("setzeAusgang", () => {
 
     expect(setzeAusgang(db, "fehlt", { outcome: "open", respondedAt: null, correctedAt: null })).toBe(false);
   });
+
+  /* Ein Korrekturdatum entsteht nur von Hand (Spec 8.3) -- wer es setzt,
+     bestaetigt damit. Die Kennzahlen-Views verlangen beides zusammen. */
+  it("markiert das gesetzte Korrekturdatum als manuelle Bestaetigung", () => {
+    const id = meldung();
+    setzeAusgang(db, id, { outcome: "corrected", respondedAt: JETZT, correctedAt: JETZT + 600 });
+    expect(db.select().from(corrections).all()[0]?.verification).toBe("manual");
+
+    /* Und zurueck: ohne Datum keine Bestaetigung. */
+    setzeAusgang(db, id, { outcome: "acknowledged", respondedAt: JETZT, correctedAt: null });
+    expect(db.select().from(corrections).all()[0]?.verification).toBe("none");
+  });
 });

@@ -181,6 +181,10 @@ export function setzeAusgang(db: Db, id: string, angaben: AusgangsAngaben): bool
       outcome: angaben.outcome,
       respondedAt: angaben.respondedAt,
       correctedAt: angaben.correctedAt,
+      /* Das Korrekturdatum kommt nur von Hand (Spec 8.3) -- wer es setzt,
+         bestaetigt damit. Ohne diese Zeile blieb `verification` auf "none"
+         und die Korrekturquote zaehlte nichts. */
+      verification: angaben.correctedAt === null ? "none" : "manual",
     })
     .where(sql`${corrections.id} = ${id}`)
     .run();

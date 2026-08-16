@@ -499,3 +499,17 @@ ohne Zustand.
 Das Korrektur-Datum kommt aus der Prüfung, nicht aus der Antwort: die Prüfung
 hat die Änderung gesehen, die Antwort hat sie nur behauptet. Der Ausgang wird
 weiterhin von Hand gesetzt — ein Befund ist Evidenz, keine Entscheidung (§9).
+
+### Warum die Korrekturquote auf null stand
+
+`kennzahlen` zählt eine Korrektur nur, wenn `corrected_at` gesetzt **und**
+`verification = 'manual'` ist (Spec 8.3: ein automatischer Befund setzt
+`corrected_at` nie, er hebt den Datensatz in die Review-Queue, die Bestätigung
+ist manuell). `setzeAusgang` schrieb aber nur das Datum — `verification` blieb
+auf dem Vorgabewert `'none'`, gesetzt wurde es im ganzen Produktivcode
+nirgends. Damit konnte die Quote nie etwas zählen, unabhängig vom Bestand.
+
+Die Regel steht jetzt in `setzeAusgang`: Ein Korrekturdatum entsteht nur von
+Hand, wer es setzt, bestätigt damit — `verification` folgt dem Datum, in beide
+Richtungen. Die Migration `20260816011500_manuelle-bestaetigung-nachziehen`
+stellt denselben Zusammenhang in Bestandsdaten her.

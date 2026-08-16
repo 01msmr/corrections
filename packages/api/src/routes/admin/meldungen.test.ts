@@ -244,6 +244,9 @@ describe("Ausgangs-Abgleich", () => {
     expect(zeile?.outcome).toBe("corrected");
     expect(zeile?.correctedAt).toBe(JETZT + 1000);
     expect(zeile?.respondedAt).toBe(JETZT);
+    /* Ohne die manuelle Bestaetigung zaehlt die Korrekturquote den Fall
+       nicht -- die Kennzahlen-Views verlangen Datum UND verification. */
+    expect(zeile?.verification).toBe("manual");
 
     const danach = await app.request("/admin/abgleich", { headers: { authorization: AUTH } });
     expect(await danach.text()).toContain("keine Meldung");
