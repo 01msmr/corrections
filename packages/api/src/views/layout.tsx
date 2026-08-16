@@ -774,6 +774,23 @@ const STYLES = `
      nur hier, in der nicht-oeffentlichen Liste (Zuruf vom 15.8.2026). */
   .meldungsliste .sp-ausgang, .meldungsliste .sp-datum { white-space: nowrap; }
   .meldungsliste .nrim, .meldungsliste .sp-ausgang .kurzform { display: none; }
+  /* Abgleich: ein Fall je Bildschirm. Die beiden Belege stehen als Zitate
+     untereinander, jeder mit seiner Herkunft als Marke davor. */
+  .abgleichfall { border: ${STRICH.haar} solid var(--linie); border-left: ${STRICH.markant} solid var(--korrektur);
+    padding: ${ABSTAND.r80} ${ABSTAND.r95}; margin: ${ABSTAND.r50} 0 ${ABSTAND.r150}; background: var(--feld); }
+  .abgleichkopf { margin: 0 0 ${ABSTAND.r25}; font: ${GRAD.normal}/${ZEILE.satz} var(--mono); color: var(--rand); }
+  .abgleichtitel { margin: 0 0 ${ABSTAND.r60}; font: ${GEWICHT.fett} ${GRAD.stark}/${ZEILE.knapp} var(--titel); }
+  .abgleichstelle { margin: 0 0 ${ABSTAND.r80}; font: ${GRAD.grund}/${ZEILE.luftig} var(--mono); }
+  .abgleichstelle del { color: var(--korrektur); text-decoration-thickness: ${STRICH.kraeftig}; }
+  .abgleichstelle ins { color: var(--vorschlag); text-decoration: none; }
+  .abgleichbeleg { margin: 0 0 ${ABSTAND.r35}; font: ${GRAD.klein}/${ZEILE.luftig} var(--sans); }
+  .belegmarke { display: inline-block; margin-right: ${ABSTAND.r50};
+    padding: ${ABSTAND.px4} ${ABSTAND.px9}; border-radius: ${RADIUS.voll};
+    background: var(--balkengrund); color: var(--balkenschrift);
+    font: ${GEWICHT.fett} ${GRAD_EM.pille}/${ZEILE.eng} var(--sans); white-space: nowrap; }
+  .abgleichtasten { display: flex; flex-wrap: wrap; align-items: center; gap: ${ABSTAND.r70}; }
+  .abgleichtasten form { margin: 0; }
+
   /* Die Titelzelle scrollt ohne sichtbaren Balken. Die Geste endet in ihr,
      sonst liest der Browser sie als "eine Seite zurueck" (Finger; das
      Mausrad faengt das Seitenskript ab). */
@@ -1497,6 +1514,7 @@ export type Bereich =
   | "redaktionen"
   | "fehlerarten"
   | "meldungen"
+  | "abgleich"
   | "bilanz"
   | "backfill"
   | "ueber";
@@ -1512,6 +1530,7 @@ const BEREICH_TITEL: Record<Bereich, string> = {
   redaktionen: "Medien",
   fehlerarten: "Kategorien",
   meldungen: "Meldungen",
+  abgleich: "Ausgang abgleichen",
   bilanz: "Bilanz",
   backfill: "Altbestand",
   ueber: "In eigener Sache",
@@ -1710,6 +1729,10 @@ export const Layout: FC<
               <a href="/admin/fehlerarten" aria-label="Kategorien" aria-current={aktiv === "fehlerarten" ? "page" : undefined} draggable={false}>
                 <TagIcon />
                 <span class="ressorttext">Kategorien</span>
+              </a>
+              <a href="/admin/abgleich" aria-label="Ausgang abgleichen" aria-current={aktiv === "abgleich" ? "page" : undefined} draggable={false}>
+                <FilePenIcon />
+                <span class="ressorttext">Abgleich</span>
               </a>
             </span>
             </nav>

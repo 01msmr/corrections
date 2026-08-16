@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { adminAuth } from "../../auth.js";
 import type { Db } from "../../db/client.js";
 import type { Env } from "../../env.js";
+import { ladeAbgleichKandidaten } from "../../repo/abgleich.js";
 import { listErrorTypes } from "../../repo/errorTypes.js";
 import {
   istAusgang,
@@ -13,6 +14,7 @@ import {
   type MeldungsFilter,
 } from "../../repo/meldungen.js";
 import { listOutlets } from "../../repo/outlets.js";
+import { AbgleichSeite } from "../../views/abgleich.js";
 import { MeldungsAnsicht, MeldungsListe } from "../../views/meldungen.js";
 
 /**
@@ -31,7 +33,12 @@ export function meldungenRoutes(deps: { db: Db; env: Env }): Hono {
   /* Auf die eigenen Pfade begrenzt: der Router wird an der Wurzel montiert,
      ein use("*") sperrte sonst die ganze Seite. Beide Muster je Pfad, weil
      /admin/meldungen/* den Pfad ohne Schraegstrich nicht abdeckt. */
-  for (const pfad of ["/admin/meldungen", "/admin/meldungen/*"]) {
+  for (const pfad of [
+    "/admin/meldungen",
+    "/admin/meldungen/*",
+    "/admin/abgleich",
+    "/admin/abgleich/*",
+  ]) {
     app.use(pfad, adminAuth(deps.env));
     /* Nichts hiervon darf in einem Zwischenspeicher landen. */
     app.use(pfad, async (c, next) => {
@@ -101,6 +108,42 @@ export function meldungenRoutes(deps: { db: Db; env: Env }): Hono {
     });
     if (!gesetzt) return c.notFound();
     return c.redirect(`/admin/meldungen/${id}?gesetzt=1`, 303);
+  });
+
+  /**
+   * Ausgangs-Abgleich, ein Fall je Bildschirm. Die Stelle steht in der
+   * Adresse statt in einer Sitzung: Uebernehmen nimmt den Fall aus der
+   * Liste, danach steht an derselben Stelle der naechste -- Weiter zaehlt
+   * eins hoch. Damit ist die Seite anhaltbar und ohne Zustand.
+   */
+  app.get("/admin/abgleich", (c) => {
+    const faelle = ladeAbgleichKandidaten(deps.db);
+    const roh = Number.parseInt(c.req.query("stelle") ?? "0", 10);
+    const stelle = Number.isFinite(roh) && roh > 0 ? roh : 0;
+    return c.html(
+      <AbgleichSeite
+        faelle={faelle}
+        stelle={stelle}
+        hinweis={c.req.query("gesetzt") === "1" ? "Ausgang gesetzt." : undefined}
+      />,
+    );
+  });
+
+  app.post("/admin/abgleich/:id", (c) => {
+    const id = c.req.param("id");
+    const fall = ladeAbgleichKandidaten(deps.db).find((k) => k.id === id);
+    if (!fall) return c.notFound();
+
+    /* Das Korrektur-Datum kommt aus der Pruefung: sie hat die Aenderung
+       gesehen, die Antwort hat sie nur angekuendigt. */
+    const gesetzt = setzeAusgang(deps.db, id, {
+      outcome: "corrected",
+      respondedAt: fall.antwortAm,
+      correctedAt: fall.geprueftAm,
+    });
+    if (!gesetzt) return c.notFound();
+    const stelle = c.req.query("stelle") ?? "0";
+    return c.redirect(`/admin/abgleich?stelle=${stelle}&gesetzt=1`, 303);
   });
 
   return app;

@@ -27,15 +27,20 @@ export interface MailMerkmale {
 /** Kennung im Betreff: " [K…]" wie von composeMail vergeben. */
 const KENNUNG_MUSTER = /\[K[A-Z0-9]+\]/;
 
+/** Nennt die Mail eine Aenderung am Text? Dann sagt sie etwas zur Sache. */
+export function nenntKorrektur(text: string): boolean {
+  const klein = text.toLowerCase();
+  return SACHAUSSAGE_MUSTER.some((muster) => klein.includes(muster));
+}
+
 /**
  * Nur die Wortmarke, ohne Bezugspruefung -- fuer schon zugeordnete Ereignisse.
  * Eine Sachaussage schlaegt jedes Bestaetigungsmuster: derselbe
  * Hoeflichkeitssatz steht ueber Bestaetigung wie ueber echter Antwort.
  */
 export function passtAufBestaetigungsmuster(text: string): boolean {
-  const klein = text.toLowerCase();
-  if (SACHAUSSAGE_MUSTER.some((muster) => klein.includes(muster))) return false;
-  return BESTAETIGUNGS_MUSTER.some((muster) => klein.includes(muster));
+  if (nenntKorrektur(text)) return false;
+  return BESTAETIGUNGS_MUSTER.some((muster) => text.toLowerCase().includes(muster));
 }
 
 export function istEingangsbestaetigung(

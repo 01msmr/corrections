@@ -2,7 +2,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { Hono } from "hono";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createDb, runMigrations, type Db } from "../../db/client.js";
-import { corrections, errorTypes, outlets } from "../../db/schema.js";
+import { articleChecks, corrections, errorTypes, outlets, responseEvents } from "../../db/schema.js";
 import { seed } from "../../db/seed.js";
 import type { Env } from "../../env.js";
 import { PALETTE } from "@korrektur/shared";
@@ -184,5 +184,67 @@ describe("Ausgang setzen", () => {
       body: new URLSearchParams({ ausgang: "erfunden" }),
     });
     expect(res.status).toBe(400);
+  });
+});
+
+describe("Ausgangs-Abgleich", () => {
+  /** Meldung mit Antwort und Pruefbefund, wie der Abgleich sie erwartet. */
+  function mitBelegen(auszug: string, befund: "changed_as_suggested" | "unchanged"): string {
+    const id = meldung({ outcome: "acknowledged", respondedAt: JETZT });
+    db.insert(responseEvents)
+      .values({
+        id: createId(),
+        correctionId: id,
+        kind: "reply",
+        receivedAt: JETZT,
+        rawMessageId: createId(),
+        fromAddr: "leserservice@alpha-blatt.de",
+        excerpt: auszug,
+      })
+      .run();
+    db.insert(articleChecks)
+      .values({
+        id: createId(),
+        correctionId: id,
+        checkedAt: JETZT + 1000,
+        httpStatus: 200,
+        quoteState: befund,
+      })
+      .run();
+    return id;
+  }
+
+  it("nimmt nur auf, wo Antwort und Pruefung dasselbe sagen", async () => {
+    const doppelt = mitBelegen("Wir haben den Fehler korrigiert.", "changed_as_suggested");
+    mitBelegen("Wir haben Ihren Hinweis erhalten.", "changed_as_suggested");
+    mitBelegen("Wir haben den Fehler korrigiert.", "unchanged");
+
+    const antwort = await app.request("/admin/abgleich", { headers: { authorization: AUTH } });
+    expect(antwort.status).toBe(200);
+    const html = await antwort.text();
+    expect(html).toContain("1 von 1");
+    expect(html).toContain(`/admin/abgleich/${doppelt}`);
+  });
+
+  it("setzt den Ausgang und nimmt den Fall aus der Liste", async () => {
+    const id = mitBelegen("Wir haben den Fehler korrigiert.", "changed_as_suggested");
+
+    const gesetzt = await app.request(`/admin/abgleich/${id}?stelle=0`, {
+      method: "POST",
+      headers: { authorization: AUTH },
+    });
+    expect(gesetzt.status).toBe(303);
+
+    const zeile = db.select().from(corrections).all().find((c) => c.id === id);
+    expect(zeile?.outcome).toBe("corrected");
+    expect(zeile?.correctedAt).toBe(JETZT + 1000);
+    expect(zeile?.respondedAt).toBe(JETZT);
+
+    const danach = await app.request("/admin/abgleich", { headers: { authorization: AUTH } });
+    expect(await danach.text()).toContain("keine Meldung");
+  });
+
+  it("sperrt auch den Abgleich ohne Auth", async () => {
+    expect((await app.request("/admin/abgleich")).status).toBe(401);
   });
 });

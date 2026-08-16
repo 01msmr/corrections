@@ -462,3 +462,22 @@ nur `excerpt`.
 (verlängern) → `bestaetigungen:zeigen` (nach Wortlaut gruppiert sichten) →
 erst dann `bestaetigungen:loeschen`. Jeder Schritt davor ändert, was der
 letzte für eine Bestätigung hält.
+
+### Ausgangs-Abgleich (`/admin/abgleich`)
+
+Nach dem Nachladen der Auszüge liegen zu vielen Meldungen zwei Belege vor: der
+Wortlaut der Antwort und der Befund der Artikel-Prüfung. Die Warteschlange
+zeigt die Fälle, in denen **beide** dasselbe sagen — `nenntKorrektur` auf dem
+Auszug (dieselbe reine Funktion, die eine Bestätigung von einer Antwort
+trennt) und `quote_state = 'changed_as_suggested'` in der jüngsten Prüfung.
+
+Ein Fall je Bildschirm, wie in der Backfill-Review: Eingabetaste übernimmt
+(setzt „korrigiert wie vorgeschlagen"), X überspringt, ein Verweis führt ins
+Detail für alles Weitere. Die Stelle steht in der Adresse statt in einer
+Sitzung — Übernehmen nimmt den Fall aus der Liste, danach steht an derselben
+Stelle der nächste; Weiter zählt eins hoch. Damit ist die Seite anhaltbar und
+ohne Zustand.
+
+Das Korrektur-Datum kommt aus der Prüfung, nicht aus der Antwort: die Prüfung
+hat die Änderung gesehen, die Antwort hat sie nur behauptet. Der Ausgang wird
+weiterhin von Hand gesetzt — ein Befund ist Evidenz, keine Entscheidung (§9).
