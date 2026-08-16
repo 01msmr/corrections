@@ -1,5 +1,5 @@
 import type { FC } from "hono/jsx";
-import { WEICHE_FEHLERARTEN } from "@korrektur/shared";
+import { WEICHE_FEHLERARTEN, quotenlage } from "@korrektur/shared";
 import type { ErrorTypeRecord } from "../repo/errorTypes.js";
 import type {
   Ausgang,
@@ -306,6 +306,19 @@ export const MeldungsAnsicht: FC<{ detail: MeldungsDetail; hinweis?: string | un
 }) => {
   const m = detail.meldung;
   const fahne = vergleicheFassungen(m.quoteBefore, m.suggestionAfter);
+  /* Der Ausgang kann gesetzt sein und die Quote sich trotzdem nicht bewegen
+     -- ohne diese Zeile ist das von aussen nicht zu sehen. */
+  const pruefungen = detail.ereignisse.filter((e) => e.art !== "reply" && e.art !== "autoreply" && e.art !== "bounce");
+  const lage = quotenlage(
+    {
+      dispatchStatus: m.dispatchStatus,
+      sentAt: m.sentAt,
+      correctedAt: m.correctedAt,
+      verification: m.verification,
+      letzterBefund: pruefungen[pruefungen.length - 1]?.art ?? null,
+    },
+    Math.floor(Date.now() / 1000),
+  );
   /* Dieselbe Auszeichnung wie in der Mail: Fehlstelle hell auf Karmin bzw.
      Gruen, der Teilsatz darum fett. Eine Quelle (compose.ts), kein Nachbau. */
   const fassungen = fassungenHtml(m.quoteBefore, m.suggestionAfter);
@@ -324,6 +337,11 @@ export const MeldungsAnsicht: FC<{ detail: MeldungsDetail; hinweis?: string | un
         <a href={m.articleUrl} target="_blank" rel="noopener">
           {m.headline ?? m.articleUrl}
         </a>
+      </p>
+
+      <p class="zaehler">
+        Korrekturquote:{" "}
+        {lage.zaehlt ? "zählt mit" : `zählt nicht mit — ${lage.grund}`}
       </p>
 
       <p class="fahne">

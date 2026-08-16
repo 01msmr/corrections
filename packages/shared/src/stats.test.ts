@@ -1,5 +1,6 @@
+import { MATURITY_SECONDS } from "./constants.js";
 import { describe, expect, it } from "vitest";
-import { rateOrNull, wilsonInterval } from "./stats.js";
+import { rateOrNull, wilsonInterval, quotenlage } from "./stats.js";
 
 describe("wilsonInterval", () => {
   it("reproduziert einen aus der Literatur bekannten Kontrollfall", () => {
@@ -39,5 +40,34 @@ describe("rateOrNull", () => {
 
   it("gibt bei n=0 null zurück", () => {
     expect(rateOrNull(0, 0)).toBeNull();
+  });
+});
+
+describe("quotenlage", () => {
+  const REIF = 1_800_000_000;
+  const JETZT = REIF + MATURITY_SECONDS + 1;
+  const BASIS = {
+    dispatchStatus: "sent",
+    sentAt: REIF,
+    correctedAt: REIF + 100,
+    verification: "manual",
+    letzterBefund: "unreachable",
+  };
+
+  it("zaehlt, wenn Versand, Frist, Datum und Bestaetigung stimmen", () => {
+    expect(quotenlage(BASIS, JETZT)).toEqual({ zaehlt: true });
+  });
+
+  it("nennt die Frist, solange sie laeuft", () => {
+    const lage = quotenlage(BASIS, REIF + 100);
+    expect(lage.zaehlt).toBe(false);
+    expect(lage.zaehlt === false && lage.grund).toContain("Tage her");
+  });
+
+  it("nennt das fehlende Korrekturdatum und die fehlende Bestaetigung", () => {
+    const ohneDatum = quotenlage({ ...BASIS, correctedAt: null }, JETZT);
+    expect(ohneDatum.zaehlt === false && ohneDatum.grund).toContain("Korrekturdatum");
+    const ohneHand = quotenlage({ ...BASIS, verification: "none" }, JETZT);
+    expect(ohneHand.zaehlt === false && ohneHand.grund).toContain("von Hand");
   });
 });

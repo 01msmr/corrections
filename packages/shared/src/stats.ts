@@ -1,4 +1,9 @@
-import { CONFIDENCE_Z, MIN_N_FOR_RATE } from "./constants.js";
+import {
+  CONFIDENCE_Z,
+  MATURITY_DAYS,
+  MATURITY_SECONDS,
+  MIN_N_FOR_RATE,
+} from "./constants.js";
 
 /**
  * Wilson-Score-Intervall. Dient als Fehlerbalken gegen Überinterpretation
@@ -27,4 +32,39 @@ export function wilsonInterval(
 export function rateOrNull(successes: number, total: number): number | null {
   if (total < MIN_N_FOR_RATE || total <= 0) return null;
   return successes / total;
+}
+
+/**
+ * Warum eine Meldung in der Korrekturquote zaehlt -- oder nicht. Dieselben
+ * Bedingungen wie die Kennzahlen-View, nur einzeln benannt: Der Ausgang kann
+ * gesetzt sein und die Zahl sich trotzdem nicht bewegen, und ohne diese
+ * Auskunft ist das von aussen nicht zu sehen.
+ */
+export interface QuotenAngaben {
+  dispatchStatus: string;
+  sentAt: number | null;
+  correctedAt: number | null;
+  verification: string;
+  /** Zustand der juengsten Artikel-Pruefung, null wenn keine gelaufen ist. */
+  letzterBefund: string | null;
+}
+
+export type Quotenlage =
+  | { zaehlt: true }
+  | { zaehlt: false; grund: string };
+
+export function quotenlage(angaben: QuotenAngaben, jetzt: number): Quotenlage {
+  if (angaben.dispatchStatus !== "sent" || angaben.sentAt === null) {
+    return { zaehlt: false, grund: "nicht versendet" };
+  }
+  if (angaben.sentAt > jetzt - MATURITY_SECONDS) {
+    return { zaehlt: false, grund: `noch keine ${MATURITY_DAYS} Tage her (§9.3)` };
+  }
+  if (angaben.correctedAt === null) {
+    return { zaehlt: false, grund: "kein Korrekturdatum gesetzt" };
+  }
+  if (angaben.verification !== "manual") {
+    return { zaehlt: false, grund: "nicht von Hand bestaetigt" };
+  }
+  return { zaehlt: true };
 }
