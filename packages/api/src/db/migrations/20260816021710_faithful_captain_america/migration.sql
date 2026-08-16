@@ -1,0 +1,1 @@
+ALTER TABLE `corrections` ADD `corrected_text` text;

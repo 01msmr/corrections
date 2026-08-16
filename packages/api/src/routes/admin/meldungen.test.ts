@@ -366,6 +366,23 @@ describe("Ausgangs-Abgleich", () => {
     expect(zeile?.verification).toBe("none");
   });
 
+  it("haelt die neue Fassung fest und warnt ohne Beleg", async () => {
+    const id = mitBelegen("Wir haben das bereits korrigiert.", "unchanged");
+    const html = await (
+      await app.request("/admin/abgleich?alle=1", { headers: { authorization: AUTH } })
+    ).text();
+    expect(html).toContain("Höflichkeitsformel");
+
+    await app.request(`/admin/abgleich/${id}?stelle=0&alle=1`, {
+      method: "POST",
+      headers: { authorization: AUTH, "content-type": "application/x-www-form-urlencoded" },
+      body: "ausgang=corrected_other&korrigierterText=entscheiden%20k%C3%B6nnen%20wird.",
+    });
+    const zeile = db.select().from(corrections).all().find((c) => c.id === id);
+    expect(zeile?.outcome).toBe("corrected_other");
+    expect(zeile?.correctedText).toBe("entscheiden können wird.");
+  });
+
   it("sperrt auch den Abgleich ohne Auth", async () => {
     expect((await app.request("/admin/abgleich")).status).toBe(401);
   });

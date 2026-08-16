@@ -535,3 +535,19 @@ Vorne steht in der offenen Schlange, was eine Korrektur nennt. Ein
 Korrekturdatum entsteht nur bei den beiden Korrektur-Ausgängen — „als richtig
 benannt" ist eine Antwort, aber keine Korrektur, und zählt entsprechend nicht
 in die Quote.
+
+### Was eine Antwort belegt — und was nicht
+
+„Wir haben den Fehler zwischenzeitlich korrigiert" ist keine Tatsache, sondern
+eine Aussage. Sie steht auch dort, wo nichts geändert wurde: als höfliche Form
+von „wir diskutieren das nicht". `nenntKorrektur` erkennt deshalb eine
+**Behauptung**, keinen Befund — das ist der Grund für den Doppelbeleg.
+
+In der offenen Warteschlange, wo der Artikel nicht prüfbar ist, sagt die Seite
+das ausdrücklich dazu: Ohne Beleg im Artikel trägt der Ausgang allein den
+Wortlaut.
+
+Wird **anders korrigiert** gewählt, gehört der tatsächliche neue Wortlaut
+festgehalten (`corrections.corrected_text`, von Hand erfasst; die automatische
+Prüfung legt ihren eigenen Fund in `article_checks.observed_text` ab). Sonst
+bliebe der Ausgang eine Behauptung ohne den Text, auf den er sich beruft.

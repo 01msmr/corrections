@@ -804,7 +804,10 @@ const STYLES = `
   /* Der Rat zum Befund: eine Nebenstimme, keine zweite Aussage. */
   .belegrat { color: var(--rand); font-style: italic; }
   .abgleichtasten { display: flex; flex-wrap: wrap; align-items: center; gap: ${ABSTAND.r70}; }
-  .abgleichtasten form { margin: 0; }
+  .abgleichtasten form { margin: 0; display: flex; align-items: flex-end; gap: ${ABSTAND.r35}; }
+  /* Das Feld gehoert zum Knopf daneben, nicht ins Blatt: schmaler und ohne
+     die betonte Unterkante der Formularfelder. */
+  .andersfassung { width: ${MASS.suchbreite}; font: ${GRAD.klein}/${ZEILE.satz} var(--mono); }
 
   /* Die Titelzelle scrollt ohne sichtbaren Balken. Die Geste endet in ihr,
      sonst liest der Browser sie als "eine Seite zurueck" (Finger; das

@@ -81,6 +81,11 @@ export const corrections = sqliteTable(
       .notNull()
       .default("none"),
     suggestionAfter: text("suggestion_after").notNull(),
+    /** Was im Artikel steht, wenn anders korrigiert wurde als vorgeschlagen --
+     *  von Hand erfasst. Die automatische Pruefung legt ihren Fund in
+     *  `article_checks.observed_text` ab; hier steht, was der Betreiber
+     *  gelesen hat. */
+    correctedText: text("corrected_text"),
     comment: text("comment"),
 
     /** Intern (§2.1). */

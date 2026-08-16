@@ -429,6 +429,18 @@ export const MeldungsAnsicht: FC<{ detail: MeldungsDetail; hinweis?: string | un
           value={datumsWert(m.correctedAt)}
         />
 
+        {/* Nur bei "anders korrigiert" gefragt, aber immer sichtbar: ein
+            Feld, das erst nach der Auswahl erschiene, wuerde uebersehen. */}
+        <label for="korrigierterText">Neue Fassung im Artikel:</label>
+        <textarea
+          id="korrigierterText"
+          name="korrigierterText"
+          rows={2}
+          placeholder="nur bei „anders korrigiert“ — was jetzt dort steht"
+        >
+          {m.correctedText ?? ""}
+        </textarea>
+
         <button type="submit">Ausgang setzen</button>
       </form>
 

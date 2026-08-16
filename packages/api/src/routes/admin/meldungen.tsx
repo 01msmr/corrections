@@ -1,3 +1,4 @@
+import { QUOTE_MAX_LENGTH } from "@korrektur/shared";
 import { Hono } from "hono";
 import { adminAuth } from "../../auth.js";
 import type { Db } from "../../db/client.js";
@@ -120,10 +121,12 @@ export function meldungenRoutes(deps: { db: Db; env: Env }): Hono {
     const angegeben = epoche("korrigiertAm");
     const korrigiertAm = korrigiert ? (angegeben ?? antwortAm) : angegeben;
 
+    const roher = typeof body["korrigierterText"] === "string" ? body["korrigierterText"].trim() : "";
     const gesetzt = setzeAusgang(deps.db, id, {
       outcome: ausgang,
       respondedAt: antwortAm,
       correctedAt: korrigiertAm,
+      correctedText: roher.length > 0 ? roher.slice(0, QUOTE_MAX_LENGTH) : null,
     });
     if (!gesetzt) return c.notFound();
     const uebernommen = korrigiert && angegeben === null && korrigiertAm !== null;
@@ -172,10 +175,12 @@ export function meldungenRoutes(deps: { db: Db; env: Env }): Hono {
     /* Ein Korrekturdatum nur, wo tatsaechlich korrigiert wurde -- "als
        richtig benannt" ist eine Antwort, aber keine Korrektur. */
     const korrigiert = gewaehlt === "corrected" || gewaehlt === "corrected_other";
+    const fassung = typeof body["korrigierterText"] === "string" ? body["korrigierterText"].trim() : "";
     const gesetzt = setzeAusgang(deps.db, id, {
       outcome: gewaehlt,
       respondedAt: fall.antwortAm,
       correctedAt: korrigiert ? fall.antwortAm : null,
+      correctedText: fassung.length > 0 ? fassung.slice(0, QUOTE_MAX_LENGTH) : null,
     });
     if (!gesetzt) return c.notFound();
     const stelle = c.req.query("stelle") ?? "0";

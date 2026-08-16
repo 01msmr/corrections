@@ -168,6 +168,16 @@ export const AbgleichSeite: FC<{
                 ) : null}
               </p>
             )}
+            {/* Eine Antwort ist eine Behauptung. "Wir haben das bereits
+                korrigiert" steht auch dort, wo nichts geaendert wurde -- als
+                hoefliche Form von "wir diskutieren das nicht". Ohne Beleg im
+                Artikel traegt der Ausgang allein den Wortlaut. */}
+            {offen && fall.befund !== "changed_as_suggested" ? (
+              <p class="abgleichbeleg belegrat">
+                Kein Beleg im Artikel: Der Ausgang stützt sich allein auf den Wortlaut
+                der Antwort — und der kann eine Höflichkeitsformel sein.
+              </p>
+            ) : null}
             <div class="abgleichtasten">
               {(offen ? AUSWAHL : AUSWAHL.slice(0, 1)).map((wahl, i) => (
                 <form
@@ -175,6 +185,18 @@ export const AbgleichSeite: FC<{
                   action={`/admin/abgleich/${fall.id}?stelle=${stelle}${offen ? "&alle=1" : ""}`}
                 >
                   <input type="hidden" name="ausgang" value={wahl.wert} />
+                  {/* Anders korrigiert heisst: im Artikel steht etwas Drittes.
+                      Was, gehoert festgehalten -- sonst bleibt der Ausgang
+                      eine Behauptung ohne Wortlaut. */}
+                  {wahl.wert === "corrected_other" ? (
+                    <input
+                      type="text"
+                      name="korrigierterText"
+                      class="andersfassung"
+                      placeholder="was jetzt dort steht"
+                      aria-label="Neue Fassung im Artikel"
+                    />
+                  ) : null}
                   <button type="submit" id={i === 0 ? "uebernehmen" : undefined}>
                     <span class="knopftext">
                       {wahl.text}

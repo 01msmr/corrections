@@ -171,6 +171,8 @@ export interface AusgangsAngaben {
   /** Datum der echten Antwort (Eingangsbestaetigungen zaehlen nicht). */
   respondedAt: number | null;
   correctedAt: number | null;
+  /** Der tatsaechliche Wortlaut, wenn anders korrigiert wurde. */
+  correctedText?: string | null;
 }
 
 /** Schreibt den Ausgang; `false`, wenn es die Meldung nicht gibt. */
@@ -181,6 +183,7 @@ export function setzeAusgang(db: Db, id: string, angaben: AusgangsAngaben): bool
       outcome: angaben.outcome,
       respondedAt: angaben.respondedAt,
       correctedAt: angaben.correctedAt,
+      ...(angaben.correctedText === undefined ? {} : { correctedText: angaben.correctedText }),
       /* Das Korrekturdatum kommt nur von Hand (Spec 8.3) -- wer es setzt,
          bestaetigt damit. Ohne diese Zeile blieb `verification` auf "none"
          und die Korrekturquote zaehlte nichts. */
