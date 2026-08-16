@@ -194,13 +194,27 @@ export function setzeAusgang(db: Db, id: string, angaben: AusgangsAngaben): bool
   return ergebnis.changes > 0;
 }
 
-/** Meldungen zu einer kanonisierten Artikeladresse -- fuer das Nachpruefen. */
-export function meldungenZuAdresse(
-  db: Db,
-  canon: string,
-): (typeof corrections.$inferSelect & { kategorie: string })[] {
-  return db.all<typeof corrections.$inferSelect & { kategorie: string }>(sql`
-    SELECT c.*, e.label AS kategorie
+/** Was das Nachpruefen einer Meldung braucht -- Fundstelle samt Ankern. */
+export interface PruefZeile {
+  id: string;
+  ref: string;
+  kategorie: string;
+  quoteBefore: string;
+  suggestionAfter: string;
+  quotePrefix: string | null;
+  quoteSuffix: string | null;
+}
+
+/**
+ * Meldungen zu einer kanonisierten Artikeladresse. Spalten einzeln benannt,
+ * nicht `c.*`: rohes SQL liefert die Namen der Datenbank, und ein
+ * `$inferSelect` darueber waere eine Behauptung, die niemand prueft.
+ */
+export function meldungenZuAdresse(db: Db, canon: string): PruefZeile[] {
+  return db.all<PruefZeile>(sql`
+    SELECT c.id, c.ref, e.label AS kategorie,
+      c.quote_before AS quoteBefore, c.suggestion_after AS suggestionAfter,
+      c.quote_prefix AS quotePrefix, c.quote_suffix AS quoteSuffix
     FROM corrections c
     JOIN error_types e ON e.id = c.error_type_id
     WHERE c.article_url_canon = ${canon}

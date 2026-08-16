@@ -419,6 +419,39 @@ describe("Ausgangs-Abgleich", () => {
     expect(antwort.status).toBe(400);
   });
 
+  /* Der Test, der gefehlt hat: die Route schrieb gegen rohes SQL und
+     stolperte ueber die Spaltennamen der Datenbank. */
+  it("prueft ueber das Lesezeichen alle Meldungen zur Adresse", async () => {
+    const eins = meldung();
+    const zwei = meldung();
+    const artikel = "Vorspann. Der Mietwagen stand bereit. Und weiter im Text.";
+
+    const antwort = await app.request("/admin/nachpruefen", {
+      method: "POST",
+      headers: { authorization: AUTH, "content-type": "application/x-www-form-urlencoded" },
+      body: `url=${encodeURIComponent("https://alpha-blatt.de/a")}&artikelText=${encodeURIComponent(artikel)}`,
+    });
+    expect(antwort.status).toBe(200);
+    const html = await antwort.text();
+    expect(html).toContain("wie vorgeschlagen geändert");
+
+    for (const id of [eins, zwei]) {
+      const checks = db.select().from(articleChecks).all().filter((a) => a.correctionId === id);
+      expect(checks).toHaveLength(1);
+      expect(checks[0]?.quoteState).toBe("changed_as_suggested");
+      expect(checks[0]?.quelle).toBe("eingefuegt");
+    }
+  });
+
+  it("weist das Lesezeichen ohne Adresse oder Text ab", async () => {
+    const ohneText = await app.request("/admin/nachpruefen", {
+      method: "POST",
+      headers: { authorization: AUTH, "content-type": "application/x-www-form-urlencoded" },
+      body: "url=https%3A%2F%2Falpha-blatt.de%2Fa&artikelText=",
+    });
+    expect(ohneText.status).toBe(400);
+  });
+
   it("sperrt auch den Abgleich ohne Auth", async () => {
     expect((await app.request("/admin/abgleich")).status).toBe(401);
   });
