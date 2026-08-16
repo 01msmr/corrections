@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
+import { ROBOTS_VERMERK } from "@korrektur/shared";
 import { nenntKorrektur } from "../inbox/bestaetigung.js";
 
 /**
@@ -48,6 +49,7 @@ export type Ankerlage = "anker" | "altbestand" | "gerissen";
 interface RohZeile extends AbgleichZeile {
   befund: string | null;
   ankerguete: string;
+  beobachtet: string | null;
 }
 
 /**
@@ -62,7 +64,8 @@ function ladeRohzeilen(db: Db): RohZeile[] {
       c.article_url AS articleUrl, c.quote_before AS quoteBefore,
       c.suggestion_after AS suggestion, r.excerpt AS auszug, r.received_at AS antwortAm,
       a.checked_at AS geprueftAm, a.match_confidence AS sicherheit,
-      a.quote_state AS befund, c.anchor_quality AS ankerguete
+      a.quote_state AS befund, c.anchor_quality AS ankerguete,
+      a.observed_text AS beobachtet
     FROM corrections c
     JOIN outlets o ON o.id = c.outlet_id
     JOIN error_types e ON e.id = c.error_type_id
@@ -119,6 +122,11 @@ export interface AbgleichLage {
   andersGeaendert: number;
   verschwunden: number;
   unerreichbar: number;
+  /* Zwei sehr verschiedene Gruende: ein Ausschluss ist die Entscheidung der
+     Redaktion und funktioniert wie vorgesehen, ein gescheiterter Abruf ist
+     unser Problem. */
+  robotsAusschluss: number;
+  abrufGescheitert: number;
 }
 
 export function ladeAbgleichLage(db: Db): AbgleichLage {
@@ -138,5 +146,11 @@ export function ladeAbgleichLage(db: Db): AbgleichLage {
     andersGeaendert: mitAussage.filter((z) => z.befund === "changed_otherwise").length,
     verschwunden: mitAussage.filter((z) => z.befund === "passage_gone").length,
     unerreichbar: mitAussage.filter((z) => z.befund === "unreachable").length,
+    robotsAusschluss: mitAussage.filter(
+      (z) => z.befund === "unreachable" && z.beobachtet === ROBOTS_VERMERK,
+    ).length,
+    abrufGescheitert: mitAussage.filter(
+      (z) => z.befund === "unreachable" && z.beobachtet !== ROBOTS_VERMERK,
+    ).length,
   };
 }

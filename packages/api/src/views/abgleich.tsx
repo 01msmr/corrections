@@ -70,7 +70,9 @@ export const AbgleichSeite: FC<{
               <tr><td class="lageunter">Stelle unverändert — Widerspruch zur Antwort</td><td>{lage.unveraendert}</td></tr>
               <tr><td class="lageunter">anders geändert als vorgeschlagen</td><td>{lage.andersGeaendert}</td></tr>
               <tr><td class="lageunter">Stelle nicht gefunden (oft: Bezahlschranke)</td><td>{lage.verschwunden}</td></tr>
-              <tr><td class="lageunter">Seite nicht erreichbar</td><td>{lage.unerreichbar}</td></tr>
+              <tr><td class="lageunter">Seite nicht erreichbar, nämlich:</td><td>{lage.unerreichbar}</td></tr>
+              <tr><td class="lageunter lagetief">durch robots.txt ausgeschlossen</td><td>{lage.robotsAusschluss}</td></tr>
+              <tr><td class="lageunter lagetief">Abruf gescheitert</td><td>{lage.abrufGescheitert}</td></tr>
             </tbody>
           </table>
         </>

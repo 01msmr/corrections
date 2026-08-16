@@ -71,6 +71,10 @@ export const CONFIDENCE_Z = 1.959964;
  */
 export const QUOTE_MAX_LENGTH = 280;
 
+/** Vermerk einer Pruefung, die die robots.txt untersagt hat -- der Ausschluss
+ *  ist die Entscheidung der Redaktion, kein gescheiterter Abruf. */
+export const ROBOTS_VERMERK = "durch robots.txt ausgeschlossen";
+
 /** Zeichen vor und nach der Fundstelle je Kontext-Anker (§8.1). */
 export const ANCHOR_LENGTH = 48;
 

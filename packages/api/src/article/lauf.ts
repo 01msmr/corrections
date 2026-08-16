@@ -1,4 +1,4 @@
-import { gleicherOrt } from "@korrektur/shared";
+import { gleicherOrt, ROBOTS_VERMERK } from "@korrektur/shared";
 import type { Db } from "../db/client.js";
 import { faelligeChecks, vermerkeCheck } from "../repo/artikelChecks.js";
 import { ARTIKEL_MINDESTZEICHEN } from "../pruefung/languagetool.js";
@@ -45,7 +45,7 @@ export async function artikelLauf(db: Db, deps: ArtikelLaufDeps): Promise<Artike
         checkedAt: jetzt,
         httpStatus: null,
         zustand: "unreachable",
-        beobachtet: "durch robots.txt ausgeschlossen",
+        beobachtet: ROBOTS_VERMERK,
         sicherheit: null,
       });
       ergebnis.ausgeschlossen += 1;
