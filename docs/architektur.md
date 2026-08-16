@@ -417,3 +417,48 @@ einer Änderung dort erst `pnpm --filter @korrektur/shared build`, sonst sieht
   aus, sobald die Geste ins Leere lief. `preventDefault` steht jetzt vor der
   Prüfung, ob es etwas zu schieben gibt; für den Finger zusätzlich
   `overscroll-behavior-x: contain`.
+
+### Antwort-Zuordnung: drei Fehler, an einem echten Fall gefunden
+
+Eine SPIEGEL-Antwort vom 30.7.2026 hing korrekt an ihrer Meldung, zeigte aber
+rohen MIME-Text — daran hing eine Kette:
+
+- **Der Titel-Weg griff nie.** `normBetreff` streicht Antwort-Vorsätze und die
+  Kennung, nicht aber unseren eigenen Betreff-Anfang „Textfehler im Artikel",
+  den schon der alte Kurzbefehl setzte. Verglichen wurde also
+  „textfehler im artikel: x" mit der Überschrift „x". Der gesamte Backfill hing
+  dadurch allein an `In-Reply-To`. `SUBJECT_PREFIX` liegt jetzt in `shared`,
+  damit Versand und Zuordnung nicht auseinanderlaufen; gekürzte Betreffe
+  (buildSubject kappt gegen ein Budget) erkennt ein Anfangs-Vergleich ab 20
+  Zeichen wieder.
+- **Grenzzeilen mit führenden Strichen** (`--==_mimepart_…`, Rails-Mailer)
+  wurden nicht erkannt: das Muster verlangte, dass nach den zwei Strichen
+  keiner mehr folgt. Das war gegen Trennlinien im Text gedacht, aber zu eng.
+  Der eigentliche Schaden lag im Rückfall — ohne erkannte Grenze landete alles
+  im Rumpf, bei leerem Kopf, womit auch die Kodierungszeile unentdeckt blieb
+  und nichts entschlüsselt wurde.
+- **Echte Antworten galten als Eingangsbestätigung.** Der Leserservice setzt
+  „vielen Dank für Ihr Interesse am SPIEGEL" über beide Sorten Mail — auch über
+  die, die die Korrektur meldet. `SACHAUSSAGE_MUSTER` schlägt jetzt jedes
+  Bestätigungsmuster. Die Prüfung sitzt in `passtAufBestaetigungsmuster` und
+  gilt damit auch für `bestaetigungen:loeschen`, das solche Ereignisse sonst
+  gelöscht und den Ausgang zurückgesetzt hätte.
+
+### Der Auszug muss den Satz zur Sache tragen
+
+Abgelegt wurden 300 Zeichen, und die gingen vom **rohen** Text ab. Bei
+mehrteiligen Mails fraßen Grenzmarke, Kopfzeilen, Trennlinie der Vorlage,
+Anrede und Dankessatz den Platz; übrig blieben rund hundert Zeichen, die
+mitten in „Wir haben den Fehler …" endeten. Damit fehlte genau der Satz, an
+dem eine erledigte Korrektur von einer Bestätigung zu unterscheiden ist — und
+das Gegenmuster läuft über denselben Auszug, konnte also nicht greifen.
+
+`AUSZUG_MAX_LENGTH` (1500) löst die 300 ab. Für schon vermerkte Antworten holt
+`auszuege:nachladen` den Text erneut aus dem Postfach: über die Message-ID aus
+`response_events`, erst im Posteingang, dann im Papierkorb. Geschrieben wird
+nur `excerpt`.
+
+**Reihenfolge beim Aufräumen:** `auszuege` (entschlüsseln) → `auszuege:nachladen`
+(verlängern) → `bestaetigungen:zeigen` (nach Wortlaut gruppiert sichten) →
+erst dann `bestaetigungen:loeschen`. Jeder Schritt davor ändert, was der
+letzte für eine Bestätigung hält.

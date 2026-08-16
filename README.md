@@ -100,6 +100,13 @@ liest das ganze Postfach (UID-Cursor), danach nur das Neue. Mailtexte
 werden vor der Erkennung aus Quoted-Printable dekodiert, sonst trifft kein
 Muster mit Umlaut.
 
+Eine Bestätigung ist nur, was **nichts zur Sache sagt**: Enthält die Mail
+eine Aussage über den Fehler („korrigiert", „geändert", „behoben"), bleibt
+sie eine Antwort, auch wenn sie den üblichen Dankessatz trägt. Redaktionen
+setzen denselben Baustein über beide Sorten Mail. Damit die Erkennung das
+sehen kann, wird vom Antworttext genug abgelegt (1500 Zeichen), und der
+Vergleich läuft auf dem entschlüsselten, nicht dem rohen Text.
+
 Angestoßen wird der Gang stündlich über `/intern/posteingang?token=…`
 (Plesk: geplante Aufgabe vom Typ „URL abrufen"). Der Weg über die Adresse
 statt über einen Cron-Befehl ist keine Bequemlichkeit: Auf dem Hoster gibt
