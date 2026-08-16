@@ -326,7 +326,10 @@ const STYLES = `
   /* Am Spalt stossen zwei Innenabstaende aufeinander und ergaeben sonst
      doppelt so viel Luft wie an den runden Aussenkanten. Innen daher knapper,
      damit die Pille in beiden Ansichten gleichmaessig wirkt. */
-  .randressorts a:first-child { padding-right: calc(${ABSTAND.r50} - ${STRICH.haar}); }
+  /* Jede Marke mit Nachbarin rechts, nicht nur die erste: sonst behaelt die
+     mittlere rechts das volle Polster, waehrend links schon das schmale
+     steht -- die Naht saesse schief. */
+  .randressorts a:not(:last-child) { padding-right: calc(${ABSTAND.r50} - ${STRICH.haar}); }
   /* Trennstrich im Seiten-Hintergrund: wirkt wie ein Spalt in der Pille. */
   .randressorts a + a { border-left: ${STRICH.kraeftig} solid var(--papier);
     padding-left: calc(${ABSTAND.r50} - ${STRICH.haar}); }
@@ -340,7 +343,7 @@ const STYLES = `
       .randressorts { margin: 0 ${STRICH.kraeftig} 0 0; }
     }
     .randressorts a { padding: calc(${ABSTAND.r60} - ${STRICH.kraeftig}) calc(${ABSTAND.r95} - ${STRICH.kraeftig}); }
-    .randressorts a:first-child { padding-right: calc(${ABSTAND.r50} - ${STRICH.kraeftig}); }
+    .randressorts a:not(:last-child) { padding-right: calc(${ABSTAND.r50} - ${STRICH.kraeftig}); }
     .randressorts a + a { padding-left: calc(${ABSTAND.r50} - ${STRICH.kraeftig}); }
   }
   .randressorts a:hover, .randressorts a:focus-visible {
