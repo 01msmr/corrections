@@ -88,8 +88,10 @@ Tabelle breit (Details: `docs/architektur.md`).
 
 **Ausgang abgleichen.** Eine Warteschlange für die Fälle, in denen zwei
 unabhängige Belege dasselbe sagen: Die Redaktion nennt in ihrer Antwort eine
-Korrektur, **und** die Artikel-Prüfung sieht die Fundstelle wie
-vorgeschlagen geändert. Ein Fall je Bildschirm, übernehmen mit der
+Korrektur, **und** die Artikel-Prüfung hat die Fundstelle zwischen ihren
+Ankern gefunden und wie vorgeschlagen geändert (Sicherheit 100). Der
+schwächere Rückfall — die Berichtigung steht irgendwo im Artikel — zählt
+hier nicht: er belegt nicht, dass die gemeldete Stelle gemeint war. Ein Fall je Bildschirm, übernehmen mit der
 Eingabetaste, überspringen mit X — die Stelle steht in der Adresse, die
 Seite ist also jederzeit anhaltbar. Gesetzt wird der Ausgang trotzdem von
 Hand: ein Beleg ist Evidenz, keine Entscheidung.

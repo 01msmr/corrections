@@ -471,6 +471,12 @@ zeigt die Fälle, in denen **beide** dasselbe sagen — `nenntKorrektur` auf dem
 Auszug (dieselbe reine Funktion, die eine Bestätigung von einer Antwort
 trennt) und `quote_state = 'changed_as_suggested'` in der jüngsten Prüfung.
 
+Dabei zählt nur der starke Befund (`match_confidence = 100`): Anker gegriffen,
+Text zwischen ihnen genau die Berichtigung. `pruefung.ts` vergibt denselben
+Zustand auch im Rückfall mit Sicherheit 50 — dort steht die Berichtigung nur
+irgendwo im Artikel, was bei kurzen Vorschlägen Zufall sein kann. Die Karte
+nennt die Sicherheit, damit sichtbar bleibt, worauf die Zeile beruht.
+
 Ein Fall je Bildschirm, wie in der Backfill-Review: Eingabetaste übernimmt
 (setzt „korrigiert wie vorgeschlagen"), X überspringt, ein Verweis führt ins
 Detail für alles Weitere. Die Stelle steht in der Adresse statt in einer

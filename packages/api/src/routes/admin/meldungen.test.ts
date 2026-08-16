@@ -189,7 +189,11 @@ describe("Ausgang setzen", () => {
 
 describe("Ausgangs-Abgleich", () => {
   /** Meldung mit Antwort und Pruefbefund, wie der Abgleich sie erwartet. */
-  function mitBelegen(auszug: string, befund: "changed_as_suggested" | "unchanged"): string {
+  function mitBelegen(
+    auszug: string,
+    befund: "changed_as_suggested" | "unchanged",
+    sicherheit = 100,
+  ): string {
     const id = meldung({ outcome: "acknowledged", respondedAt: JETZT });
     db.insert(responseEvents)
       .values({
@@ -209,6 +213,7 @@ describe("Ausgangs-Abgleich", () => {
         checkedAt: JETZT + 1000,
         httpStatus: 200,
         quoteState: befund,
+        matchConfidence: sicherheit,
       })
       .run();
     return id;
@@ -218,6 +223,9 @@ describe("Ausgangs-Abgleich", () => {
     const doppelt = mitBelegen("Wir haben den Fehler korrigiert.", "changed_as_suggested");
     mitBelegen("Wir haben Ihren Hinweis erhalten.", "changed_as_suggested");
     mitBelegen("Wir haben den Fehler korrigiert.", "unchanged");
+    /* Rueckfall-Befund: die Berichtigung stand irgendwo im Artikel, nicht
+       nachweislich an unserer Fundstelle. */
+    mitBelegen("Wir haben den Fehler korrigiert.", "changed_as_suggested", 50);
 
     const antwort = await app.request("/admin/abgleich", { headers: { authorization: AUTH } });
     expect(antwort.status).toBe(200);
@@ -242,6 +250,18 @@ describe("Ausgangs-Abgleich", () => {
 
     const danach = await app.request("/admin/abgleich", { headers: { authorization: AUTH } });
     expect(await danach.text()).toContain("keine Meldung");
+  });
+
+  it("trennt Belegmarke und Satz mit einem Leerzeichen", async () => {
+    mitBelegen("Wir haben den Fehler korrigiert.", "changed_as_suggested");
+    const html = await (
+      await app.request("/admin/abgleich", { headers: { authorization: AUTH } })
+    ).text();
+    /* Ohne das kleben Datum und Satz beim Kopieren und im Vorlesen aneinander. */
+    for (const marke of html.matchAll(/class="belegmarke">.*?<\/span>(.)/g)) {
+      expect(marke[1]).toBe(" ");
+    }
+    expect(html).toContain("</span> Fundstelle");
   });
 
   it("sperrt auch den Abgleich ohne Auth", async () => {

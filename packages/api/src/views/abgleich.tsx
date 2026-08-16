@@ -58,12 +58,16 @@ export const AbgleichSeite: FC<{
             </p>
             {/* Die beiden Belege nebeneinander -- daran wird entschieden. */}
             <p class="abgleichbeleg">
-              <span class="belegmarke">Antwort {datum(fall.antwortAm)}</span>
+              {/* Das Leerzeichen ausdruecklich: JSX schluckt den Umbruch, der
+                  Abstand der Marke ist nur Optik -- kopierter Text und
+                  Vorlesesoftware klebten die Woerter sonst zusammen. */}
+              <span class="belegmarke">Antwort {datum(fall.antwortAm)}</span>{" "}
               {kernsatz(fall.auszug)}
             </p>
             <p class="abgleichbeleg">
-              <span class="belegmarke">Prüfung {datum(fall.geprueftAm)}</span>
-              Fundstelle wie vorgeschlagen geändert.
+              <span class="belegmarke">Prüfung {datum(fall.geprueftAm)}</span>{" "}
+              Fundstelle zwischen ihren Ankern gefunden und wie vorgeschlagen
+              geändert (Sicherheit {fall.sicherheit}).
             </p>
             <div class="abgleichtasten">
               <form method="post" action={`/admin/abgleich/${fall.id}?stelle=${stelle}`}>
