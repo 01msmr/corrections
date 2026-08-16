@@ -9,6 +9,14 @@ export const MIN_N_FOR_RATE = 10;
  *  in der Voreinstellung aus (Umschalter ?alle=1). Erweiterbar. */
 export const WEICHE_FEHLERARTEN = ["schlechter_satzbau"] as const;
 
+/**
+ * So viel Antworttext wird zur Meldung abgelegt. 300 Zeichen waren zu knapp:
+ * bei mehrteiligen Mails gingen Anrede und Dankessatz davon ab, der Satz zur
+ * Sache stand nicht mehr drin -- und ohne ihn ist eine erledigte Korrektur
+ * nicht von einer Eingangsbestaetigung zu unterscheiden.
+ */
+export const AUSZUG_MAX_LENGTH = 1500;
+
 /** Anfang jedes Betreffs, den wir versenden -- und schon der des alten
  *  Kurzbefehls. Die Antwort-Zuordnung streicht ihn wieder weg. */
 export const SUBJECT_PREFIX = "Textfehler im Artikel";

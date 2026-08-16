@@ -1,7 +1,8 @@
 import { createId } from "@paralleldrive/cuid2";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { corrections, responseEvents } from "../db/schema.js";
+import { AUSZUG_MAX_LENGTH } from "@korrektur/shared";
 import { normBetreff, type AntwortKandidat } from "../inbox/antworten.js";
 import { lesbarerText } from "../inbox/dekodieren.js";
 
@@ -107,6 +108,37 @@ function bestaetigungsEreignisse(db: Db, passt: (text: string) => boolean): Best
 }
 
 /** Zaehlt sie, ohne etwas zu aendern. */
+/** Ein Ereignis, dessen Auszug aus dem Postfach nachgeladen werden kann. */
+export interface NachladeZeile {
+  id: string;
+  rawMessageId: string;
+  laenge: number;
+}
+
+/**
+ * Antworten mit Message-ID, deren Auszug kuerzer ist als das heutige Mass --
+ * bei ihnen kann im Postfach noch mehr Text stehen.
+ */
+export function ereignisseZumNachladen(db: Db): NachladeZeile[] {
+  return db.all<NachladeZeile>(sql`
+    SELECT id, raw_message_id AS rawMessageId, LENGTH(COALESCE(excerpt, '')) AS laenge
+    FROM response_events
+    WHERE raw_message_id IS NOT NULL AND LENGTH(COALESCE(excerpt, '')) < ${AUSZUG_MAX_LENGTH}
+    ORDER BY received_at
+  `);
+}
+
+/** Schreibt den nachgeladenen Auszug; false, wenn er nichts Neues bringt. */
+export function setzeAuszug(db: Db, ereignisId: string, auszug: string): boolean {
+  const gekuerzt = auszug.slice(0, AUSZUG_MAX_LENGTH).trim();
+  const alt = db.get<{ excerpt: string | null }>(sql`
+    SELECT excerpt FROM response_events WHERE id = ${ereignisId}
+  `);
+  if (!alt || gekuerzt.length === 0 || gekuerzt === (alt.excerpt ?? "")) return false;
+  db.update(responseEvents).set({ excerpt: gekuerzt }).where(eq(responseEvents.id, ereignisId)).run();
+  return true;
+}
+
 /** Dieselben Treffer zum Sichten, bevor jemand sie loescht. */
 export function listeBestaetigungen(
   db: Db,

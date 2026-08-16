@@ -1,4 +1,5 @@
 import { ImapFlow } from "imapflow";
+import { AUSZUG_MAX_LENGTH } from "@korrektur/shared";
 import type { WorkerEnv } from "../env.js";
 import type { EingehendeMail } from "./antworten.js";
 import { istEingangsbestaetigung } from "./bestaetigung.js";
@@ -19,6 +20,9 @@ import { lesbarerText } from "./dekodieren.js";
  * Projekt —, jeder weitere nur das Neue. Erkennung und Schreiben sind rein
  * bzw. liegen im Repo; hier ist nur der Transport.
  */
+
+/** So viel Rohtext wird aus einer Mail gelesen, bevor daraus der Auszug wird. */
+const LESE_MAX = 8000;
 
 export interface PosteingangErgebnis {
   gesichtet: number;
@@ -125,7 +129,7 @@ export async function verarbeitePosteingang(
           receivedAt: Number.isFinite(datumMs) ? Math.floor(datumMs / 1000) : Math.floor(Date.now() / 1000),
           rawMessageId: nachricht.envelope?.messageId?.replace(/[<>]/g, "").trim() || null,
           fromAddr: absender,
-          excerpt: textAnfang.slice(0, 300).trim() || null,
+          excerpt: textAnfang.slice(0, AUSZUG_MAX_LENGTH).trim() || null,
         });
         if (neu) ergebnis.zugeordnet += 1;
       }
@@ -136,6 +140,65 @@ export async function verarbeitePosteingang(
       }
     } finally {
       schloss.release();
+    }
+  } finally {
+    await client.logout();
+  }
+  return ergebnis;
+}
+
+export interface NachladeErgebnis {
+  gesucht: number;
+  gefunden: number;
+  geaendert: number;
+}
+
+/**
+ * Holt den Text schon vermerkter Antworten erneut aus dem Postfach. Noetig
+ * fuer Altbestaende, deren Auszug zu kurz abgelegt wurde: gesucht wird ueber
+ * die Message-ID, erst im Posteingang, dann im Papierkorb.
+ */
+export async function ladeAuszuegeNach(
+  env: WorkerEnv,
+  eintraege: readonly { id: string; rawMessageId: string }[],
+  schreibe: (ereignisId: string, auszug: string) => boolean,
+): Promise<NachladeErgebnis | null> {
+  if (!env.IMAP_HOST || !env.IMAP_USER || !env.IMAP_PASSWORD) return null;
+
+  const client = new ImapFlow({
+    host: env.IMAP_HOST,
+    port: env.IMAP_PORT,
+    secure: true,
+    auth: { user: env.IMAP_USER, pass: env.IMAP_PASSWORD },
+    logger: false,
+  });
+
+  const ergebnis: NachladeErgebnis = { gesucht: eintraege.length, gefunden: 0, geaendert: 0 };
+  /* Im zweiten Ordner nur noch suchen, was der erste nicht hatte. */
+  const erledigt = new Set<string>();
+  await client.connect();
+  try {
+    for (const ordner of ["INBOX", env.IMAP_TRASH]) {
+      const offen = eintraege.filter((e) => !erledigt.has(e.id));
+      if (offen.length === 0) break;
+      const schloss = await client.getMailboxLock(ordner);
+      try {
+        for (const eintrag of offen) {
+          const uids = await client.search({ header: { "message-id": eintrag.rawMessageId } }, { uid: true });
+          const uid = Array.isArray(uids) ? uids[0] : undefined;
+          if (uid === undefined) continue;
+          erledigt.add(eintrag.id);
+          ergebnis.gefunden += 1;
+          const nachricht = await client.fetchOne(String(uid), { bodyParts: ["text"] }, { uid: true });
+          const roh = typeof nachricht === "object" && nachricht
+            ? nachricht.bodyParts?.get("text")?.toString("utf8")
+            : undefined;
+          if (!roh) continue;
+          if (schreibe(eintrag.id, lesbarerText(roh.slice(0, LESE_MAX)))) ergebnis.geaendert += 1;
+        }
+      } finally {
+        schloss.release();
+      }
     }
   } finally {
     await client.logout();

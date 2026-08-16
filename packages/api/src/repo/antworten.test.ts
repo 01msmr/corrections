@@ -6,8 +6,10 @@ import { seed } from "../db/seed.js";
 import { createOutlet } from "./outlets.js";
 import {
   ladeAntwortKandidaten,
+  ereignisseZumNachladen,
   listeBestaetigungen,
   macheAuszuegeLesbar,
+  setzeAuszug,
   nimmBestaetigungenZurueck,
   vermerkeAntwort,
   zaehleBestaetigungen,
@@ -217,5 +219,39 @@ describe("Auszuege lesbar machen", () => {
       .map((z) => z.excerpt);
     expect(auszuege).toContain("Danke, wir haben korrigiert.");
     expect(auszuege.filter((a) => a === "Danke, wir haben korrigiert.")).toHaveLength(2);
+  });
+});
+
+describe("Auszuege nachladen", () => {
+  it("bietet kurze Auszuege mit Message-ID an und schreibt den laengeren zurueck", () => {
+    const id = meldung();
+    vermerkeAntwort(db, id, {
+      receivedAt: JETZT,
+      rawMessageId: "kurz-1",
+      fromAddr: "leserservice@spiegel.de",
+      excerpt: "Sehr geehrter Herr, vielen Dank fuer Ihren Hinweis. Wir haben d",
+    });
+    const offen = ereignisseZumNachladen(db);
+    expect(offen).toHaveLength(1);
+    expect(offen[0]?.rawMessageId).toBe("kurz-1");
+
+    const ereignisId = offen[0]?.id ?? "";
+    const voll = "Sehr geehrter Herr, vielen Dank fuer Ihren Hinweis. Wir haben den Fehler korrigiert.";
+    expect(setzeAuszug(db, ereignisId, voll)).toBe(true);
+    expect(setzeAuszug(db, ereignisId, voll)).toBe(false);
+
+    const gespeichert = db.select().from(responseEvents).all();
+    expect(gespeichert[0]?.excerpt).toBe(voll);
+  });
+
+  it("laesst Ereignisse ohne Message-ID aus", () => {
+    const id = meldung();
+    vermerkeAntwort(db, id, {
+      receivedAt: JETZT,
+      rawMessageId: null,
+      fromAddr: "a@b.de",
+      excerpt: "kurz",
+    });
+    expect(ereignisseZumNachladen(db)).toHaveLength(0);
   });
 });

@@ -17,6 +17,9 @@ und stellt beides auswertbar dar. Spec: `docs/superpowers/specs/2026-08-01-korre
   entscheiden am Text, und eine widersprechende Antwort sieht einer
   Bestätigung ähnlich.
 - `auszuege` — gespeicherte Antwort-Auszüge nachträglich lesbar machen
+- `auszuege:nachladen` — zu kurz abgelegte Auszüge erneut aus dem Postfach holen
+  (sucht über die Message-ID, erst Posteingang, dann Papierkorb; ändert nur den
+  Auszug, nie Ausgang oder Zuordnung)
 - `papierkorb` — Formulierungen im Papierkorb sichten (nur lesend)
 
 Stündlich läuft beides von selbst über eine geplante Aufgabe vom Typ
