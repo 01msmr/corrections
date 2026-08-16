@@ -112,6 +112,13 @@ export interface AbgleichLage {
   starkGeaendert: number;
   schwachGeaendert: number;
   andererBefund: number;
+  /* Die Aufschluesselung von andererBefund: dahinter stecken sehr
+     verschiedene Lagen -- eine unveraenderte Stelle ist ein Widerspruch zur
+     Redaktion, eine verschwundene oft nur eine Bezahlschranke. */
+  unveraendert: number;
+  andersGeaendert: number;
+  verschwunden: number;
+  unerreichbar: number;
 }
 
 export function ladeAbgleichLage(db: Db): AbgleichLage {
@@ -127,5 +134,9 @@ export function ladeAbgleichLage(db: Db): AbgleichLage {
     andererBefund: mitAussage.filter(
       (z) => z.befund !== null && z.befund !== "changed_as_suggested",
     ).length,
+    unveraendert: mitAussage.filter((z) => z.befund === "unchanged").length,
+    andersGeaendert: mitAussage.filter((z) => z.befund === "changed_otherwise").length,
+    verschwunden: mitAussage.filter((z) => z.befund === "passage_gone").length,
+    unerreichbar: mitAussage.filter((z) => z.befund === "unreachable").length,
   };
 }

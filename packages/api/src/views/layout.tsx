@@ -778,6 +778,7 @@ const STYLES = `
   .lagetabelle { width: auto; margin-top: ${ABSTAND.r100}; }
   .lagetabelle td { font: ${GRAD.klein}/${ZEILE.satz} var(--mono); }
   .lagetabelle td + td { text-align: right; font-weight: ${GEWICHT.fett}; }
+  .lagetabelle .lageunter { padding-left: ${ABSTAND.r150}; color: var(--rand); }
 
   /* Abgleich: ein Fall je Bildschirm. Die beiden Belege stehen als Zitate
      untereinander, jeder mit seiner Herkunft als Marke davor. */

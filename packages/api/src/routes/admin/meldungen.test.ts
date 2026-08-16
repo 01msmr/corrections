@@ -299,6 +299,8 @@ describe("Ausgangs-Abgleich", () => {
     expect(zahl("Anker gegriffen")).toBe("0");
     expect(zahl("ohne greifende Anker")).toBe("0");
     expect(zahl("anderer Befund")).toBe("1");
+    expect(zahl("Stelle unverändert")).toBe("1");
+    expect(zahl("Bezahlschranke")).toBe("0");
   });
 
   it("sperrt auch den Abgleich ohne Auth", async () => {

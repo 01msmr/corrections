@@ -66,7 +66,11 @@ export const AbgleichSeite: FC<{
               <tr><td>davon noch ohne Artikel-Prüfung</td><td>{lage.ohnePruefung}</td></tr>
               <tr><td>davon geändert, Anker gegriffen</td><td>{lage.starkGeaendert}</td></tr>
               <tr><td>davon geändert, ohne greifende Anker</td><td>{lage.schwachGeaendert}</td></tr>
-              <tr><td>davon anderer Befund (unverändert, anders, verschwunden)</td><td>{lage.andererBefund}</td></tr>
+              <tr><td>davon anderer Befund, nämlich:</td><td>{lage.andererBefund}</td></tr>
+              <tr><td class="lageunter">Stelle unverändert — Widerspruch zur Antwort</td><td>{lage.unveraendert}</td></tr>
+              <tr><td class="lageunter">anders geändert als vorgeschlagen</td><td>{lage.andersGeaendert}</td></tr>
+              <tr><td class="lageunter">Stelle nicht gefunden (oft: Bezahlschranke)</td><td>{lage.verschwunden}</td></tr>
+              <tr><td class="lageunter">Seite nicht erreichbar</td><td>{lage.unerreichbar}</td></tr>
             </tbody>
           </table>
         </>
