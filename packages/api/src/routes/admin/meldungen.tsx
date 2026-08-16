@@ -85,7 +85,13 @@ export function meldungenRoutes(deps: { db: Db; env: Env }): Hono {
     return c.html(
       <MeldungsAnsicht
         detail={detail}
-        hinweis={c.req.query("gesetzt") === "1" ? "Ausgang gespeichert." : undefined}
+        hinweis={
+          c.req.query("gesetzt") === "1"
+            ? c.req.query("datum") === "1"
+              ? "Ausgang gespeichert; als Korrekturdatum gilt der Tag der Antwort."
+              : "Ausgang gespeichert."
+            : undefined
+        }
       />,
     );
   });
@@ -105,13 +111,23 @@ export function meldungenRoutes(deps: { db: Db; env: Env }): Hono {
       return Number.isNaN(ms) ? null : Math.floor(ms / 1000);
     };
 
+    /* Steht ein Korrektur-Ausgang ohne Datum da, gilt der Tag der Antwort:
+       dort hat die Redaktion die Korrektur gemeldet. Ohne Datum bliebe die
+       manuelle Bestaetigung aus und die Quote zaehlte den Fall nicht --
+       eine stille Falle, denn der Ausgang stuende ja gesetzt da. */
+    const korrigiert = ausgang === "corrected" || ausgang === "corrected_other";
+    const antwortAm = epoche("antwortAm");
+    const angegeben = epoche("korrigiertAm");
+    const korrigiertAm = korrigiert ? (angegeben ?? antwortAm) : angegeben;
+
     const gesetzt = setzeAusgang(deps.db, id, {
       outcome: ausgang,
-      respondedAt: epoche("antwortAm"),
-      correctedAt: epoche("korrigiertAm"),
+      respondedAt: antwortAm,
+      correctedAt: korrigiertAm,
     });
     if (!gesetzt) return c.notFound();
-    return c.redirect(`/admin/meldungen/${id}?gesetzt=1`, 303);
+    const uebernommen = korrigiert && angegeben === null && korrigiertAm !== null;
+    return c.redirect(`/admin/meldungen/${id}?gesetzt=1${uebernommen ? "&datum=1" : ""}`, 303);
   });
 
   /**

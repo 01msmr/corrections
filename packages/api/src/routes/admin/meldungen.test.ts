@@ -187,6 +187,36 @@ describe("Ausgang setzen", () => {
   });
 });
 
+describe("Ausgang im Detail", () => {
+  it("nimmt bei fehlendem Korrekturdatum den Tag der Antwort", async () => {
+    const id = meldung();
+    const antwort = await app.request(`/admin/meldungen/${id}/ausgang`, {
+      method: "POST",
+      headers: { authorization: AUTH, "content-type": "application/x-www-form-urlencoded" },
+      body: "ausgang=corrected&antwortAm=2026-07-30",
+    });
+    expect(antwort.status).toBe(303);
+    expect(antwort.headers.get("location")).toContain("datum=1");
+
+    const zeile = db.select().from(corrections).all().find((c) => c.id === id);
+    expect(zeile?.correctedAt).toBe(zeile?.respondedAt);
+    /* Erst damit zaehlt die Korrekturquote den Fall. */
+    expect(zeile?.verification).toBe("manual");
+  });
+
+  it("laesst ohne Korrektur-Ausgang alles wie eingetragen", async () => {
+    const id = meldung();
+    await app.request(`/admin/meldungen/${id}/ausgang`, {
+      method: "POST",
+      headers: { authorization: AUTH, "content-type": "application/x-www-form-urlencoded" },
+      body: "ausgang=rejected&antwortAm=2026-07-30",
+    });
+    const zeile = db.select().from(corrections).all().find((c) => c.id === id);
+    expect(zeile?.correctedAt).toBeNull();
+    expect(zeile?.verification).toBe("none");
+  });
+});
+
 describe("Ausgangs-Abgleich", () => {
   /** Meldung mit Antwort und Pruefbefund, wie der Abgleich sie erwartet. */
   function mitBelegen(
