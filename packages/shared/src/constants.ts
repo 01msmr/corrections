@@ -1,5 +1,9 @@
-/** Eine Meldung zählt erst nach dieser Frist in einen Quoten-Nenner (§9.3). */
-export const MATURITY_DAYS = 14;
+/**
+ * Eine Meldung zählt erst nach dieser Frist in einen Quoten-Nenner (§9.3).
+ * Drei Wochen statt zwei (16.8.2026): Redaktionen antworten oft erst nach
+ * einer Woche, und eine zu kurze Frist misst die eigene Ungeduld.
+ */
+export const MATURITY_DAYS = 21;
 export const MATURITY_SECONDS = MATURITY_DAYS * 24 * 60 * 60;
 
 /** Unterhalb dieser Fallzahl wird keine Quote angezeigt, nur Rohzahlen (§9.4). */

@@ -63,6 +63,12 @@ export interface Bilanz {
   /** Meldungen, die die Reifegrenze überschritten haben und zustellbar sind. */
   reifUndZustellbar: number;
   korrektur: Quotenstand;
+  /** Bestaetigte Korrekturen, die noch in der Reifefrist stehen. Sie zaehlen
+   *  nicht mit -- fruehe Erfolge drin und fruehe Nichtantworten draussen
+   *  hoebe die Quote. Sichtbar sind sie trotzdem. */
+  frischKorrigiert: number;
+  /** Wann die aelteste davon in die Quote kommt, null wenn keine da ist. */
+  frischAb: number | null;
   antwort: Quotenstand;
   fehlerarten: Verteilungswert[];
   schwere: Verteilungswert[];
@@ -126,6 +132,14 @@ export function ladeBilanz(
       WHERE dispatch_status = 'sent' AND sent_at IS NOT NULL AND sent_at <= ${reifeGrenze} ${ohneWeiche}
     `);
 
+  /* Dieselbe Bedingung wie oben, nur diesseits der Reifegrenze. */
+  const frisch = db.get<{ anzahl: number; aeltester: number | null }>(sql`
+      SELECT COUNT(*) AS anzahl, MIN(sent_at) AS aeltester
+      FROM corrections
+      WHERE dispatch_status = 'sent' AND sent_at IS NOT NULL AND sent_at > ${reifeGrenze}
+        AND corrected_at IS NOT NULL AND verification = 'manual' ${ohneWeiche}
+    `);
+
   const abgleichLief = (db.get<{ anzahl: number }>(sql`SELECT COUNT(*) AS anzahl FROM imap_cursor`)?.anzahl ?? 0) > 0;
 
   const fehlerarten = db.all<Verteilungswert>(sql`
@@ -182,6 +196,11 @@ export function ladeBilanz(
     bis: eckdaten?.bis ?? null,
     reifUndZustellbar: basis?.reif ?? 0,
     korrektur: { zaehler: basis?.korrigiert ?? 0, nenner: basis?.geprueft ?? 0 },
+    frischKorrigiert: frisch?.anzahl ?? 0,
+    frischAb:
+      frisch?.aeltester === null || frisch?.aeltester === undefined
+        ? null
+        : frisch.aeltester + MATURITY_SECONDS,
     antwort: {
       zaehler: basis?.beantwortet ?? 0,
       nenner: abgleichLief ? (basis?.smtp ?? 0) : 0,

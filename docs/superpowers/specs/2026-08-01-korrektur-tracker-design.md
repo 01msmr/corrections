@@ -524,7 +524,8 @@ Deshalb:
 - **zustellbar** = `dispatch_status='sent'` und kein Bounce. `prepared` und `failed`
   fallen aus jeder öffentlichen Zahl heraus. Eine Mail, die nie ankam, darf keine
   Redaktion belasten.
-- **reif** = `sent_at` liegt ≥ **14 Tage** zurück. Ohne diese Grenze ziehen frische
+- **reif** = `sent_at` liegt ≥ **21 Tage** zurück (bis 16.8.2026: 14 — Redaktionen
+  antworten oft erst nach einer Woche). Ohne diese Grenze ziehen frische
   Meldungen jede Quote nach unten, und die Seite sieht schlechter aus, je aktiver
   gemeldet wird. Der Wert ist eine benannte Konstante in `shared` und wird auf der
   Seite genannt.

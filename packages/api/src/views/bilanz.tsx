@@ -18,6 +18,12 @@ const MONATE = [
   "Juli", "August", "September", "Oktober", "November", "Dezember",
 ];
 
+/** Tagesgenau, fuer die Frist-Zeile unter der Quote. */
+function tagDatum(epochSekunden: number): string {
+  const d = new Date(epochSekunden * 1000);
+  return `${d.getUTCDate()}. ${MONATE[d.getUTCMonth()] ?? ""} ${d.getUTCFullYear()}`;
+}
+
 function monatJahr(epochSekunden: number): string {
   const datum = new Date(epochSekunden * 1000);
   return `${MONATE[datum.getUTCMonth()] ?? ""} ${datum.getUTCFullYear()}`;
@@ -45,7 +51,9 @@ const Quote: FC<{
   erlaeuterung: string;
   /** Warum es (noch) nichts zu rechnen gibt — steht statt eines Prozentwerts. */
   leerGrund: string;
-}> = ({ titel, stand, erlaeuterung, leerGrund }) => {
+  /** Bestaetigtes, das die Reifefrist noch nicht hinter sich hat. */
+  frisch?: { anzahl: number; ab: number | null } | undefined;
+}> = ({ titel, stand, erlaeuterung, leerGrund, frisch }) => {
   const quote = rateOrNull(stand.zaehler, stand.nenner);
   const spanne = quote === null ? null : wilsonInterval(stand.zaehler, stand.nenner);
   return (
@@ -69,6 +77,16 @@ const Quote: FC<{
           </span>
         </>
       )}
+      {/* Ausserhalb der Quote, aber sofort sichtbar: eine bestaetigte
+          Korrektur soll nicht zwei Wochen unsichtbar bleiben. In den Zaehler
+          gehoert sie erst, wenn auch die Nichtantworten derselben Tage im
+          Nenner stehen -- sonst zeigte die Quote zu viel. */}
+      {frisch && frisch.anzahl > 0 ? (
+        <span class="kennzahl-fuss frischzeile">
+          dazu {frisch.anzahl} bestätigt, noch in der {MATURITY_DAYS}-Tage-Frist
+          {frisch.ab === null ? "" : ` · zählt ab ${tagDatum(frisch.ab)}`}
+        </span>
+      ) : null}
       <span class="kennzahl-erklaerung">{erlaeuterung}</span>
     </div>
   );
@@ -216,6 +234,7 @@ export const BilanzSeite: FC<{
               titel="Korrekturquote"
               stand={bilanz.korrektur}
               leerGrund="noch kein Artikel nachgeprüft"
+              frisch={{ anzahl: bilanz.frischKorrigiert, ab: bilanz.frischAb }}
               erlaeuterung="Anteil der Korrekturen, nach denen der Artikel nachweislich berichtigt wurde."
             />
             <Quote
