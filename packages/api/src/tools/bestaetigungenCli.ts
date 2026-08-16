@@ -54,6 +54,16 @@ function main(): void {
     for (const [auszug, { anzahl, refs }] of [...fassungen].sort((a, b) => b[1].anzahl - a[1].anzahl)) {
       console.log(JSON.stringify({ anzahl, refs, auszug }));
     }
+    /* Immer eine Zeile am Ende: ohne sie sieht "keine Treffer" wie ein
+       haengender Aufruf aus. */
+    console.log(
+      JSON.stringify({
+        level: "info",
+        msg: "bestaetigungen gesichtet",
+        ereignisse: [...fassungen.values()].reduce((summe, e) => summe + e.anzahl, 0),
+        fassungen: fassungen.size,
+      }),
+    );
     return;
   }
 
