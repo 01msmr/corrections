@@ -572,3 +572,21 @@ robots.txt, drosselt und nennt sich im User-Agent — eine Anmeldung zum
 Umgehen einer Schranke wäre das Gegenteil davon; und es wäre das erste
 Geheimnis mit persönlichem Bezug in der Serverumgebung. So bleiben die
 Zugangsdaten im Browser, und bei jedem Abruf ist ein Mensch dabei.
+
+### Nachprüf-Lesezeichen
+
+Zweites Lesezeichen neben dem Erfassungs-Lesezeichen, angeboten auf
+`/admin/abgleich` (nicht öffentlich — es taugt nur dem Betreiber). Es liest
+den Text der geöffneten, angemeldeten Artikelseite und schickt ihn per
+Formular an `POST /admin/nachpruefen`; geprüft werden **alle** Meldungen zu
+dieser Adresse auf einmal, das Ergebnis steht als Tabelle auf der Zielseite.
+
+Warum ein Lesezeichen und kein Knopf: Der Text steht nur auf der Artikelseite,
+und an einen fremden Tab kommt unsere Seite nicht heran (Same-Origin). Warum
+ein Formular und kein `fetch`: Der Artikeltext passt in keine Adresse, und ein
+cross-site `fetch` trüge das Sitzungs-Cookie nicht mit. Dasselbe Muster löst
+schon beim Erfassen die Bezahlschranke.
+
+Neben dem Kopierknopf steht ein Ziehgriff: Wer den Verweis in die
+Lesezeichenleiste zieht, spart das Anlegen von Hand. Ein Klick darauf wird
+abgefangen — er liefe auf der falschen Seite.

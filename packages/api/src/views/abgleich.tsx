@@ -1,7 +1,7 @@
 import type { FC } from "hono/jsx";
-import { SACHAUSSAGE_MUSTER } from "@korrektur/shared";
+import { ARTIKEL_MAX_LENGTH, SACHAUSSAGE_MUSTER } from "@korrektur/shared";
 import type { AbgleichLage, AbgleichZeile, Ankerlage } from "../repo/abgleich.js";
-import { Layout } from "./layout.js";
+import { CopyIcon, Layout } from "./layout.js";
 import { vergleicheFassungen } from "./vergleich.js";
 
 /**
@@ -264,6 +264,58 @@ export const AbgleichSeite: FC<{
           />
         </>
       )}
+      {/* Das Lesezeichen nimmt der Bezahlschranke die Arbeit ab: es liest
+          den Text der geoeffneten, angemeldeten Seite und schickt ihn
+          hierher -- per Formular, weil er in keine Adresse passt. */}
+      <p class="knopfzeile lesezeichenzeile">
+        {/* Ziehen statt kopieren: das Lesezeichen muss auf der Artikelseite
+            laufen, also in die Leiste -- ein Klick hier laese unsere eigene
+            Seite aus und wird deshalb abgefangen. */}
+        <a id="ziehe-nachpruefen" class="knopf zeilenknopf" href="#" draggable={true}>
+          <span class="knopftext">↦ Nachprüfen</span>
+        </a>
+        <button type="button" id="kopiere-nachpruefen" class="zeilenknopf">
+          <span class="knopftext">
+            JavaScript für das Nachprüf-Lesezeichen <CopyIcon />
+          </span>
+        </button>
+        <span id="nachpruefen-hinweis" class="zaehler" aria-live="polite" />
+      </p>
+      <p class="zaehler">
+        Einmal als Lesezeichen anlegen. Auf dem angemeldet geöffneten Artikel
+        anklicken — geprüft werden alle Meldungen zu dieser Adresse.
+      </p>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+  /* Aus der aufgerufenen Adresse gebaut, damit es auch lokal stimmt. Ein
+     Formular statt einer Adresse: der Artikeltext passt in keine URL. */
+  const nachpruefen =
+    "javascript:(()=>{" +
+    "const a=document.querySelector('article,main')||document.body;" +
+    "const x=(a.innerText||'').trim().slice(0,${ARTIKEL_MAX_LENGTH});" +
+    "const f=document.createElement('form');f.method='post';" +
+    "f.action='" + location.origin + "/admin/nachpruefen';" +
+    "[['url',location.href],['artikelText',x]].forEach(p=>{" +
+    "const i=document.createElement('input');i.type='hidden';" +
+    "i.name=p[0];i.value=p[1];f.append(i)});" +
+    "document.body.append(f);f.submit()})()";
+
+  const nachpruefenHinweis = document.getElementById("nachpruefen-hinweis");
+  const zieher = document.getElementById("ziehe-nachpruefen");
+  zieher.href = nachpruefen;
+  zieher.addEventListener("click", (e) => {
+    e.preventDefault();
+    nachpruefenHinweis.textContent = "Nicht klicken — in die Lesezeichenleiste ziehen.";
+  });
+  document.getElementById("kopiere-nachpruefen").addEventListener("click", () => {
+    navigator.clipboard.writeText(nachpruefen).then(
+      () => { nachpruefenHinweis.textContent = "kopiert"; nachpruefenHinweis.classList.add("erkannt"); },
+      () => { nachpruefenHinweis.textContent = "Kopieren nicht erlaubt — bitte von Hand markieren."; },
+    );
+  });`,
+        }}
+      />
     </Layout>
   );
 };

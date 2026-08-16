@@ -193,3 +193,17 @@ export function setzeAusgang(db: Db, id: string, angaben: AusgangsAngaben): bool
     .run();
   return ergebnis.changes > 0;
 }
+
+/** Meldungen zu einer kanonisierten Artikeladresse -- fuer das Nachpruefen. */
+export function meldungenZuAdresse(
+  db: Db,
+  canon: string,
+): (typeof corrections.$inferSelect & { kategorie: string })[] {
+  return db.all<typeof corrections.$inferSelect & { kategorie: string }>(sql`
+    SELECT c.*, e.label AS kategorie
+    FROM corrections c
+    JOIN error_types e ON e.id = c.error_type_id
+    WHERE c.article_url_canon = ${canon}
+    ORDER BY c.created_at
+  `);
+}

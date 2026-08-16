@@ -803,6 +803,7 @@ const STYLES = `
   .abgleichwahl { display: inline-flex; margin: 0 0 ${ABSTAND.r100}; }
   /* Der Rat zum Befund: eine Nebenstimme, keine zweite Aussage. */
   .belegrat { color: var(--rand); font-style: italic; }
+  .lesezeichenzeile { display: flex; flex-wrap: wrap; align-items: center; gap: ${ABSTAND.r70}; }
   /* Die Einfuege-Pruefung steht zwischen Beleg und Entscheidung: sie kann
      den Befund noch aendern, auf den die Knoepfe sich stuetzen. */
   .einfuegepruefung { margin: ${ABSTAND.r80} 0; }

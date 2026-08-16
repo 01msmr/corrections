@@ -1,4 +1,4 @@
-import { ARTIKEL_MAX_LENGTH, QUOTE_MAX_LENGTH } from "@korrektur/shared";
+import { ARTIKEL_MAX_LENGTH, QUOTE_MAX_LENGTH, canonicalizeUrl } from "@korrektur/shared";
 import { Hono } from "hono";
 import { adminAuth } from "../../auth.js";
 import type { Db } from "../../db/client.js";
@@ -14,6 +14,7 @@ import { listErrorTypes } from "../../repo/errorTypes.js";
 import {
   istAusgang,
   leseMeldung,
+  meldungenZuAdresse,
   listeMeldungen,
   SEITENGROESSE,
   setzeAusgang,
@@ -22,6 +23,7 @@ import {
 } from "../../repo/meldungen.js";
 import { listOutlets } from "../../repo/outlets.js";
 import { AbgleichSeite } from "../../views/abgleich.js";
+import { NachpruefSeite, type NachpruefZeile } from "../../views/nachpruefen.js";
 import { MeldungsAnsicht, MeldungsListe } from "../../views/meldungen.js";
 
 /**
@@ -41,6 +43,7 @@ export function meldungenRoutes(deps: { db: Db; env: Env }): Hono {
      ein use("*") sperrte sonst die ganze Seite. Beide Muster je Pfad, weil
      /admin/meldungen/* den Pfad ohne Schraegstrich nicht abdeckt. */
   for (const pfad of [
+    "/admin/nachpruefen",
     "/admin/meldungen",
     "/admin/meldungen/*",
     "/admin/abgleich",
@@ -239,6 +242,49 @@ export function meldungenRoutes(deps: { db: Db; env: Env }): Hono {
       ? `/admin/abgleich?stelle=${c.req.query("stelle") ?? "0"}&alle=1&geprueft=1`
       : `/admin/meldungen/${id}?geprueft=1`;
     return c.redirect(ziel, 303);
+  });
+
+  /**
+   * Ziel des Nachpruef-Lesezeichens: Es schickt Adresse und Artikeltext der
+   * geoeffneten (angemeldeten) Seite per Formular hierher -- derselbe Weg wie
+   * beim Erfassen, weil der Text in keine Adresse passt. Geprueft werden alle
+   * Meldungen zu dieser Adresse.
+   */
+  app.post("/admin/nachpruefen", async (c) => {
+    const body = await c.req.parseBody();
+    const adresse = typeof body["url"] === "string" ? body["url"] : "";
+    const roh = typeof body["artikelText"] === "string" ? body["artikelText"] : "";
+    const text = roh.trim().slice(0, ARTIKEL_MAX_LENGTH);
+    const canon = canonicalizeUrl(adresse);
+    if (!canon || text.length === 0) return c.text("Adresse oder Artikeltext fehlt", 400);
+
+    const jetzt = Math.floor(Date.now() / 1000);
+    const zeilen: NachpruefZeile[] = [];
+    for (const meldung of meldungenZuAdresse(deps.db, canon.canonical)) {
+      const befund = beurteileFundstelle({
+        artikelText: text,
+        quoteBefore: meldung.quoteBefore,
+        suggestionAfter: meldung.suggestionAfter,
+        prefix: meldung.quotePrefix,
+        suffix: meldung.quoteSuffix,
+      });
+      vermerkeCheck(deps.db, meldung.id, {
+        checkedAt: jetzt,
+        httpStatus: null,
+        zustand: befund.zustand,
+        beobachtet: befund.beobachtet,
+        sicherheit: befund.sicherheit,
+        quelle: "eingefuegt",
+      });
+      zeilen.push({
+        id: meldung.id,
+        ref: meldung.ref,
+        kategorie: meldung.kategorie,
+        befund: befund.zustand,
+        sicherheit: befund.sicherheit,
+      });
+    }
+    return c.html(<NachpruefSeite adresse={canon.canonical} zeilen={zeilen} />);
   });
 
   return app;
