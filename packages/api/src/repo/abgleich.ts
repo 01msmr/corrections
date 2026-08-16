@@ -35,13 +35,24 @@ export interface AbgleichZeile {
  */
 const SICHER = 100;
 
-export function ladeAbgleichKandidaten(db: Db): AbgleichZeile[] {
-  const zeilen = db.all<AbgleichZeile>(sql`
+/** Eine beantwortete Meldung samt juengstem Befund -- die Rohmenge. */
+interface RohZeile extends AbgleichZeile {
+  befund: string | null;
+}
+
+/**
+ * Alle Meldungen auf "Antwort erhalten" mit ihrer juengsten Antwort und ihrem
+ * juengsten Pruefbefund. Eine Abfrage fuer beide Verwender: die Warteschlange
+ * filtert daraus, die Lage zaehlt darueber.
+ */
+function ladeRohzeilen(db: Db): RohZeile[] {
+  return db.all<RohZeile>(sql`
     SELECT
       c.id, c.ref, o.name AS medium, e.label AS kategorie, c.headline,
       c.article_url AS articleUrl, c.quote_before AS quoteBefore,
       c.suggestion_after AS suggestion, r.excerpt AS auszug, r.received_at AS antwortAm,
-      a.checked_at AS geprueftAm, a.match_confidence AS sicherheit
+      a.checked_at AS geprueftAm, a.match_confidence AS sicherheit,
+      a.quote_state AS befund
     FROM corrections c
     JOIN outlets o ON o.id = c.outlet_id
     JOIN error_types e ON e.id = c.error_type_id
@@ -51,17 +62,52 @@ export function ladeAbgleichKandidaten(db: Db): AbgleichZeile[] {
       WHERE correction_id = c.id AND kind = 'reply'
       ORDER BY received_at DESC, id DESC LIMIT 1
     )
-    JOIN article_checks a ON a.id = (
+    LEFT JOIN article_checks a ON a.id = (
       SELECT id FROM article_checks
       WHERE correction_id = c.id
       ORDER BY checked_at DESC, id DESC LIMIT 1
     )
     WHERE c.outcome = 'acknowledged'
-      AND a.quote_state = 'changed_as_suggested'
-      AND a.match_confidence >= ${SICHER}
     ORDER BY r.received_at, c.id
   `);
-  /* Den Wortlaut prueft eine reine Funktion, nicht SQL -- dieselbe, die
-     entscheidet, ob eine Mail mehr ist als eine Eingangsbestaetigung. */
-  return zeilen.filter((zeile) => nenntKorrektur(zeile.auszug ?? ""));
+}
+
+export function ladeAbgleichKandidaten(db: Db): AbgleichZeile[] {
+  return ladeRohzeilen(db).filter(
+    (zeile) =>
+      /* Den Wortlaut prueft eine reine Funktion, nicht SQL -- dieselbe, die
+         entscheidet, ob eine Mail mehr ist als eine Eingangsbestaetigung. */
+      nenntKorrektur(zeile.auszug ?? "") &&
+      zeile.befund === "changed_as_suggested" &&
+      (zeile.sicherheit ?? 0) >= SICHER,
+  );
+}
+
+/**
+ * Warum die Warteschlange leer ist. Steht auf der Seite selbst, statt in
+ * einem Werkzeug: die Frage stellt sich genau dort, wo nichts zu tun ist.
+ */
+export interface AbgleichLage {
+  beantwortet: number;
+  nenntKorrektur: number;
+  ohnePruefung: number;
+  starkGeaendert: number;
+  schwachGeaendert: number;
+  andererBefund: number;
+}
+
+export function ladeAbgleichLage(db: Db): AbgleichLage {
+  const zeilen = ladeRohzeilen(db);
+  const mitAussage = zeilen.filter((z) => nenntKorrektur(z.auszug ?? ""));
+  const geaendert = mitAussage.filter((z) => z.befund === "changed_as_suggested");
+  return {
+    beantwortet: zeilen.length,
+    nenntKorrektur: mitAussage.length,
+    ohnePruefung: mitAussage.filter((z) => z.befund === null).length,
+    starkGeaendert: geaendert.filter((z) => (z.sicherheit ?? 0) >= SICHER).length,
+    schwachGeaendert: geaendert.filter((z) => (z.sicherheit ?? 0) < SICHER).length,
+    andererBefund: mitAussage.filter(
+      (z) => z.befund !== null && z.befund !== "changed_as_suggested",
+    ).length,
+  };
 }

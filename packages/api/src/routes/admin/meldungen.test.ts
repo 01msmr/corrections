@@ -264,6 +264,24 @@ describe("Ausgangs-Abgleich", () => {
     expect(html).toContain("</span> Fundstelle");
   });
 
+  it("erklaert die leere Warteschlange mit Zahlen", async () => {
+    mitBelegen("Wir haben den Fehler korrigiert.", "changed_as_suggested", 50);
+    mitBelegen("Wir haben den Fehler korrigiert.", "unchanged");
+    mitBelegen("Wir haben Ihren Hinweis erhalten.", "changed_as_suggested");
+
+    const html = await (
+      await app.request("/admin/abgleich", { headers: { authorization: AUTH } })
+    ).text();
+    expect(html).toContain("Nichts abzugleichen");
+    const zahl = (zeile: string): string =>
+      html.split(zeile)[1]?.match(/<td>(\d+)<\/td>/)?.[1] ?? "";
+    expect(zahl("Antwort erhalten")).toBe("3");
+    expect(zahl("nennt die Antwort eine Korrektur")).toBe("2");
+    expect(zahl("Sicherheit 100")).toBe("0");
+    expect(zahl("Rückfall gefunden (50)")).toBe("1");
+    expect(zahl("anderer Befund")).toBe("1");
+  });
+
   it("sperrt auch den Abgleich ohne Auth", async () => {
     expect((await app.request("/admin/abgleich")).status).toBe(401);
   });

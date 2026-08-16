@@ -1,6 +1,6 @@
 import type { FC } from "hono/jsx";
 import { SACHAUSSAGE_MUSTER } from "@korrektur/shared";
-import type { AbgleichZeile } from "../repo/abgleich.js";
+import type { AbgleichLage, AbgleichZeile } from "../repo/abgleich.js";
 import { Layout } from "./layout.js";
 
 /**
@@ -26,19 +26,34 @@ function kernsatz(auszug: string): string {
 
 export const AbgleichSeite: FC<{
   faelle: AbgleichZeile[];
+  lage: AbgleichLage;
   stelle: number;
   hinweis?: string | undefined;
-}> = ({ faelle, stelle, hinweis }) => {
+}> = ({ faelle, lage, stelle, hinweis }) => {
   const fall = faelle[stelle];
   return (
     <Layout title="Ausgang abgleichen" aktiv="abgleich" betreiber>
       {hinweis ? <p class="zaehler" aria-live="polite">{hinweis}</p> : null}
       {!fall ? (
-        <p class="prosa">
-          {faelle.length === 0
-            ? "Nichts abzugleichen: keine Meldung, bei der Antwort und Artikel-Prüfung dasselbe sagen."
-            : "Durch. Alle Fälle dieser Runde sind gesichtet."}
-        </p>
+        <>
+          <p class="prosa">
+            {faelle.length === 0
+              ? "Nichts abzugleichen: keine Meldung, bei der Antwort und Artikel-Prüfung dasselbe sagen."
+              : "Durch. Alle Fälle dieser Runde sind gesichtet."}
+          </p>
+          {/* Woran es liegt, steht hier statt in einem Werkzeug -- die Frage
+              stellt sich genau dort, wo nichts zu tun ist. */}
+          <table class="lagetabelle">
+            <tbody>
+              <tr><td>Meldungen auf „Antwort erhalten"</td><td>{lage.beantwortet}</td></tr>
+              <tr><td>davon nennt die Antwort eine Korrektur</td><td>{lage.nenntKorrektur}</td></tr>
+              <tr><td>davon noch ohne Artikel-Prüfung</td><td>{lage.ohnePruefung}</td></tr>
+              <tr><td>davon geändert, Anker gegriffen (Sicherheit 100)</td><td>{lage.starkGeaendert}</td></tr>
+              <tr><td>davon geändert, nur im Rückfall gefunden (50)</td><td>{lage.schwachGeaendert}</td></tr>
+              <tr><td>davon anderer Befund (unverändert, anders, verschwunden)</td><td>{lage.andererBefund}</td></tr>
+            </tbody>
+          </table>
+        </>
       ) : (
         <>
           <p class="zaehler">

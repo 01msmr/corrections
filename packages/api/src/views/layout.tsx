@@ -774,6 +774,11 @@ const STYLES = `
      nur hier, in der nicht-oeffentlichen Liste (Zuruf vom 15.8.2026). */
   .meldungsliste .sp-ausgang, .meldungsliste .sp-datum { white-space: nowrap; }
   .meldungsliste .nrim, .meldungsliste .sp-ausgang .kurzform { display: none; }
+  /* Die Lage, wenn nichts abzugleichen ist: schmale Zahlenaufstellung. */
+  .lagetabelle { width: auto; margin-top: ${ABSTAND.r100}; }
+  .lagetabelle td { font: ${GRAD.klein}/${ZEILE.satz} var(--mono); }
+  .lagetabelle td + td { text-align: right; font-weight: ${GEWICHT.fett}; }
+
   /* Abgleich: ein Fall je Bildschirm. Die beiden Belege stehen als Zitate
      untereinander, jeder mit seiner Herkunft als Marke davor. */
   .abgleichfall { border: ${STRICH.haar} solid var(--linie); border-left: ${STRICH.markant} solid var(--korrektur);

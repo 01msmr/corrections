@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { adminAuth } from "../../auth.js";
 import type { Db } from "../../db/client.js";
 import type { Env } from "../../env.js";
-import { ladeAbgleichKandidaten } from "../../repo/abgleich.js";
+import { ladeAbgleichKandidaten, ladeAbgleichLage } from "../../repo/abgleich.js";
 import { listErrorTypes } from "../../repo/errorTypes.js";
 import {
   istAusgang,
@@ -123,6 +123,7 @@ export function meldungenRoutes(deps: { db: Db; env: Env }): Hono {
     return c.html(
       <AbgleichSeite
         faelle={faelle}
+        lage={ladeAbgleichLage(deps.db)}
         stelle={stelle}
         hinweis={c.req.query("gesetzt") === "1" ? "Ausgang gesetzt." : undefined}
       />,
