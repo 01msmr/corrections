@@ -2,6 +2,7 @@ import type { FC } from "hono/jsx";
 import { SACHAUSSAGE_MUSTER } from "@korrektur/shared";
 import type { AbgleichLage, AbgleichZeile, Ankerlage } from "../repo/abgleich.js";
 import { Layout } from "./layout.js";
+import { vergleicheFassungen } from "./vergleich.js";
 
 /**
  * Ausgangs-Abgleich: ein Fall je Bildschirm, wie in der Backfill-Review.
@@ -83,8 +84,21 @@ export const AbgleichSeite: FC<{
                 {fall.headline ?? fall.articleUrl}
               </a>
             </p>
+            {/* Dieselbe Korrekturfahne wie im Detail: nur das abweichende
+                Wort ist ausgezeichnet, nicht der ganze Satz zweimal. */}
             <p class="abgleichstelle">
-              <del>{fall.quoteBefore}</del> <ins>{fall.suggestion}</ins>
+              {vergleicheFassungen(fall.quoteBefore, fall.suggestion).map((stueck, i) => (
+                <>
+                  {i > 0 ? " " : ""}
+                  {stueck.art === "gleich" ? (
+                    stueck.text
+                  ) : stueck.art === "getilgt" ? (
+                    <del>{stueck.text}</del>
+                  ) : (
+                    <ins>{stueck.text}</ins>
+                  )}
+                </>
+              ))}
             </p>
             {/* Die beiden Belege nebeneinander -- daran wird entschieden. */}
             <p class="abgleichbeleg">
