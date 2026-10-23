@@ -38,7 +38,7 @@ import sys
 
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.ttLib import TTCollection
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFont
 
 STAMM = pathlib.Path(__file__).resolve().parent.parent
 KONSTANTEN = STAMM / "packages/shared/src/constants.ts"
@@ -64,7 +64,7 @@ STRICH_FELD = {"x": 0.06, "y": 0.30, "breite": 0.88, "hoehe": 0.40}
 # iOS-Icon: er trennt fuer iOS Vorder- und Hintergrund, sodass der Grund je
 # nach Modus gefuellt wird. Reines Weiss ist hier Absicht und kein Farbwert
 # der Oberflaeche -- er kommt nicht in die Palette.
-SAUM = 1.5 / 180  # 1,5 px im 180-px-Icon
+SAUM = 2 / 180  # 2 px im 180-px-Icon
 SAUM_FARBE = (255, 255, 255)
 
 
@@ -176,7 +176,13 @@ def zeichne(
         zeichner.text(ort, ZEICHEN, font=schrift, fill=255)
         zeichner.polygon(polygon, fill=255)
         radius = round(SAUM * gross)
-        weit = maske.filter(ImageFilter.MaxFilter(2 * radius + 1))
+        # Rund aufweiten: MaxFilter zoege einen eckigen Saum, der an den
+        # Rundungen des K kantig wirkt.
+        weit = maske
+        for dy in range(-radius, radius + 1):
+            for dx in range(-radius, radius + 1):
+                if dx * dx + dy * dy <= radius * radius:
+                    weit = ImageChops.lighter(weit, ImageChops.offset(maske, dx, dy))
         bild.paste(Image.new("RGB", (gross, gross), SAUM_FARBE), mask=weit)
 
     stift = stifte[0]
