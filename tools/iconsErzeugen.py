@@ -38,7 +38,8 @@ import sys
 
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.ttLib import TTCollection
-from PIL import Image, ImageChops, ImageDraw, ImageFont
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 
 STAMM = pathlib.Path(__file__).resolve().parent.parent
 KONSTANTEN = STAMM / "packages/shared/src/constants.ts"
@@ -54,6 +55,8 @@ RAND = 0.14
 # Der Buchstabe darf ueber diesen Rand hinausgehen; er traegt das Motiv.
 BUCHSTABE_MASS = 1.15
 UEBERABTASTUNG = 4
+# Mit Saum feiner: die Breite des Saums soll auf Zehntelpixel stimmen.
+UEBERABTASTUNG_SAUM = 8
 
 # Das Feld, in das der Strich gezogen wird (Anteile der Kantenlaenge). Seine
 # Form bestimmt die Neigung: die Vorlage ist 46:26 breit, hier wird sie auf
@@ -150,11 +153,38 @@ def pfad_zu_punkten(pfad: str, schritte: int = 32) -> list[tuple[float, float]]:
     return punkte
 
 
+def scheibe_aufweiten(maske: Image.Image, radius: float) -> Image.Image:
+    """Weitet eine 0/255-Maske um einen Kreis vom Radius `radius` (Pixel) aus.
+
+    Zeilenweise: fuer jeden Versatz nach oben/unten eine waagerechte
+    Aufweitung um die Sehnenhalbbreite des Kreises -- exakt rund, ohne die
+    Ecken eines quadratischen Filters.
+    """
+    a = np.asarray(maske) > 127
+    h, b = a.shape
+    r = int(np.floor(radius))
+    summe = np.pad(np.cumsum(a, axis=1, dtype=np.int32), ((0, 0), (1, 0)))
+    waagerecht: dict[int, np.ndarray] = {}
+    aus = np.zeros_like(a)
+    for dy in range(-r, r + 1):
+        halb = int(np.floor(np.sqrt(radius * radius - dy * dy)))
+        if halb not in waagerecht:
+            lo = np.clip(np.arange(b) - halb, 0, b)
+            hi = np.clip(np.arange(b) + halb + 1, 0, b)
+            waagerecht[halb] = (summe[:, hi] - summe[:, lo]) > 0
+        zeilen = waagerecht[halb]
+        if dy >= 0:
+            aus[dy:] |= zeilen[: h - dy]
+        else:
+            aus[:dy] |= zeilen[-dy:]
+    return Image.fromarray((aus * 255).astype(np.uint8), "L")
+
+
 def zeichne(
     kante: int, farben: dict[str, str], grund: str = "papier", saum: bool = False
 ) -> Image.Image:
     """Malt das Motiv auf eine quadratische Flaeche der gegebenen Kantenlaenge."""
-    gross = kante * UEBERABTASTUNG
+    gross = kante * (UEBERABTASTUNG_SAUM if saum else UEBERABTASTUNG)
     # Mit Saum wird das Motiv auf weissem Grund gemalt und zugleich auf eine
     # Maske, deren Aufweitung die Kontur des Saums ergibt; der eigentliche
     # Grund kommt erst beim Zusammensetzen dazu (siehe unten).
@@ -182,14 +212,7 @@ def zeichne(
         zeichner = stifte[1]
         zeichner.text(ort, ZEICHEN, font=schrift, fill=255)
         zeichner.polygon(polygon, fill=255)
-        radius = round(SAUM * gross)
-        # Rund aufweiten: MaxFilter zoege einen eckigen Saum, der an den
-        # Rundungen des K kantig wirkt.
-        weit = maske
-        for dy in range(-radius, radius + 1):
-            for dx in range(-radius, radius + 1):
-                if dx * dx + dy * dy <= radius * radius:
-                    weit = ImageChops.lighter(weit, ImageChops.offset(maske, dx, dy))
+        weit = scheibe_aufweiten(maske, SAUM * gross)
 
     stift = stifte[0]
     stift.text(ort, ZEICHEN, font=schrift, fill=farben["tinte"])
@@ -197,12 +220,15 @@ def zeichne(
     klein = bild.resize((kante, kante), Image.LANCZOS)
     if not saum:
         return klein
-    # Die Aussenkante des Saums bleibt hart: ohne Zwischenstufen zum Grund
-    # (wie bei a.msmr.co) erkennt iOS ihn als Grenze und tauscht den Grund
-    # im Dunkelmodus; ein geglaetteter Rand tat das nicht. Der Grund bleibt
-    # dadurch auch exakt einfarbig.
-    hart = weit.resize((kante, kante), Image.BOX).point(lambda v: 255 if v >= 128 else 0)
-    return Image.composite(klein, Image.new("RGB", (kante, kante), farben[grund]), hart)
+    # Die Aussenkante des Saums ist geglaettet, aber auf Zehntelpixel genau:
+    # der Anteil, den die Aufweitung von jedem Pixel deckt, mischt Weiss ueber
+    # den Grund. So ist der Saum ueberall gleich breit; eine harte Kante
+    # rastete an ganzen Pixeln ein und schwankte zwischen 1 und 3 px.
+    deckung = np.asarray(weit.resize((kante, kante), Image.BOX), dtype=np.float64) / 255.0
+    unten = np.asarray(Image.new("RGB", (kante, kante), farben[grund]), dtype=np.float64)
+    oben = np.asarray(klein, dtype=np.float64)
+    gemischt = oben * deckung[..., None] + unten * (1 - deckung[..., None])
+    return Image.fromarray(np.rint(gemischt).astype(np.uint8), "RGB")
 
 
 def buchstabenpfad() -> tuple[str, object]:
