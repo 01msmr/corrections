@@ -64,7 +64,7 @@ STRICH_FELD = {"x": 0.06, "y": 0.30, "breite": 0.88, "hoehe": 0.40}
 # iOS-Icon: er trennt fuer iOS Vorder- und Hintergrund, sodass der Grund je
 # nach Modus gefuellt wird. Reines Weiss ist hier Absicht und kein Farbwert
 # der Oberflaeche -- er kommt nicht in die Palette.
-SAUM = 1.2 / 180  # 1,2 px im 180-px-Icon
+SAUM = 1.5 / 180  # 1,5 px im 180-px-Icon
 SAUM_FARBE = (255, 255, 255)
 
 
