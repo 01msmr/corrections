@@ -149,9 +149,10 @@ def zeichne(
 ) -> Image.Image:
     """Malt das Motiv auf eine quadratische Flaeche der gegebenen Kantenlaenge."""
     gross = kante * UEBERABTASTUNG
-    bild = Image.new("RGB", (gross, gross), farben[grund])
-    # Mit Saum wird das Motiv zuerst auf eine Maske gemalt, deren Aufweitung
-    # den weissen Rand ergibt; danach kommt das Motiv farbig darueber.
+    # Mit Saum wird das Motiv auf weissem Grund gemalt und zugleich auf eine
+    # Maske, deren Aufweitung die Kontur des Saums ergibt; der eigentliche
+    # Grund kommt erst beim Zusammensetzen dazu (siehe unten).
+    bild = Image.new("RGB", (gross, gross), SAUM_FARBE if saum else farben[grund])
     maske = Image.new("L", (gross, gross), 0)
     stifte = [ImageDraw.Draw(bild)] + ([ImageDraw.Draw(maske)] if saum else [])
 
@@ -183,12 +184,19 @@ def zeichne(
             for dx in range(-radius, radius + 1):
                 if dx * dx + dy * dy <= radius * radius:
                     weit = ImageChops.lighter(weit, ImageChops.offset(maske, dx, dy))
-        bild.paste(Image.new("RGB", (gross, gross), SAUM_FARBE), mask=weit)
 
     stift = stifte[0]
     stift.text(ort, ZEICHEN, font=schrift, fill=farben["tinte"])
     stift.polygon(polygon, fill=farben["korrektur"])
-    return bild.resize((kante, kante), Image.LANCZOS)
+    klein = bild.resize((kante, kante), Image.LANCZOS)
+    if not saum:
+        return klein
+    # Die Aussenkante des Saums bleibt hart: ohne Zwischenstufen zum Grund
+    # (wie bei a.msmr.co) erkennt iOS ihn als Grenze und tauscht den Grund
+    # im Dunkelmodus; ein geglaetteter Rand tat das nicht. Der Grund bleibt
+    # dadurch auch exakt einfarbig.
+    hart = weit.resize((kante, kante), Image.BOX).point(lambda v: 255 if v >= 128 else 0)
+    return Image.composite(klein, Image.new("RGB", (kante, kante), farben[grund]), hart)
 
 
 def buchstabenpfad() -> tuple[str, object]:
