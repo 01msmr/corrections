@@ -69,6 +69,9 @@ STRICH_FELD = {"x": 0.06, "y": 0.30, "breite": 0.88, "hoehe": 0.40}
 # ab 1,25 % stehen; duennere werden mit umgefaerbt und verschwinden.
 SAUM = 0.0125
 SAUM_FARBE = (255, 255, 255)
+# Das K im iOS-Icon ist reines Schwarz, nicht die Tinte der Palette: iOS laesst
+# den Buchstaben im Dunkelmodus unveraendert, und so ist es bei a.msmr.co.
+IOS_TINTE = "#000000"
 
 
 def palette() -> dict[str, str]:
@@ -254,7 +257,7 @@ def main() -> None:
 
     farben = palette()
 
-    apple = als_png(zeichne(180, farben, "iosGrund", saum=True))
+    apple = als_png(zeichne(180, {**farben, "tinte": IOS_TINTE}, "iosGrund", saum=True))
     android192 = als_png(zeichne(192, farben))
     android512 = als_png(zeichne(512, farben))
 
