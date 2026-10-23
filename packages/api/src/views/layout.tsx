@@ -25,6 +25,7 @@ import {
 } from "@korrektur/shared";
 import type { FC, PropsWithChildren } from "hono/jsx";
 import { raw } from "hono/html";
+import { APPLE_TOUCH_ICON } from "./icons.js";
 import { TOASTIFY_CSS, TOASTIFY_JS } from "./vendor/toastify.js";
 
 /** Fuer Farben in data-URIs: "#rrggbb" -> "%23rrggbb". */
@@ -1655,7 +1656,7 @@ export const Layout: FC<
           Browser die es koennen nehmen es; die .ico bleibt fuer die uebrigen. */}
       <link rel="icon" href="/icon.svg" type="image/svg+xml" />
       <link rel="icon" href="/favicon.ico" sizes="32x32" />
-      <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+      <link rel="apple-touch-icon" href={"data:image/png;base64," + APPLE_TOUCH_ICON} />
       <link rel="manifest" href="/site.webmanifest" />
       {/* Die Browserleiste nimmt die Farbe des Blattes an, in beiden Modi. */}
       <meta name="theme-color" media="(prefers-color-scheme: light)" content={PALETTE.papier} />

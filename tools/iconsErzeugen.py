@@ -38,7 +38,7 @@ import sys
 
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.ttLib import TTCollection
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 STAMM = pathlib.Path(__file__).resolve().parent.parent
 KONSTANTEN = STAMM / "packages/shared/src/constants.ts"
@@ -59,6 +59,13 @@ UEBERABTASTUNG = 4
 # Form bestimmt die Neigung: die Vorlage ist 46:26 breit, hier wird sie auf
 # rund 2:1 gestaucht -- flacher als im Titel, aber nicht gequetscht.
 STRICH_FELD = {"x": 0.06, "y": 0.30, "breite": 0.88, "hoehe": 0.40}
+
+# Duenner weisser Saum um K und Strich (Anteil der Kantenlaenge), nur im
+# iOS-Icon: er trennt fuer iOS Vorder- und Hintergrund, sodass der Grund je
+# nach Modus gefuellt wird. Reines Weiss ist hier Absicht und kein Farbwert
+# der Oberflaeche -- er kommt nicht in die Palette.
+SAUM = 1 / 180  # 1 px im 180-px-Icon
+SAUM_FARBE = (255, 255, 255)
 
 
 def palette() -> dict[str, str]:
@@ -137,36 +144,44 @@ def pfad_zu_punkten(pfad: str, schritte: int = 32) -> list[tuple[float, float]]:
     return punkte
 
 
-def zeichne(kante: int, farben: dict[str, str]) -> Image.Image:
+def zeichne(
+    kante: int, farben: dict[str, str], grund: str = "papier", saum: bool = False
+) -> Image.Image:
     """Malt das Motiv auf eine quadratische Flaeche der gegebenen Kantenlaenge."""
     gross = kante * UEBERABTASTUNG
-    bild = Image.new("RGB", (gross, gross), farben["papier"])
-    stift = ImageDraw.Draw(bild)
+    bild = Image.new("RGB", (gross, gross), farben[grund])
+    # Mit Saum wird das Motiv zuerst auf eine Maske gemalt, deren Aufweitung
+    # den weissen Rand ergibt; danach kommt das Motiv farbig darueber.
+    maske = Image.new("L", (gross, gross), 0)
+    stifte = [ImageDraw.Draw(bild)] + ([ImageDraw.Draw(maske)] if saum else [])
 
     schrift = ImageFont.truetype(
         str(SCHRIFT),
         int(gross * (1 - 2 * RAND) * BUCHSTABE_MASS * 1.16),
         index=SCHRIFT_INDEX,
     )
-    kasten = stift.textbbox((0, 0), ZEICHEN, font=schrift)
+    kasten = stifte[0].textbbox((0, 0), ZEICHEN, font=schrift)
     breite, hoehe = kasten[2] - kasten[0], kasten[3] - kasten[1]
-    stift.text(
-        ((gross - breite) / 2 - kasten[0], (gross - hoehe) / 2 - kasten[1]),
-        ZEICHEN,
-        font=schrift,
-        fill=farben["tinte"],
-    )
-
+    ort = ((gross - breite) / 2 - kasten[0], (gross - hoehe) / 2 - kasten[1])
     strich, kb, kh = strichpfad()
     feld = STRICH_FELD
     sx, sy = feld["breite"] * gross / kb, feld["hoehe"] * gross / kh
-    stift.polygon(
-        [
-            (feld["x"] * gross + px * sx, feld["y"] * gross + py * sy)
-            for px, py in pfad_zu_punkten(strich)
-        ],
-        fill=farben["korrektur"],
-    )
+    polygon = [
+        (feld["x"] * gross + px * sx, feld["y"] * gross + py * sy)
+        for px, py in pfad_zu_punkten(strich)
+    ]
+
+    if saum:
+        zeichner = stifte[1]
+        zeichner.text(ort, ZEICHEN, font=schrift, fill=255)
+        zeichner.polygon(polygon, fill=255)
+        radius = round(SAUM * gross)
+        weit = maske.filter(ImageFilter.MaxFilter(2 * radius + 1))
+        bild.paste(Image.new("RGB", (gross, gross), SAUM_FARBE), mask=weit)
+
+    stift = stifte[0]
+    stift.text(ort, ZEICHEN, font=schrift, fill=farben["tinte"])
+    stift.polygon(polygon, fill=farben["korrektur"])
     return bild.resize((kante, kante), Image.LANCZOS)
 
 
@@ -222,7 +237,7 @@ def main() -> None:
 
     farben = palette()
 
-    apple = als_png(zeichne(180, farben))
+    apple = als_png(zeichne(180, farben, "iosGrund", saum=True))
     android192 = als_png(zeichne(192, farben))
     android512 = als_png(zeichne(512, farben))
 

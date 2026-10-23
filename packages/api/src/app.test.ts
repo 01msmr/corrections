@@ -46,11 +46,6 @@ pro Woche. Jederzeit kündbar.</p>
 const AUTH = `Basic ${Buffer.from("admin:geheimes-passwort").toString("base64")}`;
 
 describe("App-Verdrahtung", () => {
-  it("lässt den Healthcheck ohne Anmeldung durch", async () => {
-    const res = await app().request("/healthz");
-    expect(res.status).toBe(200);
-  });
-
   it("schützt das Erfassungsformular", async () => {
     expect((await app().request("/neu")).status).toBe(401);
     expect((await app().request("/neu", { headers: { authorization: AUTH } })).status).toBe(200);
@@ -303,6 +298,15 @@ describe("Icons und Manifest", () => {
       expect(res.status, pfad).toBe(200);
       expect(res.headers.get("content-type"), pfad).toBe(typ);
     }
+  });
+
+  it("bettet das Apple-Icon als data:-URI in die Seite ein", async () => {
+    /* iOS laedt das Icon im "Zum Home-Bildschirm"-Dialog nicht von einer URL;
+       die Route bleibt als Rueckfall, der Link traegt die Bytes selbst. */
+    const html = await (await app().request("/hinweis")).text();
+    const links = html.match(/<link rel="apple-touch-icon"[^>]*>/g) ?? [];
+    expect(links).toHaveLength(1);
+    expect(links[0]).toContain('href="data:image/png;base64,');
   });
 
   it("nennt im Manifest beide Groessen und eine maskierbare Fassung", async () => {

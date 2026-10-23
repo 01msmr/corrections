@@ -97,6 +97,9 @@ export const ARTIKEL_MAX_LENGTH = 200_000;
  */
 export const PALETTE = {
   papier: "#f7f7f4",
+  /** Grund des iOS-Icons: deckendes helles Grau, das iOS je nach Modus selbst
+   *  fuellt; reines Weiss blieb in beiden Modi weiss. */
+  iosGrund: "#e6e6e9",
   tinte: "#1b1f23",
   korrektur: "#bb2233",
   vorschlag: "#2f6f4e",
