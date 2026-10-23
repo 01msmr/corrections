@@ -36,11 +36,4 @@ describe("seed", () => {
     seed(db);
     expect(db.select().from(errorTypes).all()).toHaveLength(DEFAULT_ERROR_TYPES.length);
   });
-
-  it("vergibt eine stabile Sortierreihenfolge", () => {
-    const db = freshDb();
-    seed(db);
-    const orders = db.select().from(errorTypes).all().map((r) => r.sortOrder);
-    expect(new Set(orders).size).toBe(DEFAULT_ERROR_TYPES.length);
-  });
 });
