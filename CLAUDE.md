@@ -1,4 +1,5 @@
 # Korrektur-Tracker
+> Governed by **CLAUDE MASTER** (`../CLAUDE.md`). Rules here extend it; they do not override it.
 
 ## Kontext
 Erfasst gemeldete Fehler in Online-Artikeln, verfolgt die Reaktionen der Redaktionen
